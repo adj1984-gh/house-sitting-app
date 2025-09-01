@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode } from 'lucide-react';
+import { getProperty, getAlerts, getDogs, getServicePeople, getAppointments, getHouseInstructions, logAccess } from '../lib/database';
+import { Property, Alert, Dog as DogType, ServicePerson, Appointment, HouseInstruction } from '../lib/types';
 
 // Simulated database - in production, this would connect to Supabase
 const initialData = {
@@ -184,9 +186,62 @@ export default function HouseSittingApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [dbData, setDbData] = useState<{
+    property: Property | null;
+    alerts: Alert[];
+    dogs: DogType[];
+    servicePeople: ServicePerson[];
+    appointments: Appointment[];
+    houseInstructions: HouseInstruction[];
+  }>({
+    property: null,
+    alerts: [],
+    dogs: [],
+    servicePeople: [],
+    appointments: [],
+    houseInstructions: []
+  });
 
   // In production, this would be stored securely in environment variables
   const SITE_PASSWORD = process.env.NEXT_PUBLIC_SITE_ACCESS_PASSWORD || 'frenchies2024';
+
+  // Load data from database
+  const loadDatabaseData = async () => {
+    try {
+      setIsLoading(true);
+      const [property, alerts, dogs, servicePeople, appointments, houseInstructions] = await Promise.all([
+        getProperty(),
+        getAlerts(),
+        getDogs(),
+        getServicePeople(),
+        getAppointments(),
+        getHouseInstructions()
+      ]);
+
+      setDbData({
+        property,
+        alerts: alerts || [],
+        dogs: dogs || [],
+        servicePeople: servicePeople || [],
+        appointments: appointments || [],
+        houseInstructions: houseInstructions || []
+      });
+    } catch (error) {
+      console.error('Error loading database data:', error);
+      // Fall back to mock data if database fails
+      setDbData({
+        property: null,
+        alerts: [],
+        dogs: [],
+        servicePeople: [],
+        appointments: [],
+        houseInstructions: []
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Check for password in URL params on mount (for QR code)
   useEffect(() => {
@@ -199,13 +254,29 @@ export default function HouseSittingApp() {
     }
   }, []);
 
+  // Load database data when component mounts
+  useEffect(() => {
+    loadDatabaseData();
+  }, []);
+
   // Login Component
   const LoginScreen = () => {
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
       e.preventDefault();
       if (password === SITE_PASSWORD) {
         setIsAuthenticated(true);
         setLoginError('');
+        
+        // Log access to database
+        try {
+          await logAccess({
+            property_id: '00000000-0000-0000-0000-000000000001',
+            access_type: 'password',
+            ip_address: undefined // We can't get IP on client side
+          });
+        } catch (error) {
+          console.error('Error logging access:', error);
+        }
       } else {
         setLoginError('Incorrect password. Please try again.');
       }
@@ -328,91 +399,104 @@ export default function HouseSittingApp() {
   };
 
   // Overview Section
-  const OverviewSection = () => (
-    <div className="space-y-6">
-      {/* Property Info */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-bold mb-4">Property Information</h2>
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <p className="text-gray-600 text-sm">Address</p>
-            <p className="font-medium">{data.property.address}</p>
-          </div>
-          <div>
-            <p className="text-gray-600 text-sm">WiFi</p>
-            <p className="font-medium">Network: {data.property.wifi.ssid}</p>
-            <p className="font-medium">Password: {data.property.wifi.password}</p>
-          </div>
-        </div>
-      </div>
+  const OverviewSection = () => {
+    const currentData = dbData.property ? {
+      property: {
+        address: dbData.property.address,
+        wifi: {
+          ssid: dbData.property.wifi_ssid || '',
+          password: dbData.property.wifi_password || ''
+        }
+      },
+      alerts: dbData.alerts
+    } : data;
 
-      {/* All Alerts */}
-      <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <AlertCircle className="w-6 h-6 text-red-600" />
-          <h2 className="text-xl font-bold text-red-800">Important Alerts</h2>
-        </div>
-        <div className="space-y-2">
-          {data.alerts.map(alert => (
-            <div key={alert.id} className={`flex items-start gap-2 ${
-              alert.type === 'danger' ? 'text-red-700' : 
-              alert.type === 'warning' ? 'text-orange-700' : 'text-blue-700'
-            }`}>
-              <span className="font-bold">•</span>
-              <span className="font-medium">{alert.text}</span>
+    return (
+      <div className="space-y-6">
+        {/* Property Info */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-bold mb-4">Property Information</h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-gray-600 text-sm">Address</p>
+              <p className="font-medium">{currentData.property.address}</p>
             </div>
-          ))}
+            <div>
+              <p className="text-gray-600 text-sm">WiFi</p>
+              <p className="font-medium">Network: {currentData.property.wifi.ssid}</p>
+              <p className="font-medium">Password: {currentData.property.wifi.password}</p>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* All Contacts */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Phone className="w-6 h-6 text-blue-600" />
-          <h2 className="text-xl font-bold">Emergency Contacts</h2>
-        </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div>
-            <h3 className="font-semibold mb-2 text-gray-800">Owners</h3>
-            {data.contacts.owners.map((owner, idx) => (
-              <p key={idx} className="text-gray-700">{owner.name}: {owner.phone}</p>
+        {/* All Alerts */}
+        <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertCircle className="w-6 h-6 text-red-600" />
+            <h2 className="text-xl font-bold text-red-800">Important Alerts</h2>
+          </div>
+          <div className="space-y-2">
+            {currentData.alerts.map(alert => (
+              <div key={alert.id} className={`flex items-start gap-2 ${
+                alert.type === 'danger' ? 'text-red-700' : 
+                alert.type === 'warning' ? 'text-orange-700' : 'text-blue-700'
+              }`}>
+                <span className="font-bold">•</span>
+                <span className="font-medium">{alert.text}</span>
+              </div>
             ))}
           </div>
-          <div>
-            <h3 className="font-semibold mb-2 text-gray-800">Regular Vet</h3>
-            <p className="text-sm font-medium">{data.contacts.regularVet.name}</p>
-            <p className="text-sm text-gray-600">{data.contacts.regularVet.address}</p>
-            <p className="text-gray-700">{data.contacts.regularVet.phone}</p>
-          </div>
-          <div>
-            <h3 className="font-semibold mb-2 text-gray-800">Emergency Vet</h3>
-            <p className="text-sm font-medium">{data.contacts.emergencyVet.name}</p>
-            <p className="text-sm text-gray-600">{data.contacts.emergencyVet.address}</p>
-            <p className="text-gray-700">{data.contacts.emergencyVet.phone}</p>
-          </div>
         </div>
-      </div>
 
-      {/* Daily Tasks Reference */}
-      <div className="bg-blue-50 rounded-lg p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Clock className="w-6 h-6 text-blue-600" />
-          <h2 className="text-xl font-bold">Daily Task Reference</h2>
-        </div>
-        <div className="grid md:grid-cols-2 gap-3">
-          {data.dailyTasks.map(task => (
-            <div key={task.id} className="flex items-start gap-3 bg-white p-3 rounded-md">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-              <div className="flex-1">
-                <p className="font-medium">{task.task}</p>
-                <p className="text-sm text-gray-600">{task.time}</p>
-              </div>
+        {/* All Contacts */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Phone className="w-6 h-6 text-blue-600" />
+            <h2 className="text-xl font-bold">Emergency Contacts</h2>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div>
+              <h3 className="font-semibold mb-2 text-gray-800">Owners</h3>
+              {data.contacts.owners.map((owner, idx) => (
+                <p key={idx} className="text-gray-700">{owner.name}: {owner.phone}</p>
+              ))}
             </div>
-          ))}
+            <div>
+              <h3 className="font-semibold mb-2 text-gray-800">Regular Vet</h3>
+              <p className="text-sm font-medium">{data.contacts.regularVet.name}</p>
+              <p className="text-sm text-gray-600">{data.contacts.regularVet.address}</p>
+              <p className="text-gray-700">{data.contacts.regularVet.phone}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-2 text-gray-800">Emergency Vet</h3>
+              <p className="text-sm font-medium">{data.contacts.emergencyVet.name}</p>
+              <p className="text-sm text-gray-600">{data.contacts.emergencyVet.address}</p>
+              <p className="text-gray-700">{data.contacts.emergencyVet.phone}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Daily Tasks Reference */}
+        <div className="bg-blue-50 rounded-lg p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="w-6 h-6 text-blue-600" />
+            <h2 className="text-xl font-bold">Daily Task Reference</h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-3">
+            {data.dailyTasks.map(task => (
+              <div key={task.id} className="flex items-start gap-3 bg-white p-3 rounded-md">
+                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                <div className="flex-1">
+                  <p className="font-medium">{task.task}</p>
+                  <p className="text-sm text-gray-600">{task.time}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Dogs Section
   const DogsSection = () => (
@@ -796,6 +880,18 @@ export default function HouseSittingApp() {
   // Show login screen if not authenticated
   if (!isAuthenticated) {
     return <LoginScreen />;
+  }
+
+  // Show loading state while fetching data
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading house sitting information...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
