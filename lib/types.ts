@@ -78,6 +78,18 @@ export interface HouseInstruction {
   updated_at: string
 }
 
+export interface DailyTask {
+  id: string
+  property_id: string
+  title: string
+  time: string
+  category: 'pets' | 'house' | 'general'
+  notes?: string
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface AccessLog {
   id: string
   property_id: string

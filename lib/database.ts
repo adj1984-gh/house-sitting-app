@@ -1,5 +1,5 @@
 import { supabase, supabaseAdmin } from './supabase'
-import { Property, Alert, Dog, ServicePerson, Appointment, HouseInstruction, AccessLog, ScheduleItem } from './types'
+import { Property, Alert, Dog, ServicePerson, Appointment, HouseInstruction, DailyTask, AccessLog, ScheduleItem } from './types'
 
 // Property operations
 export const getProperty = async (id: string = '00000000-0000-0000-0000-000000000001'): Promise<Property | null> => {
@@ -512,11 +512,94 @@ export const getAccessLogs = async (propertyId: string = '00000000-0000-0000-000
   return data || []
 }
 
+// Daily Tasks operations
+export const getDailyTasks = async (propertyId: string = '00000000-0000-0000-0000-000000000001'): Promise<DailyTask[]> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning empty array')
+    return []
+  }
+
+  const { data, error } = await supabase
+    .from('daily_tasks')
+    .select('*')
+    .eq('property_id', propertyId)
+    .eq('active', true)
+    .order('time', { ascending: true })
+  
+  if (error) {
+    console.error('Error fetching daily tasks:', error)
+    return []
+  }
+  
+  return data || []
+}
+
+export const createDailyTask = async (task: Omit<DailyTask, 'id' | 'created_at' | 'updated_at'>): Promise<DailyTask | null> => {
+  if (!supabaseAdmin) {
+    console.warn('Supabase admin not configured')
+    return null
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('daily_tasks')
+    .insert([task])
+    .select()
+    .single()
+  
+  if (error) {
+    console.error('Error creating daily task:', error)
+    return null
+  }
+  
+  return data
+}
+
+export const updateDailyTask = async (id: string, updates: Partial<DailyTask>): Promise<DailyTask | null> => {
+  if (!supabaseAdmin) {
+    console.warn('Supabase admin not configured')
+    return null
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('daily_tasks')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+  
+  if (error) {
+    console.error('Error updating daily task:', error)
+    return null
+  }
+  
+  return data
+}
+
+export const deleteDailyTask = async (id: string): Promise<boolean> => {
+  if (!supabaseAdmin) {
+    console.warn('Supabase admin not configured')
+    return false
+  }
+
+  const { error } = await supabaseAdmin
+    .from('daily_tasks')
+    .update({ active: false, updated_at: new Date().toISOString() })
+    .eq('id', id)
+  
+  if (error) {
+    console.error('Error deleting daily task:', error)
+    return false
+  }
+  
+  return true
+}
+
 // Master Schedule Generation
 export const generateMasterSchedule = (
   dogs: Dog[],
   appointments: Appointment[],
   servicePeople: ServicePerson[],
+  dailyTasks: DailyTask[],
   targetDate?: string
 ): ScheduleItem[] => {
   const scheduleItems: ScheduleItem[] = []
@@ -618,24 +701,15 @@ export const generateMasterSchedule = (
     }
   })
   
-  // Add daily tasks
-  const dailyTasks = [
-    { time: '7:00 AM', task: 'Morning feeding & medicine' },
-    { time: '6:00 PM', task: 'Evening feeding & medicine' },
-    { time: 'Once daily', task: 'Barolo head wipe' },
-    { time: 'Daily', task: 'Walk Barolo' },
-    { time: 'As needed', task: 'Refill water bowls' },
-    { time: 'Throughout day', task: 'Multiple potty breaks' },
-    { time: 'Before bed', task: 'Check patio door is locked' }
-  ]
-  
-  dailyTasks.forEach((task, index) => {
+  // Add daily tasks from database
+  dailyTasks.forEach(task => {
     scheduleItems.push({
-      id: `task-${index}`,
+      id: `task-${task.id}`,
       type: 'task',
-      title: task.task,
+      title: task.title,
       time: task.time,
       date: today,
+      notes: task.notes,
       recurring: true,
       source: 'task'
     })

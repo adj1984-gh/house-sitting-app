@@ -89,6 +89,19 @@ CREATE TABLE IF NOT EXISTS house_instructions (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Daily Tasks table
+CREATE TABLE IF NOT EXISTS daily_tasks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  time TEXT NOT NULL,
+  category TEXT CHECK (category IN ('pets', 'house', 'general')),
+  notes TEXT,
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Access Logs table (for tracking who accessed when)
 CREATE TABLE IF NOT EXISTS access_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -190,4 +203,15 @@ ON CONFLICT DO NOTHING;
 -- Insert default appointment
 INSERT INTO appointments (property_id, date, time, type, for_dog_id, location, notes) VALUES
 ('00000000-0000-0000-0000-000000000001', '2024-06-06', '09:30:00', 'Vet - Shot', '00000000-0000-0000-0000-000000000002', 'Regular Vet', 'Take ziplock bag from counter. Serum in refrigerator (top right next to jalapeños, marked #2). Dose: 1.0 ml')
+ON CONFLICT DO NOTHING;
+
+-- Insert default daily tasks
+INSERT INTO daily_tasks (property_id, title, time, category, notes) VALUES
+('00000000-0000-0000-0000-000000000001', 'Morning feeding & medicine', '7:00 AM', 'pets', 'Feed both dogs and give morning medicine'),
+('00000000-0000-0000-0000-000000000001', 'Evening feeding & medicine', '6:00 PM', 'pets', 'Feed both dogs and give evening medicine'),
+('00000000-0000-0000-0000-000000000001', 'Barolo head wipe', 'Once daily', 'pets', 'Wipe top of head with wipes'),
+('00000000-0000-0000-0000-000000000001', 'Walk Barolo', 'Daily', 'pets', 'Use black harness, avoid other dogs'),
+('00000000-0000-0000-0000-000000000001', 'Refill water bowls', 'As needed', 'pets', 'Main: dining room, Also: outside & office'),
+('00000000-0000-0000-0000-000000000001', 'Multiple potty breaks', 'Throughout day', 'pets', 'Let dogs out frequently, use verbal command'),
+('00000000-0000-0000-0000-000000000001', 'Check patio door is locked', 'Before bed', 'house', 'Barolo can nudge it open - must be locked')
 ON CONFLICT DO NOTHING;

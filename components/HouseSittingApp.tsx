@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode } from 'lucide-react';
-import { getProperty, getAlerts, getDogs, getServicePeople, getAppointments, getHouseInstructions, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createServicePerson, updateServicePerson, deleteServicePerson, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, generateMasterSchedule } from '../lib/database';
-import { Property, Alert, Dog as DogType, ServicePerson, Appointment, HouseInstruction, ScheduleItem } from '../lib/types';
+import { getProperty, getAlerts, getDogs, getServicePeople, getAppointments, getHouseInstructions, getDailyTasks, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createServicePerson, updateServicePerson, deleteServicePerson, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, generateMasterSchedule } from '../lib/database';
+import { Property, Alert, Dog as DogType, ServicePerson, Appointment, HouseInstruction, DailyTask, ScheduleItem } from '../lib/types';
 
 // All data comes from Supabase database - no mock data
 
@@ -364,13 +364,15 @@ export default function HouseSittingApp() {
     servicePeople: ServicePerson[];
     appointments: Appointment[];
     houseInstructions: HouseInstruction[];
+    dailyTasks: DailyTask[];
   }>({
     property: null,
     alerts: [],
     dogs: [],
     servicePeople: [],
     appointments: [],
-    houseInstructions: []
+    houseInstructions: [],
+    dailyTasks: []
   });
   const [masterSchedule, setMasterSchedule] = useState<ScheduleItem[]>([]);
 
@@ -388,13 +390,14 @@ export default function HouseSittingApp() {
   const loadDatabaseData = async () => {
     try {
       setIsLoading(true);
-      const [property, alerts, dogs, servicePeople, appointments, houseInstructions] = await Promise.all([
+      const [property, alerts, dogs, servicePeople, appointments, houseInstructions, dailyTasks] = await Promise.all([
         getProperty(),
         getAlerts(),
         getDogs(),
         getServicePeople(),
         getAppointments(),
-        getHouseInstructions()
+        getHouseInstructions(),
+        getDailyTasks()
       ]);
 
       setDbData({
@@ -403,7 +406,8 @@ export default function HouseSittingApp() {
         dogs: dogs || [],
         servicePeople: servicePeople || [],
         appointments: appointments || [],
-        houseInstructions: houseInstructions || []
+        houseInstructions: houseInstructions || [],
+        dailyTasks: dailyTasks || []
       });
     } catch (error) {
       console.error('Error loading database data:', error);
@@ -414,7 +418,8 @@ export default function HouseSittingApp() {
         dogs: [],
         servicePeople: [],
         appointments: [],
-        houseInstructions: []
+        houseInstructions: [],
+        dailyTasks: []
       });
     } finally {
       setIsLoading(false);
@@ -426,10 +431,11 @@ export default function HouseSittingApp() {
     const schedule = generateMasterSchedule(
       dbData.dogs,
       dbData.appointments,
-      dbData.servicePeople
+      dbData.servicePeople,
+      dbData.dailyTasks
     );
     setMasterSchedule(schedule);
-  }, [dbData.dogs, dbData.appointments, dbData.servicePeople]);
+  }, [dbData.dogs, dbData.appointments, dbData.servicePeople, dbData.dailyTasks]);
 
   // Admin CRUD operations
   const handleCreate = async (type: string, data: any) => {
@@ -466,6 +472,12 @@ export default function HouseSittingApp() {
           result = await createHouseInstruction({ ...data, property_id: propertyId });
           if (result) {
             setDbData(prev => ({ ...prev, houseInstructions: [...prev.houseInstructions, result] }));
+          }
+          break;
+        case 'dailyTask':
+          result = await createDailyTask({ ...data, property_id: propertyId });
+          if (result) {
+            setDbData(prev => ({ ...prev, dailyTasks: [...prev.dailyTasks, result] }));
           }
           break;
       }
@@ -526,6 +538,15 @@ export default function HouseSittingApp() {
             }));
           }
           break;
+        case 'dailyTask':
+          result = await updateDailyTask(id, data);
+          if (result) {
+            setDbData(prev => ({ 
+              ...prev, 
+              dailyTasks: prev.dailyTasks.map(dt => dt.id === id ? result : dt)
+            }));
+          }
+          break;
       }
       
       setEditingItem(null);
@@ -569,10 +590,31 @@ export default function HouseSittingApp() {
             setDbData(prev => ({ ...prev, houseInstructions: prev.houseInstructions.filter(hi => hi.id !== id) }));
           }
           break;
+        case 'dailyTask':
+          success = await deleteDailyTask(id);
+          if (success) {
+            setDbData(prev => ({ ...prev, dailyTasks: prev.dailyTasks.filter(dt => dt.id !== id) }));
+          }
+          break;
       }
     } catch (error) {
       console.error(`Error deleting ${type}:`, error);
     }
+  };
+
+  // Handle schedule item deletion
+  const handleScheduleItemDelete = async (item: ScheduleItem) => {
+    if (item.source === 'task') {
+      // Extract the actual task ID from the schedule item ID
+      const taskId = item.id.replace('task-', '');
+      await handleDelete('dailyTask', taskId);
+    } else if (item.source === 'appointment') {
+      // Extract the actual appointment ID from the schedule item ID
+      const appointmentId = item.id.replace('appointment-', '');
+      await handleDelete('appointment', appointmentId);
+    }
+    // Note: Other sources (dog feeding, medicine, walks, services) are derived from other data
+    // and would need to be managed from their respective sections
   };
 
   // Check for password in URL params on mount (for QR code)
@@ -865,7 +907,18 @@ export default function HouseSittingApp() {
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <p className="font-medium">{item.title}</p>
-                      <span className="text-sm text-gray-600">{item.time}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">{item.time}</span>
+                        {isAdmin && (item.source === 'task' || item.source === 'appointment') && (
+                          <button
+                            onClick={() => handleScheduleItemDelete(item)}
+                            className="text-red-600 hover:text-red-800"
+                            title="Delete item"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                     {item.dog_name && (
                       <p className="text-sm text-gray-600">For: {item.dog_name}</p>
@@ -1278,13 +1331,22 @@ export default function HouseSittingApp() {
       <div className="space-y-6">
         {isAdmin && (
           <div className="bg-white rounded-lg shadow-md p-4">
-            <button
-              onClick={() => setShowAddForm({ type: 'appointment' })}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              <Plus className="w-4 h-4" />
-              Add Appointment
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowAddForm({ type: 'appointment' })}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                <Plus className="w-4 h-4" />
+                Add Appointment
+              </button>
+              <button
+                onClick={() => setShowAddForm({ type: 'dailyTask' })}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              >
+                <Plus className="w-4 h-4" />
+                Add Daily Task
+              </button>
+            </div>
           </div>
         )}
         
@@ -1309,9 +1371,20 @@ export default function HouseSittingApp() {
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <p className="font-medium text-gray-900">{item.title}</p>
-                      <span className="text-sm font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                        {item.time}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                          {item.time}
+                        </span>
+                        {isAdmin && (item.source === 'task' || item.source === 'appointment') && (
+                          <button
+                            onClick={() => handleScheduleItemDelete(item)}
+                            className="text-red-600 hover:text-red-800"
+                            title="Delete item"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                     {item.dog_name && (
                       <p className="text-sm text-gray-600 mt-1">🐕 For: {item.dog_name}</p>
@@ -1347,6 +1420,56 @@ export default function HouseSittingApp() {
             )}
           </div>
         </div>
+
+        {/* Daily Tasks Management */}
+        {isAdmin && dbData.dailyTasks.length > 0 && (
+          <div className="bg-gray-50 rounded-lg p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <CheckSquare className="w-6 h-6 text-gray-600" />
+              <h2 className="text-xl font-bold">Daily Tasks Management</h2>
+            </div>
+            <div className="space-y-3">
+              {dbData.dailyTasks.map(task => (
+                <div key={task.id} className="flex items-center justify-between bg-white p-3 rounded-md border">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                        {task.time}
+                      </span>
+                      <span className="font-medium">{task.title}</span>
+                      <span className={`text-xs px-2 py-1 rounded ${
+                        task.category === 'pets' ? 'bg-orange-100 text-orange-700' :
+                        task.category === 'house' ? 'bg-blue-100 text-blue-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {task.category}
+                      </span>
+                    </div>
+                    {task.notes && (
+                      <p className="text-sm text-gray-500 mt-1">{task.notes}</p>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setEditingItem({ type: 'dailyTask', id: task.id, data: task })}
+                      className="text-blue-600 hover:text-blue-800"
+                      title="Edit task"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete('dailyTask', task.id)}
+                      className="text-red-600 hover:text-red-800"
+                      title="Delete task"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Weekly Overview */}
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -1579,6 +1702,31 @@ export default function HouseSittingApp() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Notes</label>
+                    <textarea name="notes" defaultValue={formData.notes || ''} className="w-full px-3 py-2 border rounded-md" rows={3} />
+                  </div>
+                </>
+              )}
+              
+              {formType === 'dailyTask' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Task Title</label>
+                    <input name="title" defaultValue={formData.title || ''} required className="w-full px-3 py-2 border rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Time</label>
+                    <input name="time" defaultValue={formData.time || ''} required className="w-full px-3 py-2 border rounded-md" placeholder="e.g., 7:00 AM, Afternoon, Before bed" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Category</label>
+                    <select name="category" defaultValue={formData.category || 'general'} required className="w-full px-3 py-2 border rounded-md">
+                      <option value="pets">Pets</option>
+                      <option value="house">House</option>
+                      <option value="general">General</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
                     <textarea name="notes" defaultValue={formData.notes || ''} className="w-full px-3 py-2 border rounded-md" rows={3} />
                   </div>
                 </>
