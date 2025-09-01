@@ -86,4 +86,19 @@ export interface AccessLog {
   ip_address?: string
 }
 
+// Master Schedule Item - consolidates all schedulable items
+export interface ScheduleItem {
+  id: string
+  type: 'feeding' | 'medicine' | 'appointment' | 'service' | 'walk' | 'task'
+  title: string
+  time: string
+  date?: string
+  dog_id?: string
+  dog_name?: string
+  location?: string
+  notes?: string
+  recurring?: boolean
+  source: 'dog' | 'appointment' | 'service' | 'task'
+}
+
 // All data now comes from Supabase database - no local mock data interfaces needed
