@@ -23,6 +23,7 @@ export interface Dog {
   property_id: string
   name: string
   age?: string
+  birthdate?: string
   photo_url?: string
   personality?: string
   feeding_schedule: any // JSONB

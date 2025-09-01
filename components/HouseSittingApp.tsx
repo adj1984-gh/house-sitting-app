@@ -5,178 +5,32 @@ import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin
 import { getProperty, getAlerts, getDogs, getServicePeople, getAppointments, getHouseInstructions, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createServicePerson, updateServicePerson, deleteServicePerson, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction } from '../lib/database';
 import { Property, Alert, Dog as DogType, ServicePerson, Appointment, HouseInstruction } from '../lib/types';
 
-// Simulated database - in production, this would connect to Supabase
-const initialData = {
-  property: {
-    address: "9441 Alto Drive, La Mesa, CA 91941",
-    wifi: {
-      ssid: "Frenchie Den / Frenchie Den2",
-      password: "Fir3fly1"
+// All data comes from Supabase database - no mock data
+
+// Helper function to calculate age from birthdate
+const calculateAge = (birthdate: string): string => {
+  if (!birthdate) return '';
+  
+  const birthDate = new Date(birthdate);
+  const today = new Date();
+  const ageInYears = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  const dayDiff = today.getDate() - birthDate.getDate();
+  
+  if (ageInYears > 0) {
+    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+      return `${ageInYears - 1} year${ageInYears - 1 !== 1 ? 's' : ''}`;
+    } else {
+      return `${ageInYears} year${ageInYears !== 1 ? 's' : ''}`;
     }
-  },
-  alerts: [
-    { id: 1, type: 'danger', category: 'pets', text: "COYOTES PRESENT IN BACKYARD - Never let dogs outside unattended" },
-    { id: 2, type: 'warning', category: 'pets', text: "No dogs on the Office Patio during this visit" },
-    { id: 3, type: 'warning', category: 'pets', text: "Keep patio steel door fully shut - Dogs will escape if left ajar" },
-    { id: 4, type: 'info', category: 'house', text: "Septic system - Only flush toilet paper" }
-  ],
-  contacts: {
-    owners: [
-      { name: "Adam", phone: "816-676-8363" },
-      { name: "Lauren", phone: "913-375-8699" }
-    ],
-    regularVet: {
-      name: "Fletcher Hills Animal Hospital",
-      address: "8807 Grossmont Blvd, La Mesa, CA 91942",
-      phone: "619-463-6604"
-    },
-    emergencyVet: {
-      name: "Veterinary Specialty Hospital of San Diego",
-      address: "10435 Sorrento Valley Road, San Diego, CA 92121",
-      phone: "858-875-7500"
-    },
-    services: [
-      { name: "Hot Tub Maintenance", phone: "Contact info on file", notes: "Has your contact info" },
-      { name: "Antonio (Gardener)", phone: "Contact owners", notes: "Payment needed" }
-    ]
-  },
-  dogs: [
-    {
-      id: 1,
-      name: "Pâté",
-      age: "1+ year",
-      photo: "🐕",
-      personality: "Gets 'sharkey' (goes crazy with mouth) but calms quickly. May run to hot tub area or bottom yard when let out. Likes to steal laundry.",
-      feeding: {
-        schedule: [
-          { time: "7:00 AM", amount: "1½ cups refrigerated food" },
-          { time: "6:00 PM", amount: "1½ cups refrigerated food" }
-        ],
-        notes: "When container empties: logs in bottom right refrigerator drawer, use black gloves to break up to ground beef consistency",
-        location: "Refrigerator"
-      },
-      medicine: {
-        schedule: [
-          { time: "Evening", medication: "1 Benadryl (25mg) with food" }
-        ],
-        notes: ""
-      },
-      potty: {
-        trained: "99% trained but needs frequent trips outside",
-        notes: "Often needs verbal command 'go potty'. May need baby wipes after."
-      },
-      walks: {
-        frequency: "Optional walks only",
-        notes: "Leash in laundry room"
-      },
-      sleeping: {
-        location: "Normally sleeps with owners",
-        notes: "Alternative: Keep in kitchen"
-      },
-      special: {
-        whenLeaving: "Goes in small cage (office or dining room)",
-        management: "Keep bedroom doors closed to prevent accidents/mischief"
-      }
-    },
-    {
-      id: 2,
-      name: "Barolo",
-      age: "5 years",
-      photo: "🐕‍🦺",
-      personality: "Can be territorial (watch for ears back - separate dogs if needed). Responds to shaking a dish towel at him.",
-      feeding: {
-        schedule: [
-          { time: "7:00 AM", amount: "3/4 cup dry food" },
-          { time: "6:00 PM", amount: "3/4 cup dry food" }
-        ],
-        notes: "Separate dogs across room when feeding. Pick up and rinse bowls immediately.",
-        location: "Bottom drawer right of stove"
-      },
-      medicine: {
-        schedule: [
-          { time: "Morning", medication: "1 Benadryl (25mg)" },
-          { time: "Evening", medication: "1 Benadryl (25mg) + 1 allergy pill from freezer (via pill pocket)" }
-        ],
-        notes: "Wipe top of head once daily with wipes. Currently on medicine for diarrhea."
-      },
-      potty: {
-        trained: "Fully trained",
-        notes: "May whine to go outside at night. May need baby wipes for cleanup. If won't come back, use leaf blower trigger."
-      },
-      walks: {
-        frequency: "Loves long daily walks",
-        notes: "Use black harness on left side. Not good with other dogs - redirect if you see any."
-      },
-      sleeping: {
-        location: "Normally sleeps with owners",
-        notes: "Alternative: Keep in kitchen"
-      },
-      special: {
-        whenLeaving: "Can stay in kitchen with gate closed",
-        management: "Use cage in living room if dogs need separation"
-      }
+  } else {
+    const ageInMonths = Math.max(0, today.getMonth() - birthDate.getMonth() + (today.getFullYear() - birthDate.getFullYear()) * 12);
+    if (ageInMonths > 0) {
+      return `${ageInMonths} month${ageInMonths !== 1 ? 's' : ''}`;
+    } else {
+      return 'Less than 1 month';
     }
-  ],
-  houseInstructions: {
-    access: {
-      mudRoom: "Keypad on wood panel outside. Enter code + red button to lock/unlock. Inside: turn cylinder right to lock.",
-      patioDoor: "Barolo can nudge it open - must be locked when not in use"
-    },
-    entertainment: {
-      tv: "LG Remote left of TV. Press house button for apps. Apple TV is default. Use iPhone Remote app or small Apple remote by fireplace.",
-      sonos: "Speakers in kitchen, living room, patio, office, guest bedroom. Auto-switches with TV. Control via SONOS app on WiFi."
-    },
-    utilities: {
-      lights: "Kitchen: Say 'Alexa, turn on/off all kitchen'. Living room: Auto at sunset, off at 11:59pm.",
-      thermostat: "Set to heat/AC auto. Adjust via touchscreen. DO NOT turn completely off.",
-      septic: "Only flush toilet paper - nothing else!",
-      bathroom: "Hall bathroom for your use. Turn on middle switch for shower. Other switches have motion sensors."
-    },
-    amenities: {
-      hotTub: "Free to use. Undo 2 straps, fold cover in half into lifter. Towels in hall closet.",
-      trash: "Pickup early Monday AM. Put bins out Sunday night, return after emptying."
-    }
-  },
-  appointments: [
-    {
-      id: 1,
-      date: "Friday 6/6",
-      time: "9:30 AM",
-      type: "Vet - Shot",
-      who: "Pâté",
-      location: "Regular Vet",
-      notes: "Take ziplock bag from counter. Serum in refrigerator (top right next to jalapeños, marked #2). Dose: 1.0 ml"
-    }
-  ],
-  servicePeople: [
-    {
-      id: 1,
-      name: "Hot Tub Maintenance",
-      day: "Tuesday",
-      time: "Varies",
-      payment: "Pre-paid",
-      notes: "Comes to backyard. Will text you heads-up.",
-      needsAccess: true
-    },
-    {
-      id: 2,
-      name: "Antonio",
-      day: "Friday 9/6",
-      time: "TBD",
-      payment: "$125.00 cash",
-      notes: "Needs to be paid when done",
-      needsAccess: true
-    }
-  ],
-  dailyTasks: [
-    { id: 1, category: 'pets', task: 'Morning feeding & medicine', time: '7:00 AM' },
-    { id: 2, category: 'pets', task: 'Evening feeding & medicine', time: '6:00 PM' },
-    { id: 3, category: 'pets', task: 'Barolo head wipe', time: 'Once daily' },
-    { id: 4, category: 'pets', task: 'Walk Barolo', time: 'Daily' },
-    { id: 5, category: 'house', task: 'Refill water bowls', time: 'As needed' },
-    { id: 6, category: 'pets', task: 'Multiple potty breaks', time: 'Throughout day' },
-    { id: 7, category: 'house', task: 'Check patio door is locked', time: 'Before bed' }
-  ]
+  }
 };
 
 // Dog Edit Form Component
@@ -257,13 +111,19 @@ const DogEditForm = ({ formData }: { formData: any }) => {
         <input name="name" defaultValue={formData.name || ''} required className="w-full px-3 py-2 border rounded-md" />
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">Age</label>
-        <input name="age" defaultValue={formData.age || ''} className="w-full px-3 py-2 border rounded-md" />
+        <label className="block text-sm font-medium mb-1">Birthdate</label>
+        <input 
+          type="date" 
+          name="birthdate" 
+          defaultValue={formData.birthdate || ''} 
+          className="w-full px-3 py-2 border rounded-md" 
+        />
+        <p className="text-xs text-gray-500 mt-1">Age will be calculated automatically from birthdate</p>
       </div>
       
       {/* Photo Upload */}
       <div>
-        <label className="block text-sm font-medium mb-1">Photo</label>
+        <label className="block text-sm font-medium mb-1">Dog Photo</label>
         <div className="space-y-2">
           {photoPreview && (
             <div className="w-24 h-24 border rounded-md overflow-hidden">
@@ -275,7 +135,9 @@ const DogEditForm = ({ formData }: { formData: any }) => {
             accept="image/*"
             onChange={handlePhotoChange}
             className="w-full px-3 py-2 border rounded-md"
+            placeholder="Choose a photo..."
           />
+          <p className="text-xs text-gray-500">Upload a photo of the dog (JPG, PNG, etc.)</p>
           <input type="hidden" name="photo_url" value={photoPreview} />
         </div>
       </div>
@@ -445,7 +307,7 @@ const DogEditForm = ({ formData }: { formData: any }) => {
           {specialInstructions.map((instruction, index) => (
             <div key={index} className="flex gap-2 items-end">
               <div className="flex-1">
-                <label className="block text-xs font-medium mb-1">Type</label>
+                <label className="block text-xs font-medium mb-1">Title</label>
                 <input
                   type="text"
                   value={instruction.type}
@@ -489,7 +351,6 @@ const DogEditForm = ({ formData }: { formData: any }) => {
 };
 
 export default function HouseSittingApp() {
-  const [data, setData] = useState(initialData);
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -866,16 +727,16 @@ export default function HouseSittingApp() {
 
   // Overview Section
   const OverviewSection = () => {
-    const currentData = dbData.property ? {
+    const currentData = {
       property: {
-        address: dbData.property.address,
+        address: dbData.property?.address || '9441 Alto Drive, La Mesa, CA 91941',
         wifi: {
-          ssid: dbData.property.wifi_ssid || '',
-          password: dbData.property.wifi_password || ''
+          ssid: dbData.property?.wifi_ssid || 'Frenchie Den / Frenchie Den2',
+          password: dbData.property?.wifi_password || 'Fir3fly1'
         }
       },
       alerts: dbData.alerts
-    } : data;
+    };
 
     return (
       <div className="space-y-6">
@@ -954,21 +815,20 @@ export default function HouseSittingApp() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
               <h3 className="font-semibold mb-2 text-gray-800">Owners</h3>
-              {data.contacts.owners.map((owner, idx) => (
-                <p key={idx} className="text-gray-700">{owner.name}: {owner.phone}</p>
-              ))}
+              <p className="text-gray-700">Adam: 816-676-8363</p>
+              <p className="text-gray-700">Lauren: 913-375-8699</p>
             </div>
             <div>
               <h3 className="font-semibold mb-2 text-gray-800">Regular Vet</h3>
-              <p className="text-sm font-medium">{data.contacts.regularVet.name}</p>
-              <p className="text-sm text-gray-600">{data.contacts.regularVet.address}</p>
-              <p className="text-gray-700">{data.contacts.regularVet.phone}</p>
+              <p className="text-sm font-medium">Fletcher Hills Animal Hospital</p>
+              <p className="text-sm text-gray-600">8807 Grossmont Blvd, La Mesa, CA 91942</p>
+              <p className="text-gray-700">619-463-6604</p>
             </div>
             <div>
               <h3 className="font-semibold mb-2 text-gray-800">Emergency Vet</h3>
-              <p className="text-sm font-medium">{data.contacts.emergencyVet.name}</p>
-              <p className="text-sm text-gray-600">{data.contacts.emergencyVet.address}</p>
-              <p className="text-gray-700">{data.contacts.emergencyVet.phone}</p>
+              <p className="text-sm font-medium">Veterinary Specialty Hospital of San Diego</p>
+              <p className="text-sm text-gray-600">10435 Sorrento Valley Road, San Diego, CA 92121</p>
+              <p className="text-gray-700">858-875-7500</p>
             </div>
           </div>
         </div>
@@ -980,15 +840,55 @@ export default function HouseSittingApp() {
             <h2 className="text-xl font-bold">Daily Task Reference</h2>
           </div>
           <div className="grid md:grid-cols-2 gap-3">
-            {data.dailyTasks.map(task => (
-              <div key={task.id} className="flex items-start gap-3 bg-white p-3 rounded-md">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                <div className="flex-1">
-                  <p className="font-medium">{task.task}</p>
-                  <p className="text-sm text-gray-600">{task.time}</p>
-                </div>
+            <div className="flex items-start gap-3 bg-white p-3 rounded-md">
+              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+              <div className="flex-1">
+                <p className="font-medium">Morning feeding & medicine</p>
+                <p className="text-sm text-gray-600">7:00 AM</p>
               </div>
-            ))}
+            </div>
+            <div className="flex items-start gap-3 bg-white p-3 rounded-md">
+              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+              <div className="flex-1">
+                <p className="font-medium">Evening feeding & medicine</p>
+                <p className="text-sm text-gray-600">6:00 PM</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 bg-white p-3 rounded-md">
+              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+              <div className="flex-1">
+                <p className="font-medium">Barolo head wipe</p>
+                <p className="text-sm text-gray-600">Once daily</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 bg-white p-3 rounded-md">
+              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+              <div className="flex-1">
+                <p className="font-medium">Walk Barolo</p>
+                <p className="text-sm text-gray-600">Daily</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 bg-white p-3 rounded-md">
+              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+              <div className="flex-1">
+                <p className="font-medium">Refill water bowls</p>
+                <p className="text-sm text-gray-600">As needed</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 bg-white p-3 rounded-md">
+              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+              <div className="flex-1">
+                <p className="font-medium">Multiple potty breaks</p>
+                <p className="text-sm text-gray-600">Throughout day</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 bg-white p-3 rounded-md">
+              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+              <div className="flex-1">
+                <p className="font-medium">Check patio door is locked</p>
+                <p className="text-sm text-gray-600">Before bed</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -997,7 +897,7 @@ export default function HouseSittingApp() {
 
   // Dogs Section
   const DogsSection = () => {
-    const currentDogs = dbData.dogs.length > 0 ? dbData.dogs : data.dogs;
+    const currentDogs = dbData.dogs;
     
     return (
       <div className="space-y-6">
@@ -1020,7 +920,7 @@ export default function HouseSittingApp() {
               <span className="text-4xl">{(dog as any).photo || '🐕'}</span>
               <div>
                 <h3 className="text-2xl font-bold">{dog.name}</h3>
-                <p className="text-gray-600">{dog.age}</p>
+                <p className="text-gray-600">{(dog as any).birthdate ? calculateAge((dog as any).birthdate) : dog.age || 'Age not specified'}</p>
               </div>
             </div>
             {isAdmin && (
@@ -1153,99 +1053,35 @@ export default function HouseSittingApp() {
   // House Instructions Section
   const HouseSection = () => (
     <div className="space-y-6">
-      {/* Access & Security */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <Key className="w-5 h-5 text-gray-600" />
-          Access & Security
-        </h3>
-        <div className="space-y-3">
-          <div>
-            <p className="font-medium">Mud Room Door</p>
-            <p className="text-sm text-gray-700">{data.houseInstructions.access.mudRoom}</p>
-          </div>
-          <div>
-            <p className="font-medium">Patio Door</p>
-            <p className="text-sm text-gray-700">{data.houseInstructions.access.patioDoor}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Entertainment */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <Tv className="w-5 h-5 text-gray-600" />
-          Entertainment Systems
-        </h3>
-        <div className="space-y-3">
-          <div>
-            <p className="font-medium flex items-center gap-2">
-              <Tv className="w-4 h-4" /> Living Room TV
-            </p>
-            <p className="text-sm text-gray-700">{data.houseInstructions.entertainment.tv}</p>
-          </div>
-          <div>
-            <p className="font-medium flex items-center gap-2">
-              <Volume2 className="w-4 h-4" /> Sonos Speakers
-            </p>
-            <p className="text-sm text-gray-700">{data.houseInstructions.entertainment.sonos}</p>
+      {dbData.houseInstructions.map((instruction) => (
+        <div key={instruction.id} className="bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+            {instruction.category === 'access' && <Key className="w-5 h-5 text-gray-600" />}
+            {instruction.category === 'entertainment' && <Tv className="w-5 h-5 text-gray-600" />}
+            {instruction.category === 'utilities' && <Settings className="w-5 h-5 text-gray-600" />}
+            {instruction.category === 'amenities' && <Heart className="w-5 h-5 text-gray-600" />}
+            {instruction.category.charAt(0).toUpperCase() + instruction.category.slice(1)}
+          </h3>
+          <div className="space-y-3">
+            <div>
+              <p className="font-medium">
+                {instruction.subcategory ? instruction.subcategory.charAt(0).toUpperCase() + instruction.subcategory.slice(1) : 'Instructions'}
+              </p>
+              <p className="text-sm text-gray-700">
+                {typeof instruction.instructions === 'object' && instruction.instructions.text 
+                  ? instruction.instructions.text 
+                  : JSON.stringify(instruction.instructions)}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Utilities */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <Settings className="w-5 h-5 text-gray-600" />
-          Home Systems
-        </h3>
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <p className="font-medium mb-1">Lights</p>
-            <p className="text-sm text-gray-700">{data.houseInstructions.utilities.lights}</p>
-          </div>
-          <div>
-            <p className="font-medium mb-1">Thermostat</p>
-            <p className="text-sm text-gray-700">{data.houseInstructions.utilities.thermostat}</p>
-          </div>
-          <div className="bg-yellow-50 p-3 rounded-md">
-            <p className="font-medium mb-1 text-yellow-800">⚠️ Septic System</p>
-            <p className="text-sm text-yellow-700">{data.houseInstructions.utilities.septic}</p>
-          </div>
-          <div>
-            <p className="font-medium mb-1">Bathroom</p>
-            <p className="text-sm text-gray-700">{data.houseInstructions.utilities.bathroom}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Amenities */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <Heart className="w-5 h-5 text-gray-600" />
-          Amenities
-        </h3>
-        <div className="space-y-3">
-          <div>
-            <p className="font-medium flex items-center gap-2">
-              <Bath className="w-4 h-4" /> Hot Tub
-            </p>
-            <p className="text-sm text-gray-700">{data.houseInstructions.amenities.hotTub}</p>
-          </div>
-          <div>
-            <p className="font-medium flex items-center gap-2">
-              <Trash className="w-4 h-4" /> Trash Collection
-            </p>
-            <p className="text-sm text-gray-700">{data.houseInstructions.amenities.trash}</p>
-          </div>
-        </div>
-      </div>
+      ))}
     </div>
   );
 
   // Service People Section
   const ServicesSection = () => {
-    const currentServicePeople = dbData.servicePeople.length > 0 ? dbData.servicePeople : data.servicePeople;
+    const currentServicePeople = dbData.servicePeople;
     
     return (
       <div className="space-y-6">
@@ -1316,12 +1152,14 @@ export default function HouseSittingApp() {
       <div className="bg-gray-50 rounded-lg p-6">
         <h4 className="font-bold mb-3">Service Contact Information</h4>
         <div className="space-y-2">
-          {data.contacts.services.map((service, idx) => (
-            <div key={idx} className="flex justify-between text-sm">
-              <span className="font-medium">{service.name}</span>
-              <span className="text-gray-600">{service.phone}</span>
-            </div>
-          ))}
+          <div className="flex justify-between text-sm">
+            <span className="font-medium">Hot Tub Maintenance</span>
+            <span className="text-gray-600">Contact info on file</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="font-medium">Antonio (Gardener)</span>
+            <span className="text-gray-600">Contact owners</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1332,7 +1170,7 @@ export default function HouseSittingApp() {
   const ScheduleSection = () => {
     const today = new Date();
     const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const currentAppointments = dbData.appointments.length > 0 ? dbData.appointments : data.appointments;
+    const currentAppointments = dbData.appointments;
     
     return (
       <div className="space-y-6">
@@ -1397,7 +1235,7 @@ export default function HouseSittingApp() {
           <h3 className="text-xl font-bold mb-4">Weekly Schedule</h3>
           <div className="grid gap-4">
             {weekDays.map(day => {
-              const hasService = data.servicePeople.some(s => s.day.includes(day));
+              const hasService = dbData.servicePeople.some(s => s.service_day && s.service_day.includes(day));
               const hasTrash = day === 'Sunday' || day === 'Monday';
               
               return (
@@ -1417,10 +1255,10 @@ export default function HouseSittingApp() {
                       Trash pickup (early AM) - Return bins
                     </p>
                   )}
-                  {hasService && data.servicePeople.filter(s => s.day.includes(day)).map(service => (
+                  {hasService && dbData.servicePeople.filter(s => s.service_day && s.service_day.includes(day)).map(service => (
                     <p key={service.id} className="text-sm text-blue-700 mt-1">
                       <Users className="w-3 h-3 inline mr-1" />
-                      {service.name} {service.payment !== 'Pre-paid' && `($${service.payment})`}
+                      {service.name} {service.payment_amount && service.payment_amount !== 'Pre-paid' && `(${service.payment_amount})`}
                     </p>
                   ))}
                 </div>
