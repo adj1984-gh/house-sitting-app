@@ -1887,6 +1887,9 @@ export default function HouseSittingApp() {
       const formData = new FormData(e.target as HTMLFormElement);
       const data: any = Object.fromEntries(formData.entries());
       
+      console.log('Form submission - raw form data:', data);
+      console.log('Form submission - form type:', formType);
+      
       // Parse JSON fields for dog forms (now handled by hidden inputs)
       if (formType === 'dog') {
         try {
@@ -1912,11 +1915,14 @@ export default function HouseSittingApp() {
       // Handle boolean fields
       if (formType === 'stay') {
         data.active = true; // Always active when created, determined by date range
+        console.log('Form submission - processed stay data:', data);
       }
       
       if (isEditing) {
+        console.log('Form submission - calling handleUpdate');
         handleUpdate(formType!, editingItem.id!, data);
       } else {
+        console.log('Form submission - calling handleCreate');
         handleCreate(formType!, data);
       }
     };
