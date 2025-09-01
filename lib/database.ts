@@ -1,5 +1,5 @@
 import { supabase, supabaseAdmin } from './supabase'
-import { Property, Alert, Dog, ServicePerson, Appointment, HouseInstruction, DailyTask, AccessLog, ScheduleItem } from './types'
+import { Property, Alert, Dog, ServicePerson, Appointment, HouseInstruction, DailyTask, Stay, AccessLog, ScheduleItem } from './types'
 
 // Property operations
 export const getProperty = async (id: string = '00000000-0000-0000-0000-000000000001'): Promise<Property | null> => {
@@ -594,6 +594,88 @@ export const deleteDailyTask = async (id: string): Promise<boolean> => {
   return true
 }
 
+// Stays operations
+export const getStays = async (propertyId: string = '00000000-0000-0000-0000-000000000001'): Promise<Stay[]> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning empty array')
+    return []
+  }
+
+  const { data, error } = await supabase
+    .from('stays')
+    .select('*')
+    .eq('property_id', propertyId)
+    .eq('active', true)
+    .order('start_date', { ascending: true })
+  
+  if (error) {
+    console.error('Error fetching stays:', error)
+    return []
+  }
+  
+  return data || []
+}
+
+export const createStay = async (stay: Omit<Stay, 'id' | 'created_at' | 'updated_at'>): Promise<Stay | null> => {
+  if (!supabaseAdmin) {
+    console.warn('Supabase admin not configured')
+    return null
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('stays')
+    .insert([stay])
+    .select()
+    .single()
+  
+  if (error) {
+    console.error('Error creating stay:', error)
+    return null
+  }
+  
+  return data
+}
+
+export const updateStay = async (id: string, updates: Partial<Stay>): Promise<Stay | null> => {
+  if (!supabaseAdmin) {
+    console.warn('Supabase admin not configured')
+    return null
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('stays')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+  
+  if (error) {
+    console.error('Error updating stay:', error)
+    return null
+  }
+  
+  return data
+}
+
+export const deleteStay = async (id: string): Promise<boolean> => {
+  if (!supabaseAdmin) {
+    console.warn('Supabase admin not configured')
+    return false
+  }
+
+  const { error } = await supabaseAdmin
+    .from('stays')
+    .update({ active: false, updated_at: new Date().toISOString() })
+    .eq('id', id)
+  
+  if (error) {
+    console.error('Error deleting stay:', error)
+    return false
+  }
+  
+  return true
+}
+
 // Master Schedule Generation
 export const generateMasterSchedule = (
   dogs: Dog[],
@@ -701,18 +783,20 @@ export const generateMasterSchedule = (
     }
   })
   
-  // Add daily tasks from database
+  // Add timed daily tasks from database (untimed tasks will be handled separately)
   dailyTasks.forEach(task => {
-    scheduleItems.push({
-      id: `task-${task.id}`,
-      type: 'task',
-      title: task.title,
-      time: task.time,
-      date: today,
-      notes: task.notes,
-      recurring: true,
-      source: 'task'
-    })
+    if (task.time) {
+      scheduleItems.push({
+        id: `task-${task.id}`,
+        type: 'task',
+        title: task.title,
+        time: task.time,
+        date: today,
+        notes: task.notes,
+        recurring: true,
+        source: 'task'
+      })
+    }
   })
   
   // Sort by time

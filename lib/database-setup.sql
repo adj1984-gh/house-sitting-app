@@ -94,8 +94,21 @@ CREATE TABLE IF NOT EXISTS daily_tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
-  time TEXT NOT NULL,
+  time TEXT,
   category TEXT CHECK (category IN ('pets', 'house', 'general')),
+  notes TEXT,
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Stays table (for managing active stays with sitters)
+CREATE TABLE IF NOT EXISTS stays (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
+  sitter_name TEXT NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
   notes TEXT,
   active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -207,11 +220,18 @@ ON CONFLICT DO NOTHING;
 
 -- Insert default daily tasks
 INSERT INTO daily_tasks (property_id, title, time, category, notes) VALUES
+-- Timed tasks (appear in main schedule)
 ('00000000-0000-0000-0000-000000000001', 'Morning feeding & medicine', '7:00 AM', 'pets', 'Feed both dogs and give morning medicine'),
 ('00000000-0000-0000-0000-000000000001', 'Evening feeding & medicine', '6:00 PM', 'pets', 'Feed both dogs and give evening medicine'),
-('00000000-0000-0000-0000-000000000001', 'Barolo head wipe', 'Once daily', 'pets', 'Wipe top of head with wipes'),
-('00000000-0000-0000-0000-000000000001', 'Walk Barolo', 'Daily', 'pets', 'Use black harness, avoid other dogs'),
-('00000000-0000-0000-0000-000000000001', 'Refill water bowls', 'As needed', 'pets', 'Main: dining room, Also: outside & office'),
-('00000000-0000-0000-0000-000000000001', 'Multiple potty breaks', 'Throughout day', 'pets', 'Let dogs out frequently, use verbal command'),
-('00000000-0000-0000-0000-000000000001', 'Check patio door is locked', 'Before bed', 'house', 'Barolo can nudge it open - must be locked')
+-- Untimed tasks (appear in daily tasks section)
+('00000000-0000-0000-0000-000000000001', 'Barolo head wipe', NULL, 'pets', 'Wipe top of head with wipes'),
+('00000000-0000-0000-0000-000000000001', 'Walk Barolo', NULL, 'pets', 'Use black harness, avoid other dogs'),
+('00000000-0000-0000-0000-000000000001', 'Refill water bowls', NULL, 'pets', 'Main: dining room, Also: outside & office'),
+('00000000-0000-0000-0000-000000000001', 'Multiple potty breaks', NULL, 'pets', 'Let dogs out frequently, use verbal command'),
+('00000000-0000-0000-0000-000000000001', 'Check patio door is locked', NULL, 'house', 'Barolo can nudge it open - must be locked')
+ON CONFLICT DO NOTHING;
+
+-- Insert default stay
+INSERT INTO stays (property_id, sitter_name, start_date, end_date, notes) VALUES
+('00000000-0000-0000-0000-000000000001', 'Andy', '2025-09-02', '2025-09-12', 'Pet sitting stay for Andy')
 ON CONFLICT DO NOTHING;

@@ -82,8 +82,20 @@ export interface DailyTask {
   id: string
   property_id: string
   title: string
-  time: string
+  time?: string
   category: 'pets' | 'house' | 'general'
+  notes?: string
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface Stay {
+  id: string
+  property_id: string
+  sitter_name: string
+  start_date: string
+  end_date: string
   notes?: string
   active: boolean
   created_at: string

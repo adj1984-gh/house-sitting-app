@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode } from 'lucide-react';
-import { getProperty, getAlerts, getDogs, getServicePeople, getAppointments, getHouseInstructions, getDailyTasks, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createServicePerson, updateServicePerson, deleteServicePerson, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, generateMasterSchedule } from '../lib/database';
-import { Property, Alert, Dog as DogType, ServicePerson, Appointment, HouseInstruction, DailyTask, ScheduleItem } from '../lib/types';
+import { getProperty, getAlerts, getDogs, getServicePeople, getAppointments, getHouseInstructions, getDailyTasks, getStays, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createServicePerson, updateServicePerson, deleteServicePerson, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, generateMasterSchedule } from '../lib/database';
+import { Property, Alert, Dog as DogType, ServicePerson, Appointment, HouseInstruction, DailyTask, Stay, ScheduleItem } from '../lib/types';
 
 // All data comes from Supabase database - no mock data
 
@@ -365,6 +365,7 @@ export default function HouseSittingApp() {
     appointments: Appointment[];
     houseInstructions: HouseInstruction[];
     dailyTasks: DailyTask[];
+    stays: Stay[];
   }>({
     property: null,
     alerts: [],
@@ -372,7 +373,8 @@ export default function HouseSittingApp() {
     servicePeople: [],
     appointments: [],
     houseInstructions: [],
-    dailyTasks: []
+    dailyTasks: [],
+    stays: []
   });
   const [masterSchedule, setMasterSchedule] = useState<ScheduleItem[]>([]);
 
@@ -390,14 +392,15 @@ export default function HouseSittingApp() {
   const loadDatabaseData = async () => {
     try {
       setIsLoading(true);
-      const [property, alerts, dogs, servicePeople, appointments, houseInstructions, dailyTasks] = await Promise.all([
+      const [property, alerts, dogs, servicePeople, appointments, houseInstructions, dailyTasks, stays] = await Promise.all([
         getProperty(),
         getAlerts(),
         getDogs(),
         getServicePeople(),
         getAppointments(),
         getHouseInstructions(),
-        getDailyTasks()
+        getDailyTasks(),
+        getStays()
       ]);
 
       setDbData({
@@ -407,7 +410,8 @@ export default function HouseSittingApp() {
         servicePeople: servicePeople || [],
         appointments: appointments || [],
         houseInstructions: houseInstructions || [],
-        dailyTasks: dailyTasks || []
+        dailyTasks: dailyTasks || [],
+        stays: stays || []
       });
     } catch (error) {
       console.error('Error loading database data:', error);
@@ -419,7 +423,8 @@ export default function HouseSittingApp() {
         servicePeople: [],
         appointments: [],
         houseInstructions: [],
-        dailyTasks: []
+        dailyTasks: [],
+        stays: []
       });
     } finally {
       setIsLoading(false);
@@ -478,6 +483,12 @@ export default function HouseSittingApp() {
           result = await createDailyTask({ ...data, property_id: propertyId });
           if (result) {
             setDbData(prev => ({ ...prev, dailyTasks: [...prev.dailyTasks, result] }));
+          }
+          break;
+        case 'stay':
+          result = await createStay({ ...data, property_id: propertyId });
+          if (result) {
+            setDbData(prev => ({ ...prev, stays: [...prev.stays, result] }));
           }
           break;
       }
@@ -547,6 +558,15 @@ export default function HouseSittingApp() {
             }));
           }
           break;
+        case 'stay':
+          result = await updateStay(id, data);
+          if (result) {
+            setDbData(prev => ({ 
+              ...prev, 
+              stays: prev.stays.map(stay => stay.id === id ? result : stay)
+            }));
+          }
+          break;
       }
       
       setEditingItem(null);
@@ -594,6 +614,12 @@ export default function HouseSittingApp() {
           success = await deleteDailyTask(id);
           if (success) {
             setDbData(prev => ({ ...prev, dailyTasks: prev.dailyTasks.filter(dt => dt.id !== id) }));
+          }
+          break;
+        case 'stay':
+          success = await deleteStay(id);
+          if (success) {
+            setDbData(prev => ({ ...prev, stays: prev.stays.filter(stay => stay.id !== id) }));
           }
           break;
       }
@@ -886,6 +912,53 @@ export default function HouseSittingApp() {
           </div>
         </div>
 
+        {/* Current Stay */}
+        <div className="bg-purple-50 rounded-lg p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="w-6 h-6 text-purple-600" />
+            <h2 className="text-xl font-bold">Current Stay</h2>
+          </div>
+          {dbData.stays.length > 0 ? (
+            dbData.stays.map(stay => (
+              <div key={stay.id} className="bg-white p-4 rounded-md border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-lg">{stay.sitter_name}</h3>
+                    <p className="text-gray-600">
+                      {new Date(stay.start_date).toLocaleDateString()} - {new Date(stay.end_date).toLocaleDateString()}
+                    </p>
+                    {stay.notes && (
+                      <p className="text-sm text-gray-500 mt-1">{stay.notes}</p>
+                    )}
+                  </div>
+                  {isAdmin && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setEditingItem({ type: 'stay', id: stay.id, data: stay })}
+                        className="text-blue-600 hover:text-blue-800"
+                        title="Edit stay"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete('stay', stay.id)}
+                        className="text-red-600 hover:text-red-800"
+                        title="Delete stay"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="bg-white p-4 rounded-md border">
+              <p className="text-gray-600 text-center">No active stay</p>
+            </div>
+          )}
+        </div>
+
         {/* Today's Schedule */}
         <div className="bg-green-50 rounded-lg p-6">
           <div className="flex items-center gap-2 mb-4">
@@ -904,7 +977,7 @@ export default function HouseSittingApp() {
                     item.type === 'walk' ? 'bg-green-500' :
                     'bg-gray-500'
                   }`}></div>
-                  <div className="flex-1">
+                <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <p className="font-medium">{item.title}</p>
                       <div className="flex items-center gap-2">
@@ -918,8 +991,8 @@ export default function HouseSittingApp() {
                             <Trash2 className="w-4 h-4" />
                           </button>
                         )}
-                      </div>
-                    </div>
+                </div>
+              </div>
                     {item.dog_name && (
                       <p className="text-sm text-gray-600">For: {item.dog_name}</p>
                     )}
@@ -929,8 +1002,8 @@ export default function HouseSittingApp() {
                     {item.location && (
                       <p className="text-sm text-gray-500">📍 {item.location}</p>
                     )}
-                  </div>
-                </div>
+          </div>
+        </div>
               ))
             ) : (
               <p className="text-gray-600 text-center py-4">No scheduled items for today</p>
@@ -938,64 +1011,7 @@ export default function HouseSittingApp() {
           </div>
         </div>
 
-        {/* Daily Tasks Reference */}
-        <div className="bg-blue-50 rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-bold">Daily Task Reference</h2>
-          </div>
-          <div className="grid md:grid-cols-2 gap-3">
-            <div className="flex items-start gap-3 bg-white p-3 rounded-md">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-              <div className="flex-1">
-                <p className="font-medium">Morning feeding & medicine</p>
-                <p className="text-sm text-gray-600">7:00 AM</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 bg-white p-3 rounded-md">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-              <div className="flex-1">
-                <p className="font-medium">Evening feeding & medicine</p>
-                <p className="text-sm text-gray-600">6:00 PM</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 bg-white p-3 rounded-md">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-              <div className="flex-1">
-                <p className="font-medium">Barolo head wipe</p>
-                <p className="text-sm text-gray-600">Once daily</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 bg-white p-3 rounded-md">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-              <div className="flex-1">
-                <p className="font-medium">Walk Barolo</p>
-                <p className="text-sm text-gray-600">Daily</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 bg-white p-3 rounded-md">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-              <div className="flex-1">
-                <p className="font-medium">Refill water bowls</p>
-                <p className="text-sm text-gray-600">As needed</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 bg-white p-3 rounded-md">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-              <div className="flex-1">
-                <p className="font-medium">Multiple potty breaks</p>
-                <p className="text-sm text-gray-600">Throughout day</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 bg-white p-3 rounded-md">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-              <div className="flex-1">
-                <p className="font-medium">Check patio door is locked</p>
-                <p className="text-sm text-gray-600">Before bed</p>
-              </div>
-            </div>
-          </div>
-        </div>
+
       </div>
     );
   };
@@ -1208,15 +1224,15 @@ export default function HouseSittingApp() {
     <div className="space-y-6">
       {dbData.houseInstructions.map((instruction) => (
         <div key={instruction.id} className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
             {instruction.category === 'access' && <Key className="w-5 h-5 text-gray-600" />}
             {instruction.category === 'entertainment' && <Tv className="w-5 h-5 text-gray-600" />}
             {instruction.category === 'utilities' && <Settings className="w-5 h-5 text-gray-600" />}
             {instruction.category === 'amenities' && <Heart className="w-5 h-5 text-gray-600" />}
             {instruction.category.charAt(0).toUpperCase() + instruction.category.slice(1)}
-          </h3>
-          <div className="space-y-3">
-            <div>
+        </h3>
+        <div className="space-y-3">
+          <div>
               <p className="font-medium">
                 {instruction.subcategory ? instruction.subcategory.charAt(0).toUpperCase() + instruction.subcategory.slice(1) : 'Instructions'}
               </p>
@@ -1225,9 +1241,9 @@ export default function HouseSittingApp() {
                   ? instruction.instructions.text 
                   : JSON.stringify(instruction.instructions)}
               </p>
-            </div>
           </div>
         </div>
+      </div>
       ))}
     </div>
   );
@@ -1308,7 +1324,7 @@ export default function HouseSittingApp() {
           <div className="flex justify-between text-sm">
             <span className="font-medium">Hot Tub Maintenance</span>
             <span className="text-gray-600">Contact info on file</span>
-          </div>
+            </div>
           <div className="flex justify-between text-sm">
             <span className="font-medium">Antonio (Gardener)</span>
             <span className="text-gray-600">Contact owners</span>
@@ -1332,19 +1348,26 @@ export default function HouseSittingApp() {
         {isAdmin && (
           <div className="bg-white rounded-lg shadow-md p-4">
             <div className="flex gap-3">
-              <button
-                onClick={() => setShowAddForm({ type: 'appointment' })}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                <Plus className="w-4 h-4" />
-                Add Appointment
-              </button>
+            <button
+              onClick={() => setShowAddForm({ type: 'appointment' })}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              <Plus className="w-4 h-4" />
+              Add Appointment
+            </button>
               <button
                 onClick={() => setShowAddForm({ type: 'dailyTask' })}
                 className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
               >
                 <Plus className="w-4 h-4" />
                 Add Daily Task
+              </button>
+              <button
+                onClick={() => setShowAddForm({ type: 'stay' })}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+              >
+                <Plus className="w-4 h-4" />
+                Add Stay
               </button>
             </div>
           </div>
@@ -1354,7 +1377,7 @@ export default function HouseSittingApp() {
         <div className="bg-green-50 rounded-lg p-6">
           <div className="flex items-center gap-2 mb-4">
             <Calendar className="w-6 h-6 text-green-600" />
-            <h2 className="text-xl font-bold">Today's Master Schedule ({currentDay})</h2>
+            <h2 className="text-xl font-bold">Master Schedule</h2>
           </div>
           <div className="space-y-3">
             {masterSchedule.length > 0 ? (
@@ -1421,15 +1444,68 @@ export default function HouseSittingApp() {
           </div>
         </div>
 
-        {/* Daily Tasks Management */}
-        {isAdmin && dbData.dailyTasks.length > 0 && (
+        {/* Daily Tasks (Untimed) */}
+        <div className="bg-gray-50 rounded-lg p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <CheckSquare className="w-6 h-6 text-gray-600" />
+            <h2 className="text-xl font-bold">Daily Tasks</h2>
+          </div>
+          <div className="space-y-3">
+            {dbData.dailyTasks.filter(task => !task.time).length > 0 ? (
+              dbData.dailyTasks
+                .filter(task => !task.time)
+                .map(task => (
+                  <div key={task.id} className="flex items-center justify-between bg-white p-3 rounded-md border">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium">{task.title}</span>
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          task.category === 'pets' ? 'bg-orange-100 text-orange-700' :
+                          task.category === 'house' ? 'bg-blue-100 text-blue-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {task.category}
+                        </span>
+                      </div>
+                      {task.notes && (
+                        <p className="text-sm text-gray-500 mt-1">{task.notes}</p>
+                      )}
+                    </div>
+                    {isAdmin && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setEditingItem({ type: 'dailyTask', id: task.id, data: task })}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="Edit task"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete('dailyTask', task.id)}
+                          className="text-red-600 hover:text-red-800"
+                          title="Delete task"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+            ) : (
+              <p className="text-gray-600 text-center py-4">No daily tasks yet</p>
+            )}
+          </div>
+        </div>
+
+        {/* Timed Daily Tasks Management */}
+        {isAdmin && dbData.dailyTasks.filter(task => task.time).length > 0 && (
           <div className="bg-gray-50 rounded-lg p-6">
             <div className="flex items-center gap-2 mb-4">
-              <CheckSquare className="w-6 h-6 text-gray-600" />
-              <h2 className="text-xl font-bold">Daily Tasks Management</h2>
+              <Clock className="w-6 h-6 text-gray-600" />
+              <h2 className="text-xl font-bold">Timed Daily Tasks</h2>
             </div>
             <div className="space-y-3">
-              {dbData.dailyTasks.map(task => (
+              {dbData.dailyTasks.filter(task => task.time).map(task => (
                 <div key={task.id} className="flex items-center justify-between bg-white p-3 rounded-md border">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
@@ -1471,46 +1547,7 @@ export default function HouseSittingApp() {
           </div>
         )}
 
-        {/* Weekly Overview */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-xl font-bold mb-4">Weekly Overview</h3>
-          <div className="grid gap-4">
-            {weekDays.map(day => {
-              const hasService = dbData.servicePeople.some(s => s.service_day && s.service_day.includes(day));
-              const hasTrash = day === 'Sunday' || day === 'Monday';
-              const isToday = day === currentDay;
-              
-              return (
-                <div key={day} className={`border rounded-lg p-3 ${
-                  isToday ? 'border-green-300 bg-green-50' :
-                  hasService || hasTrash ? 'border-blue-300 bg-blue-50' : 'border-gray-200'
-                }`}>
-                  <h4 className={`font-bold text-lg mb-2 ${isToday ? 'text-green-800' : ''}`}>
-                    {day} {isToday && '(Today)'}
-                  </h4>
-                  {hasTrash && day === 'Sunday' && (
-                    <p className="text-sm text-blue-700">
-                      <Trash className="w-3 h-3 inline mr-1" />
-                      Put trash bins out tonight
-                    </p>
-                  )}
-                  {hasTrash && day === 'Monday' && (
-                    <p className="text-sm text-blue-700 mt-1">
-                      <Trash className="w-3 h-3 inline mr-1" />
-                      Trash pickup (early AM) - Return bins
-                    </p>
-                  )}
-                  {hasService && dbData.servicePeople.filter(s => s.service_day && s.service_day.includes(day)).map(service => (
-                    <p key={service.id} className="text-sm text-blue-700 mt-1">
-                      <Users className="w-3 h-3 inline mr-1" />
-                      {service.name} {service.payment_amount && service.payment_amount !== 'Pre-paid' && `(${service.payment_amount})`}
-                    </p>
-                  ))}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+
 
         {/* All Appointments */}
         {dbData.appointments.length > 0 && (
@@ -1522,41 +1559,41 @@ export default function HouseSittingApp() {
             <div className="space-y-3">
               {dbData.appointments.map(apt => (
                 <div key={apt.id} className="bg-white rounded p-4 shadow-sm">
-                  <div className="flex justify-between items-start">
-                    <div>
+                <div className="flex justify-between items-start">
+                  <div>
                       <p className="font-bold text-gray-900">{apt.date} at {apt.time}</p>
                       <p className="font-medium text-gray-700">{apt.type}</p>
                       {apt.for_dog_id && (
                         <p className="text-sm text-gray-600">🐕 For: {dbData.dogs.find(d => d.id === apt.for_dog_id)?.name || 'Unknown Dog'}</p>
                       )}
-                      <p className="text-sm text-gray-600 mt-1">{apt.notes}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded">
-                        {apt.location}
-                      </span>
-                      {isAdmin && (
-                        <div className="flex gap-1">
-                          <button 
-                            onClick={() => setEditingItem({ type: 'appointment', id: String(apt.id), data: apt })}
-                            className="text-blue-600 hover:text-blue-800"
-                            title="Edit appointment"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button 
-                            onClick={() => handleDelete('appointment', String(apt.id))}
-                            className="text-red-600 hover:text-red-800"
-                            title="Delete appointment"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    <p className="text-sm text-gray-600 mt-1">{apt.notes}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded">
+                      {apt.location}
+                    </span>
+                    {isAdmin && (
+                      <div className="flex gap-1">
+                        <button 
+                          onClick={() => setEditingItem({ type: 'appointment', id: String(apt.id), data: apt })}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="Edit appointment"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete('appointment', String(apt.id))}
+                          className="text-red-600 hover:text-red-800"
+                          title="Delete appointment"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
-              ))}
+              </div>
+            ))}
             </div>
           </div>
         )}
@@ -1714,8 +1751,8 @@ export default function HouseSittingApp() {
                     <input name="title" defaultValue={formData.title || ''} required className="w-full px-3 py-2 border rounded-md" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Time</label>
-                    <input name="time" defaultValue={formData.time || ''} required className="w-full px-3 py-2 border rounded-md" placeholder="e.g., 7:00 AM, Afternoon, Before bed" />
+                    <label className="block text-sm font-medium mb-1">Time (Optional)</label>
+                    <input name="time" defaultValue={formData.time || ''} className="w-full px-3 py-2 border rounded-md" placeholder="e.g., 7:00 AM, Afternoon, Before bed (leave empty for untimed tasks)" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Category</label>
@@ -1724,6 +1761,27 @@ export default function HouseSittingApp() {
                       <option value="house">House</option>
                       <option value="general">General</option>
                     </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
+                    <textarea name="notes" defaultValue={formData.notes || ''} className="w-full px-3 py-2 border rounded-md" rows={3} />
+                  </div>
+                </>
+              )}
+              
+              {formType === 'stay' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Sitter Name</label>
+                    <input name="sitter_name" defaultValue={formData.sitter_name || ''} required className="w-full px-3 py-2 border rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Start Date</label>
+                    <input name="start_date" type="date" defaultValue={formData.start_date || ''} required className="w-full px-3 py-2 border rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">End Date</label>
+                    <input name="end_date" type="date" defaultValue={formData.end_date || ''} required className="w-full px-3 py-2 border rounded-md" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Notes (Optional)</label>

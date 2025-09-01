@@ -42,7 +42,7 @@ A comprehensive web application for managing house and pet sitting instructions,
 - **Next.js configuration** updated for version 14 compatibility
 
 ### ✅ Phase 3: Admin Interface (COMPLETED)
-- **Full CRUD operations** for all data types (dogs, alerts, service people, appointments)
+- **Full CRUD operations** for all data types (dogs, alerts, service people, appointments, daily tasks)
 - **Enhanced pet profile editing** with user-friendly interfaces:
   - **Photo upload** with preview functionality
   - **Feeding schedule builder** with time picker and amount fields
@@ -50,6 +50,11 @@ A comprehensive web application for managing house and pet sitting instructions,
   - **Special instructions** with categorized add/remove interface
   - **Birthdate field** with automatic age calculation
   - **No more JSON input** - all complex data handled through intuitive UI
+- **Master schedule system** with comprehensive task management:
+  - **Daily tasks management** with full CRUD operations
+  - **Schedule item deletion** for manageable items (tasks, appointments)
+  - **Real-time schedule updates** across all views
+  - **Smart deletion logic** that identifies deletable vs. managed items
 - **Admin mode toggle** with comprehensive editing interface
 - **Modal forms** for adding and editing items with organized sections
 - **Real-time data updates** with optimistic UI updates
@@ -64,7 +69,6 @@ A comprehensive web application for managing house and pet sitting instructions,
 - Email notifications
 - Photo storage integration (currently using base64 preview)
 - Contact information management (currently hardcoded)
-- Daily tasks management (currently hardcoded)
 
 ## ✨ Features
 
@@ -81,6 +85,8 @@ A comprehensive web application for managing house and pet sitting instructions,
 - **Emergency contacts** prominently displayed
 - **Safety alerts** (coyotes, septic system, etc.)
 - **Appointment tracking** with detailed instructions
+- **Daily tasks management** with full CRUD operations
+- **Master schedule system** consolidating all schedulable items
 
 ### User Experience
 - Mobile-first responsive design
@@ -163,6 +169,8 @@ house-sitting-app/
 - [x] Add appointment scheduling (backend ready)
 - [x] Connect admin UI to database operations
 - [x] Enhanced pet editing with organized sections and JSON field support
+- [x] Daily tasks management with full CRUD operations
+- [x] Master schedule system with item deletion capabilities
 
 ### Phase 5: Deployment ✅ (Week 3) - COMPLETED
 - [x] Deploy to Vercel
@@ -295,6 +303,19 @@ CREATE TABLE house_instructions (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Daily Tasks table
+CREATE TABLE daily_tasks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  time TEXT NOT NULL,
+  category TEXT CHECK (category IN ('pets', 'house', 'general')),
+  notes TEXT,
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Access Logs table (for tracking who accessed when)
 CREATE TABLE access_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -383,7 +404,6 @@ npm run dev
 - [ ] **Sitter Feedback**: Allow sitters to leave notes
 - [ ] **Emergency Mode**: Quick-access emergency info page
 - [ ] **Contact Management**: Database-driven contact information
-- [ ] **Daily Tasks Management**: Database-driven task scheduling
 
 ### Medium Priority
 - [ ] **Email Notifications**: Remind about upcoming appointments
@@ -451,7 +471,7 @@ Private project - not for public distribution
 ---
 
 *Last Updated: December 2024*
-*Version: 2.1.0 (Database-Only Implementation Complete)*
+*Version: 2.2.0 (Master Schedule & Daily Tasks Management Complete)*
 
 ## 🌐 Live Application
 
@@ -475,11 +495,12 @@ Private project - not for public distribution
 - **CRUD operations** verified functional in production environment
 
 ### 📊 Database Schema
-- **7 tables** with proper relationships and constraints
+- **8 tables** with proper relationships and constraints
 - **UUID primary keys** for all entities
 - **JSONB fields** for flexible data storage (feeding schedules, instructions)
 - **Timestamps** for audit trails and data tracking
 - **Foreign key relationships** maintaining data integrity
+- **Daily tasks management** with full CRUD operations
 
 ### 🔧 Technical Implementation
 - **TypeScript types** for all database entities
@@ -496,4 +517,4 @@ Private project - not for public distribution
 4. **Implement email notifications** for appointments
 5. **Create printable PDF export** for offline reference
 
-The application now has full database connectivity, data persistence, and a fully functional admin interface. All mock data has been removed, and the system relies entirely on the Supabase database for dynamic content. Pet sitters can access all necessary information with real-time data from the database, and administrators can manage all data through the secure admin interface. The system is production-ready and fully operational with a clean, database-only architecture.
+The application now has full database connectivity, data persistence, and a fully functional admin interface. All mock data has been removed, and the system relies entirely on the Supabase database for dynamic content. Pet sitters can access all necessary information with real-time data from the database, and administrators can manage all data through the secure admin interface. The system includes a comprehensive master schedule system with daily tasks management and schedule item deletion capabilities. The system is production-ready and fully operational with a clean, database-only architecture.
