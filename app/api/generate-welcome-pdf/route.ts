@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStay } from '../../../lib/database';
+import QRCode from 'qrcode';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +20,21 @@ export async function POST(request: NextRequest) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://housesit.9441altodrive.com';
     const accessPassword = process.env.NEXT_PUBLIC_SITE_ACCESS_PASSWORD;
     const qrCodeUrl = `${siteUrl}?access=${accessPassword}`;
+
+    // Generate QR code as data URL
+    let qrCodeDataUrl = '';
+    try {
+      qrCodeDataUrl = await QRCode.toDataURL(qrCodeUrl, {
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+    }
 
     // Create HTML content for PDF
     const htmlContent = `
@@ -147,10 +163,12 @@ export async function POST(request: NextRequest) {
               Scan this QR code with your phone to instantly access the house sitting portal with all the information you need!
             </div>
             <div class="qr-code">
-              <!-- QR Code will be generated here -->
-              <div style="width: 200px; height: 200px; margin: 0 auto; background-color: #f3f4f6; border: 2px dashed #9ca3af; display: flex; align-items: center; justify-content: center; color: #6b7280;">
-                QR Code<br/>${qrCodeUrl}
-              </div>
+              ${qrCodeDataUrl ? 
+                `<img src="${qrCodeDataUrl}" alt="QR Code for ${qrCodeUrl}" style="width: 200px; height: 200px; margin: 0 auto; display: block;" />` :
+                `<div style="width: 200px; height: 200px; margin: 0 auto; background-color: #f3f4f6; border: 2px dashed #9ca3af; display: flex; align-items: center; justify-content: center; color: #6b7280;">
+                  QR Code<br/>${qrCodeUrl}
+                </div>`
+              }
             </div>
             <div style="margin-top: 15px; font-size: 12px; color: #6b7280;">
               Or visit: ${qrCodeUrl}

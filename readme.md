@@ -728,8 +728,10 @@ The application now has full database connectivity, data persistence, and a full
   - **Admin Button**: Green settings icon in stays section to generate welcome PDF
   - **QR Code**: Auto-generates login URL with access password for instant portal access
 - **Content**: Welcome document includes sitter name, stay dates, notes, QR code, and emergency contact info
+- **QR Code Generation**: Uses `qrcode` library to generate actual QR code images (not placeholders)
 - **Files Changed**: 
-  - `app/api/generate-welcome-pdf/route.ts` - New API route for PDF generation
+  - `app/api/generate-welcome-pdf/route.ts` - New API route for PDF generation with QR code
   - `lib/database.ts` - Added getStay function for fetching individual stay details
   - `components/HouseSittingApp.tsx` - Added generateWelcomePDF function and admin button
-- **Result**: Admins can generate professional welcome documents for sitters with instant portal access
+  - `package.json` - Added qrcode library and TypeScript types
+- **Result**: Admins can generate professional welcome documents for sitters with instant portal access via scannable QR codes
