@@ -206,9 +206,12 @@ export default function HouseSittingApp() {
   // Admin state
   const [editingItem, setEditingItem] = useState<{type: string, id?: string, data?: any} | null>(null);
   const [showAddForm, setShowAddForm] = useState<{type: string} | null>(null);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
 
   // In production, this would be stored securely in environment variables
   const SITE_PASSWORD = process.env.NEXT_PUBLIC_SITE_ACCESS_PASSWORD || 'frenchies2024';
+  const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin2024';
 
   // Load data from database
   const loadDatabaseData = async () => {
@@ -513,7 +516,13 @@ export default function HouseSittingApp() {
                 <Lock className="w-5 h-5" />
               </button>
               <button
-                onClick={() => setIsAdmin(!isAdmin)}
+                onClick={() => {
+                  if (isAdmin) {
+                    setIsAdmin(false);
+                  } else {
+                    setShowAdminLogin(true);
+                  }
+                }}
                 className={`px-4 py-2 rounded-md ${
                   isAdmin ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'
                 }`}
@@ -708,7 +717,10 @@ export default function HouseSittingApp() {
             {isAdmin && (
               <div className="flex gap-2">
                 <button 
-                  onClick={() => setEditingItem({ type: 'dog', id: String(dog.id), data: dog })}
+                  onClick={() => {
+                    console.log('Edit dog clicked:', dog);
+                    setEditingItem({ type: 'dog', id: String(dog.id), data: dog });
+                  }}
                   className="text-blue-600 hover:text-blue-800"
                   title="Edit dog"
                 >
@@ -1144,6 +1156,7 @@ export default function HouseSittingApp() {
 
   // Admin Forms
   const AdminForm = () => {
+    console.log('AdminForm render:', { showAddForm, editingItem });
     if (!showAddForm && !editingItem) return null;
 
     const isEditing = !!editingItem;
@@ -1293,6 +1306,61 @@ export default function HouseSittingApp() {
     );
   };
 
+  // Admin Login Modal
+  const AdminLoginModal = () => {
+    if (!showAdminLogin) return null;
+
+    const handleAdminLogin = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (adminPassword === ADMIN_PASSWORD) {
+        setIsAdmin(true);
+        setShowAdminLogin(false);
+        setAdminPassword('');
+      } else {
+        alert('Incorrect admin password');
+      }
+    };
+
+    const handleCancel = () => {
+      setShowAdminLogin(false);
+      setAdminPassword('');
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+          <div className="p-6">
+            <h3 className="text-lg font-bold mb-4">Admin Access</h3>
+            <p className="text-gray-600 mb-4">Enter admin password to access editing features</p>
+            
+            <form onSubmit={handleAdminLogin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Admin Password</label>
+                <input
+                  type="password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md"
+                  placeholder="Enter admin password"
+                  autoFocus
+                />
+              </div>
+              
+              <div className="flex gap-3">
+                <button type="submit" className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
+                  Access Admin
+                </button>
+                <button type="button" onClick={handleCancel} className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Render the active section
   const renderSection = () => {
     switch(activeSection) {
@@ -1329,6 +1397,7 @@ export default function HouseSittingApp() {
         {renderSection()}
       </div>
       <AdminForm />
+      <AdminLoginModal />
     </div>
   );
 }
