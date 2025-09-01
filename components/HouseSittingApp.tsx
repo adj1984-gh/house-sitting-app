@@ -179,6 +179,315 @@ const initialData = {
   ]
 };
 
+// Dog Edit Form Component
+const DogEditForm = ({ formData }: { formData: any }) => {
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>(formData.photo_url || '');
+  const [feedingSchedule, setFeedingSchedule] = useState<Array<{time: string, amount: string}>>(
+    Array.isArray(formData.feeding_schedule) ? formData.feeding_schedule : []
+  );
+  const [medicineSchedule, setMedicineSchedule] = useState<Array<{time: string, medication: string, notes: string}>>(
+    Array.isArray(formData.medicine_schedule) ? formData.medicine_schedule : []
+  );
+  const [specialInstructions, setSpecialInstructions] = useState<Array<{type: string, instruction: string}>>(
+    formData.special_instructions && typeof formData.special_instructions === 'object' 
+      ? Object.entries(formData.special_instructions).map(([type, instruction]) => ({ type, instruction: instruction as string }))
+      : []
+  );
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPhotoPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const addFeedingTime = () => {
+    setFeedingSchedule([...feedingSchedule, { time: '', amount: '' }]);
+  };
+
+  const removeFeedingTime = (index: number) => {
+    setFeedingSchedule(feedingSchedule.filter((_, i) => i !== index));
+  };
+
+  const updateFeedingTime = (index: number, field: 'time' | 'amount', value: string) => {
+    const updated = [...feedingSchedule];
+    updated[index][field] = value;
+    setFeedingSchedule(updated);
+  };
+
+  const addMedicine = () => {
+    setMedicineSchedule([...medicineSchedule, { time: '', medication: '', notes: '' }]);
+  };
+
+  const removeMedicine = (index: number) => {
+    setMedicineSchedule(medicineSchedule.filter((_, i) => i !== index));
+  };
+
+  const updateMedicine = (index: number, field: 'time' | 'medication' | 'notes', value: string) => {
+    const updated = [...medicineSchedule];
+    updated[index][field] = value;
+    setMedicineSchedule(updated);
+  };
+
+  const addSpecialInstruction = () => {
+    setSpecialInstructions([...specialInstructions, { type: '', instruction: '' }]);
+  };
+
+  const removeSpecialInstruction = (index: number) => {
+    setSpecialInstructions(specialInstructions.filter((_, i) => i !== index));
+  };
+
+  const updateSpecialInstruction = (index: number, field: 'type' | 'instruction', value: string) => {
+    const updated = [...specialInstructions];
+    updated[index][field] = value;
+    setSpecialInstructions(updated);
+  };
+
+  return (
+    <>
+      {/* Basic Information */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Name</label>
+        <input name="name" defaultValue={formData.name || ''} required className="w-full px-3 py-2 border rounded-md" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">Age</label>
+        <input name="age" defaultValue={formData.age || ''} className="w-full px-3 py-2 border rounded-md" />
+      </div>
+      
+      {/* Photo Upload */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Photo</label>
+        <div className="space-y-2">
+          {photoPreview && (
+            <div className="w-24 h-24 border rounded-md overflow-hidden">
+              <img src={photoPreview} alt="Dog preview" className="w-full h-full object-cover" />
+            </div>
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoChange}
+            className="w-full px-3 py-2 border rounded-md"
+          />
+          <input type="hidden" name="photo_url" value={photoPreview} />
+        </div>
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium mb-1">Personality</label>
+        <textarea name="personality" defaultValue={formData.personality || ''} className="w-full px-3 py-2 border rounded-md" rows={3} />
+      </div>
+      
+      {/* Feeding Section */}
+      <div className="border-t pt-4">
+        <h4 className="font-semibold text-gray-800 mb-3">Feeding Information</h4>
+        <div className="space-y-3">
+          {feedingSchedule.map((feeding, index) => (
+            <div key={index} className="flex gap-2 items-end">
+              <div className="flex-1">
+                <label className="block text-xs font-medium mb-1">Time</label>
+                <input
+                  type="time"
+                  value={feeding.time}
+                  onChange={(e) => updateFeedingTime(index, 'time', e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs font-medium mb-1">Amount</label>
+                <input
+                  type="text"
+                  value={feeding.amount}
+                  onChange={(e) => updateFeedingTime(index, 'amount', e.target.value)}
+                  placeholder="1½ cups"
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => removeFeedingTime(index)}
+                className="px-3 py-2 text-red-600 hover:text-red-800"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addFeedingTime}
+            className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:text-blue-800 text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Add Feeding Time
+          </button>
+        </div>
+        <input type="hidden" name="feeding_schedule" value={JSON.stringify(feedingSchedule)} />
+        
+        <div className="mt-3">
+          <label className="block text-sm font-medium mb-1">Feeding Location</label>
+          <input name="feeding_location" defaultValue={formData.feeding_location || ''} className="w-full px-3 py-2 border rounded-md" />
+        </div>
+        <div className="mt-3">
+          <label className="block text-sm font-medium mb-1">Feeding Notes</label>
+          <textarea name="feeding_notes" defaultValue={formData.feeding_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} />
+        </div>
+      </div>
+
+      {/* Medicine Section */}
+      <div className="border-t pt-4">
+        <h4 className="font-semibold text-gray-800 mb-3">Medicine Information</h4>
+        <div className="space-y-3">
+          {medicineSchedule.map((medicine, index) => (
+            <div key={index} className="border rounded-md p-3 space-y-2">
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium mb-1">Time</label>
+                  <input
+                    type="text"
+                    value={medicine.time}
+                    onChange={(e) => updateMedicine(index, 'time', e.target.value)}
+                    placeholder="Morning, Evening, etc."
+                    className="w-full px-3 py-2 border rounded-md text-sm"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium mb-1">Medication</label>
+                  <input
+                    type="text"
+                    value={medicine.medication}
+                    onChange={(e) => updateMedicine(index, 'medication', e.target.value)}
+                    placeholder="1 Benadryl (25mg)"
+                    className="w-full px-3 py-2 border rounded-md text-sm"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeMedicine(index)}
+                  className="px-3 py-2 text-red-600 hover:text-red-800"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1">Notes</label>
+                <input
+                  type="text"
+                  value={medicine.notes}
+                  onChange={(e) => updateMedicine(index, 'notes', e.target.value)}
+                  placeholder="With food, etc."
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                />
+              </div>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addMedicine}
+            className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:text-blue-800 text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Add Medicine
+          </button>
+        </div>
+        <input type="hidden" name="medicine_schedule" value={JSON.stringify(medicineSchedule)} />
+      </div>
+
+      {/* Potty Section */}
+      <div className="border-t pt-4">
+        <h4 className="font-semibold text-gray-800 mb-3">Potty Training</h4>
+        <div>
+          <label className="block text-sm font-medium mb-1">Potty Trained Status</label>
+          <input name="potty_trained" defaultValue={formData.potty_trained || ''} className="w-full px-3 py-2 border rounded-md" />
+        </div>
+        <div className="mt-3">
+          <label className="block text-sm font-medium mb-1">Potty Notes</label>
+          <textarea name="potty_notes" defaultValue={formData.potty_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} />
+        </div>
+      </div>
+
+      {/* Walking Section */}
+      <div className="border-t pt-4">
+        <h4 className="font-semibold text-gray-800 mb-3">Walking Information</h4>
+        <div>
+          <label className="block text-sm font-medium mb-1">Walk Frequency</label>
+          <input name="walk_frequency" defaultValue={formData.walk_frequency || ''} className="w-full px-3 py-2 border rounded-md" />
+        </div>
+        <div className="mt-3">
+          <label className="block text-sm font-medium mb-1">Walk Notes</label>
+          <textarea name="walk_notes" defaultValue={formData.walk_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} />
+        </div>
+      </div>
+
+      {/* Sleeping Section */}
+      <div className="border-t pt-4">
+        <h4 className="font-semibold text-gray-800 mb-3">Sleeping Information</h4>
+        <div>
+          <label className="block text-sm font-medium mb-1">Sleeping Location</label>
+          <input name="sleeping_location" defaultValue={formData.sleeping_location || ''} className="w-full px-3 py-2 border rounded-md" />
+        </div>
+        <div className="mt-3">
+          <label className="block text-sm font-medium mb-1">Sleeping Notes</label>
+          <textarea name="sleeping_notes" defaultValue={formData.sleeping_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} />
+        </div>
+      </div>
+
+      {/* Special Instructions Section */}
+      <div className="border-t pt-4">
+        <h4 className="font-semibold text-gray-800 mb-3">Special Instructions</h4>
+        <div className="space-y-3">
+          {specialInstructions.map((instruction, index) => (
+            <div key={index} className="flex gap-2 items-end">
+              <div className="flex-1">
+                <label className="block text-xs font-medium mb-1">Type</label>
+                <input
+                  type="text"
+                  value={instruction.type}
+                  onChange={(e) => updateSpecialInstruction(index, 'type', e.target.value)}
+                  placeholder="When Leaving, Management, etc."
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                />
+              </div>
+              <div className="flex-2">
+                <label className="block text-xs font-medium mb-1">Instruction</label>
+                <input
+                  type="text"
+                  value={instruction.instruction}
+                  onChange={(e) => updateSpecialInstruction(index, 'instruction', e.target.value)}
+                  placeholder="Goes in small cage"
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => removeSpecialInstruction(index)}
+                className="px-3 py-2 text-red-600 hover:text-red-800"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addSpecialInstruction}
+            className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:text-blue-800 text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Add Special Instruction
+          </button>
+        </div>
+        <input type="hidden" name="special_instructions" value={JSON.stringify(Object.fromEntries(specialInstructions.map(si => [si.type, si.instruction])))} />
+      </div>
+    </>
+  );
+};
+
 export default function HouseSittingApp() {
   const [data, setData] = useState(initialData);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -209,14 +518,9 @@ export default function HouseSittingApp() {
   const [adminPassword, setAdminPassword] = useState('');
   const [showAdminLogin, setShowAdminLogin] = useState(false);
 
-  // In production, this would be stored securely in environment variables
-  const SITE_PASSWORD = process.env.NEXT_PUBLIC_SITE_ACCESS_PASSWORD || 'frenchies2024';
-  const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123';
-  
-  // Debug: Log the admin password being used (remove in production)
-  console.log('Admin password from env:', process.env.ADMIN_PASSWORD);
-  console.log('Admin password from NEXT_PUBLIC:', process.env.NEXT_PUBLIC_ADMIN_PASSWORD);
-  console.log('Final admin password:', ADMIN_PASSWORD);
+  // Environment variables for authentication
+  const SITE_PASSWORD = process.env.NEXT_PUBLIC_SITE_ACCESS_PASSWORD;
+  const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
 
   // Load data from database
   const loadDatabaseData = async () => {
@@ -1173,7 +1477,7 @@ export default function HouseSittingApp() {
       const formData = new FormData(e.target as HTMLFormElement);
       const data = Object.fromEntries(formData.entries());
       
-      // Parse JSON fields for dog forms
+      // Parse JSON fields for dog forms (now handled by hidden inputs)
       if (formType === 'dog') {
         try {
           if (data.feeding_schedule) {
@@ -1187,7 +1491,7 @@ export default function HouseSittingApp() {
           }
         } catch (error) {
           console.error('Error parsing JSON fields:', error);
-          alert('Error: Invalid JSON format in one of the fields. Please check your JSON syntax.');
+          alert('Error: Invalid data format. Please try again.');
           return;
         }
       }
@@ -1214,120 +1518,7 @@ export default function HouseSittingApp() {
             
             <form onSubmit={handleSubmit} className="space-y-4">
               {formType === 'dog' && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Name</label>
-                    <input name="name" defaultValue={formData.name || ''} required className="w-full px-3 py-2 border rounded-md" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Age</label>
-                    <input name="age" defaultValue={formData.age || ''} className="w-full px-3 py-2 border rounded-md" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Photo URL</label>
-                    <input name="photo_url" defaultValue={formData.photo_url || ''} className="w-full px-3 py-2 border rounded-md" placeholder="https://example.com/photo.jpg" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Personality</label>
-                    <textarea name="personality" defaultValue={formData.personality || ''} className="w-full px-3 py-2 border rounded-md" rows={3} />
-                  </div>
-                  
-                  {/* Feeding Section */}
-                  <div className="border-t pt-4">
-                    <h4 className="font-semibold text-gray-800 mb-3">Feeding Information</h4>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Feeding Schedule (JSON)</label>
-                      <textarea 
-                        name="feeding_schedule" 
-                        defaultValue={typeof formData.feeding_schedule === 'object' ? JSON.stringify(formData.feeding_schedule, null, 2) : formData.feeding_schedule || '[]'} 
-                        className="w-full px-3 py-2 border rounded-md font-mono text-sm" 
-                        rows={4}
-                        placeholder='[{"time": "7:00 AM", "amount": "1½ cups"}]'
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Feeding Location</label>
-                      <input name="feeding_location" defaultValue={formData.feeding_location || ''} className="w-full px-3 py-2 border rounded-md" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Feeding Notes</label>
-                      <textarea name="feeding_notes" defaultValue={formData.feeding_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} />
-                    </div>
-                  </div>
-
-                  {/* Medicine Section */}
-                  <div className="border-t pt-4">
-                    <h4 className="font-semibold text-gray-800 mb-3">Medicine Information</h4>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Medicine Schedule (JSON)</label>
-                      <textarea 
-                        name="medicine_schedule" 
-                        defaultValue={typeof formData.medicine_schedule === 'object' ? JSON.stringify(formData.medicine_schedule, null, 2) : formData.medicine_schedule || '[]'} 
-                        className="w-full px-3 py-2 border rounded-md font-mono text-sm" 
-                        rows={4}
-                        placeholder='[{"time": "Evening", "medication": "1 Benadryl (25mg)"}]'
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Medicine Notes</label>
-                      <textarea name="medicine_notes" defaultValue={formData.medicine_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} />
-                    </div>
-                  </div>
-
-                  {/* Potty Section */}
-                  <div className="border-t pt-4">
-                    <h4 className="font-semibold text-gray-800 mb-3">Potty Training</h4>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Potty Trained Status</label>
-                      <input name="potty_trained" defaultValue={formData.potty_trained || ''} className="w-full px-3 py-2 border rounded-md" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Potty Notes</label>
-                      <textarea name="potty_notes" defaultValue={formData.potty_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} />
-                    </div>
-                  </div>
-
-                  {/* Walking Section */}
-                  <div className="border-t pt-4">
-                    <h4 className="font-semibold text-gray-800 mb-3">Walking Information</h4>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Walk Frequency</label>
-                      <input name="walk_frequency" defaultValue={formData.walk_frequency || ''} className="w-full px-3 py-2 border rounded-md" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Walk Notes</label>
-                      <textarea name="walk_notes" defaultValue={formData.walk_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} />
-                    </div>
-                  </div>
-
-                  {/* Sleeping Section */}
-                  <div className="border-t pt-4">
-                    <h4 className="font-semibold text-gray-800 mb-3">Sleeping Information</h4>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Sleeping Location</label>
-                      <input name="sleeping_location" defaultValue={formData.sleeping_location || ''} className="w-full px-3 py-2 border rounded-md" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Sleeping Notes</label>
-                      <textarea name="sleeping_notes" defaultValue={formData.sleeping_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} />
-                    </div>
-                  </div>
-
-                  {/* Special Instructions Section */}
-                  <div className="border-t pt-4">
-                    <h4 className="font-semibold text-gray-800 mb-3">Special Instructions</h4>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Special Instructions (JSON)</label>
-                      <textarea 
-                        name="special_instructions" 
-                        defaultValue={typeof formData.special_instructions === 'object' ? JSON.stringify(formData.special_instructions, null, 2) : formData.special_instructions || '{}'} 
-                        className="w-full px-3 py-2 border rounded-md font-mono text-sm" 
-                        rows={4}
-                        placeholder='{"whenLeaving": "Goes in small cage", "management": "Keep bedroom doors closed"}'
-                      />
-                    </div>
-                  </div>
-                </>
+                <DogEditForm formData={formData} />
               )}
               
               {formType === 'alert' && (

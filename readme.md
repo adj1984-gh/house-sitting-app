@@ -43,8 +43,12 @@ A comprehensive web application for managing house and pet sitting instructions,
 
 ### ✅ Phase 3: Admin Interface (COMPLETED)
 - **Full CRUD operations** for all data types (dogs, alerts, service people, appointments)
-- **Comprehensive pet profile editing** with all fields (feeding, medicine, potty, walking, sleeping, special instructions)
-- **JSON field support** for complex data structures (feeding schedules, medicine schedules, special instructions)
+- **Enhanced pet profile editing** with user-friendly interfaces:
+  - **Photo upload** with preview functionality
+  - **Feeding schedule builder** with time picker and amount fields
+  - **Medicine management** with add/remove/edit capabilities for each medication
+  - **Special instructions** with categorized add/remove interface
+  - **No more JSON input** - all complex data handled through intuitive UI
 - **Admin mode toggle** with comprehensive editing interface
 - **Modal forms** for adding and editing items with organized sections
 - **Real-time data updates** with optimistic UI updates
@@ -54,9 +58,9 @@ A comprehensive web application for managing house and pet sitting instructions,
 - **Live deployment tested** and fully functional on production site
 
 ### 🚧 Not Yet Implemented
-- Image uploads for pets
 - Multiple property support
 - Email notifications
+- Photo storage integration (currently using base64 preview)
 
 ## ✨ Features
 
@@ -182,16 +186,16 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=configured_in_vercel
 SUPABASE_SERVICE_ROLE_KEY=configured_in_vercel
 
 # Site Access (Production)
-NEXT_PUBLIC_SITE_ACCESS_PASSWORD=frenchies2024
-NEXT_PUBLIC_ADMIN_PASSWORD=admin123
+NEXT_PUBLIC_SITE_ACCESS_PASSWORD=your_site_password
+NEXT_PUBLIC_ADMIN_PASSWORD=your_admin_password
 
 # Optional
 NEXT_PUBLIC_SITE_URL=https://housesit.9441altodrive.com
 ```
 
 **Status**: ✅ **All environment variables are configured and working in production**
-- **Site access password**: `frenchies2024` (for sitter access)
-- **Admin password**: `admin123` (for admin mode access)
+- **Site access password**: Configured via environment variables (for sitter access)
+- **Admin password**: Configured via environment variables (for admin mode access)
 - **Database**: Fully connected to Supabase production instance
 - **Live testing**: Admin interface tested and functional on production site
 
@@ -448,7 +452,7 @@ Private project - not for public distribution
 **Production URL:** https://housesit.9441altodrive.com/
 **Vercel URL:** https://house-sitting-app-kappa.vercel.app/
 
-**Current Password:** `frenchies2024` (configurable via environment variables)
+**Current Password:** Configured via environment variables
 
 ## 🗄️ Database Integration Status
 
