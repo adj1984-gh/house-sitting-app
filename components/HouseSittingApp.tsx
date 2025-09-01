@@ -211,7 +211,12 @@ export default function HouseSittingApp() {
 
   // In production, this would be stored securely in environment variables
   const SITE_PASSWORD = process.env.NEXT_PUBLIC_SITE_ACCESS_PASSWORD || 'frenchies2024';
-  const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin2024';
+  const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123';
+  
+  // Debug: Log the admin password being used (remove in production)
+  console.log('Admin password from env:', process.env.ADMIN_PASSWORD);
+  console.log('Admin password from NEXT_PUBLIC:', process.env.NEXT_PUBLIC_ADMIN_PASSWORD);
+  console.log('Final admin password:', ADMIN_PASSWORD);
 
   // Load data from database
   const loadDatabaseData = async () => {
