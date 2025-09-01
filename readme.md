@@ -43,6 +43,8 @@ A comprehensive web application for managing house and pet sitting instructions,
 
 ### ✅ Phase 3: Admin Interface (COMPLETED)
 - **Full CRUD operations** for all data types (dogs, alerts, service people, appointments, daily tasks, stays)
+- **Stay creation form** with proper field handling including active status checkbox
+- **Admin access control** - admins have full access to all sections regardless of stay status
 - **Enhanced pet profile editing** with user-friendly interfaces:
   - **Photo upload** with preview functionality
   - **Feeding schedule builder** with time picker and amount fields
@@ -59,13 +61,14 @@ A comprehensive web application for managing house and pet sitting instructions,
 - **Stay management system** with sitter context:
   - **Active stay tracking** with sitter names and date ranges
   - **Admin-only stay management** (create, edit, delete)
+  - **"Add Stay" button** in Current Stay section for easy stay creation
   - **Sitter view context** showing current stay or "No active stay"
   - **Date range validation** for stay periods
 - **Stay-gated access control**:
-  - **Portal lockdown** when no active stay is scheduled for current date
+  - **Portal lockdown** when no active stay is scheduled for current date (sitter view only)
   - **Limited sitter view** showing only "No Active Stay" message and emergency contacts
-  - **Full functionality** only available during active stay periods
-  - **Admin override** allows full access regardless of stay status
+  - **Full functionality** only available during active stay periods (for sitters)
+  - **Admin override** allows full access regardless of stay status - admins can access all sections and manage data even without active stays
   - **Automatic date-based stay validation** using database queries
 - **Editable contact management**:
   - **Database-driven contacts** with full CRUD operations
@@ -74,6 +77,13 @@ A comprehensive web application for managing house and pet sitting instructions,
   - **Categorized contacts** (owners, regular vet, emergency vet, other)
   - **Admin interface** for adding, editing, and deleting contacts
   - **Display order control** for custom contact organization
+- **Structured walk schedule system**:
+  - **JSONB-based walk schedules** replacing simple text frequency fields
+  - **Time-based walk management** with Morning/Afternoon/Evening/Night options
+  - **Duration and notes** for each scheduled walk
+  - **Consistent schedule generation** - only dogs with actual walk schedules appear in schedule
+  - **Admin interface** for adding, editing, and removing walk times
+  - **Clear visibility** of which dogs have scheduled walks vs. optional walks
 - **Restructured page organization**:
   - **Overview page** shows "Today's Schedule" and "Current Stay"
   - **Schedule page** shows full "Master Schedule" and task management
@@ -91,7 +101,6 @@ A comprehensive web application for managing house and pet sitting instructions,
 - Multiple property support
 - Email notifications
 - Photo storage integration (currently using base64 preview)
-- Contact information management (currently hardcoded)
 
 ## ✨ Features
 
@@ -282,7 +291,7 @@ CREATE TABLE dogs (
   medicine_notes TEXT,
   potty_trained TEXT,
   potty_notes TEXT,
-  walk_frequency TEXT,
+  walk_schedule JSONB,
   walk_notes TEXT,
   sleeping_location TEXT,
   sleeping_notes TEXT,
@@ -559,7 +568,7 @@ Private project - not for public distribution
 ---
 
 *Last Updated: December 2024*
-*Version: 2.4.0 (Editable Contacts & Stay-Gated Access Complete)*
+*Version: 2.6.0 (Stay Creation Fix & Admin Access Control Update)*
 
 ## 🌐 Live Application
 

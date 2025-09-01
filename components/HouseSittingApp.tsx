@@ -860,7 +860,7 @@ export default function HouseSittingApp() {
 
   // Navigation Component
   const Navigation = () => {
-    const sections = hasActiveStayToday ? [
+    const sections = (hasActiveStayToday || isAdmin) ? [
       { id: 'overview', label: 'Overview', icon: Home },
       { id: 'dogs', label: 'Pet Care', icon: Dog },
       { id: 'house', label: 'House Instructions', icon: Key },
@@ -1891,6 +1891,11 @@ export default function HouseSittingApp() {
         }
       }
       
+      // Handle boolean fields
+      if (formType === 'stay') {
+        data.active = data.active === 'on';
+      }
+      
       if (isEditing) {
         handleUpdate(formType!, editingItem.id!, data);
       } else {
@@ -2044,6 +2049,12 @@ export default function HouseSittingApp() {
                     <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
                     <textarea name="notes" defaultValue={formData.notes || ''} className="w-full px-3 py-2 border rounded-md" rows={3} />
                   </div>
+                  <div>
+                    <label className="flex items-center gap-2">
+                      <input name="active" type="checkbox" defaultChecked={formData.active !== false} className="rounded" />
+                      <span className="text-sm font-medium">Active Stay</span>
+                    </label>
+                  </div>
                 </>
               )}
               
@@ -2157,7 +2168,7 @@ export default function HouseSittingApp() {
 
   // Render the active section
   const renderSection = () => {
-    // If no active stay, only show overview
+    // If no active stay and not admin, only show overview
     if (!hasActiveStayToday && !isAdmin) {
       return <OverviewSection />;
     }
