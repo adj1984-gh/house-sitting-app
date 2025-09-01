@@ -478,6 +478,24 @@ export default function HouseSittingApp() {
   const SITE_PASSWORD = process.env.NEXT_PUBLIC_SITE_ACCESS_PASSWORD;
   const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
 
+  // Check for existing session on component mount
+  useEffect(() => {
+    const checkExistingSession = () => {
+      const savedAuth = localStorage.getItem('houseSittingAuth');
+      const savedAdmin = localStorage.getItem('houseSittingAdmin');
+      
+      if (savedAuth === 'true') {
+        setIsAuthenticated(true);
+      }
+      
+      if (savedAdmin === 'true') {
+        setIsAdmin(true);
+      }
+    };
+    
+    checkExistingSession();
+  }, []);
+
   // Load data from database
   const loadDatabaseData = async () => {
     try {
@@ -789,6 +807,9 @@ export default function HouseSittingApp() {
         setIsAuthenticated(true);
         setLoginError('');
         
+        // Save session to localStorage
+        localStorage.setItem('houseSittingAuth', 'true');
+        
         // Log access to database
         try {
           await logAccess({
@@ -882,7 +903,12 @@ export default function HouseSittingApp() {
             <h1 className="text-2xl font-bold text-gray-800">House Sitting Portal</h1>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setIsAuthenticated(false)}
+                onClick={() => {
+                  setIsAuthenticated(false);
+                  setIsAdmin(false);
+                  localStorage.removeItem('houseSittingAuth');
+                  localStorage.removeItem('houseSittingAdmin');
+                }}
                 className="px-3 py-2 text-gray-600 hover:text-gray-800"
                 title="Lock"
               >
@@ -892,6 +918,7 @@ export default function HouseSittingApp() {
                 onClick={() => {
                   if (isAdmin) {
                     setIsAdmin(false);
+                    localStorage.removeItem('houseSittingAdmin');
                   } else {
                     setShowAdminLogin(true);
                   }
@@ -2139,6 +2166,9 @@ export default function HouseSittingApp() {
         setIsAdmin(true);
         setShowAdminLogin(false);
         setAdminPassword('');
+        
+        // Save admin session to localStorage
+        localStorage.setItem('houseSittingAdmin', 'true');
       } else {
         alert('Incorrect admin password');
       }
