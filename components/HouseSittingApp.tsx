@@ -1036,35 +1036,48 @@ export default function HouseSittingApp() {
             )}
           </div>
           <div className="space-y-2">
-            {currentData.alerts.map(alert => (
-              <div key={alert.id} className={`flex items-start justify-between gap-2 ${
-                alert.type === 'danger' ? 'text-red-700' : 
-                alert.type === 'warning' ? 'text-orange-700' : 'text-blue-700'
-              }`}>
-                <div className="flex items-start gap-2">
-                  <span className="font-bold">•</span>
-                  <span className="font-medium">{alert.text}</span>
-                </div>
-                {isAdmin && (
-                  <div className="flex gap-1">
-                    <button 
-                      onClick={() => setEditingItem({ type: 'alert', id: String(alert.id), data: alert })}
-                      className="text-blue-600 hover:text-blue-800"
-                      title="Edit alert"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete('alert', String(alert.id))}
-                      className="text-red-600 hover:text-red-800"
-                      title="Delete alert"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+            {currentData.alerts.map(alert => {
+              const getAlertSymbol = (type: string) => {
+                switch (type) {
+                  case 'danger': return '🚨';
+                  case 'warning': return '⚠️';
+                  case 'info': return 'ℹ️';
+                  default: return '•';
+                }
+              };
+              
+              return (
+                <div key={alert.id} className={`flex items-start justify-between gap-2 ${
+                  alert.type === 'danger' ? 'text-red-700' : 
+                  alert.type === 'warning' ? 'text-orange-700' : 'text-blue-700'
+                }`}>
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg" role="img" aria-label={`${alert.type} alert`}>
+                      {getAlertSymbol(alert.type)}
+                    </span>
+                    <span className="font-medium">{alert.text}</span>
                   </div>
-                )}
-              </div>
-            ))}
+                  {isAdmin && (
+                    <div className="flex gap-1">
+                      <button 
+                        onClick={() => setEditingItem({ type: 'alert', id: String(alert.id), data: alert })}
+                        className="text-blue-600 hover:text-blue-800"
+                        title="Edit alert"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete('alert', String(alert.id))}
+                        className="text-red-600 hover:text-red-800"
+                        title="Delete alert"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -1867,7 +1880,7 @@ export default function HouseSittingApp() {
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       const formData = new FormData(e.target as HTMLFormElement);
-      const data = Object.fromEntries(formData.entries());
+      const data: any = Object.fromEntries(formData.entries());
       
       // Parse JSON fields for dog forms (now handled by hidden inputs)
       if (formType === 'dog') {

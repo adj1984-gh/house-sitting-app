@@ -125,9 +125,10 @@ A comprehensive web application for managing house and pet sitting instructions,
 ### User Experience
 - Mobile-first responsive design
 - Tabbed navigation for easy section access
-- Color-coded alerts (red=danger, orange=payment needed, blue=info)
+- Color-coded alerts with accessibility symbols (🚨 danger, ⚠️ warning, ℹ️ info)
 - Print-friendly layout
 - Offline-capable (after initial load)
+- Accessibility features for colorblind users
 
 ## 🛠 Tech Stack
 
@@ -568,7 +569,7 @@ Private project - not for public distribution
 ---
 
 *Last Updated: December 2024*
-*Version: 2.6.0 (Stay Creation Fix & Admin Access Control Update)*
+*Version: 2.7.0 (Alert Accessibility Symbols Added)*
 
 ## 🌐 Live Application
 
