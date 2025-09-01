@@ -1,5 +1,5 @@
 import { supabase, supabaseAdmin } from './supabase'
-import { Property, Alert, Dog, ServicePerson, Appointment, HouseInstruction, DailyTask, Stay, AccessLog, ScheduleItem } from './types'
+import { Property, Alert, Dog, ServicePerson, Appointment, HouseInstruction, DailyTask, Stay, Contact, AccessLog, ScheduleItem } from './types'
 
 // Property operations
 export const getProperty = async (id: string = '00000000-0000-0000-0000-000000000001'): Promise<Property | null> => {
@@ -616,6 +616,32 @@ export const getStays = async (propertyId: string = '00000000-0000-0000-0000-000
   return data || []
 }
 
+// Check if there's an active stay covering the current date
+export const hasActiveStay = async (propertyId: string = '00000000-0000-0000-0000-000000000001'): Promise<boolean> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning false')
+    return false
+  }
+
+  const today = new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
+
+  const { data, error } = await supabase
+    .from('stays')
+    .select('id')
+    .eq('property_id', propertyId)
+    .eq('active', true)
+    .lte('start_date', today)
+    .gte('end_date', today)
+    .limit(1)
+  
+  if (error) {
+    console.error('Error checking active stay:', error)
+    return false
+  }
+  
+  return (data && data.length > 0) || false
+}
+
 export const createStay = async (stay: Omit<Stay, 'id' | 'created_at' | 'updated_at'>): Promise<Stay | null> => {
   if (!supabaseAdmin) {
     console.warn('Supabase admin not configured')
@@ -805,4 +831,86 @@ export const generateMasterSchedule = (
     const timeB = b.time === 'TBD' ? '23:59' : b.time
     return timeA.localeCompare(timeB)
   })
+}
+
+// Contact operations
+export const getContacts = async (propertyId: string = '00000000-0000-0000-0000-000000000001'): Promise<Contact[]> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning empty array')
+    return []
+  }
+
+  const { data, error } = await supabase
+    .from('contacts')
+    .select('*')
+    .eq('property_id', propertyId)
+    .eq('active', true)
+    .order('display_order', { ascending: true })
+  
+  if (error) {
+    console.error('Error fetching contacts:', error)
+    return []
+  }
+  
+  return data || []
+}
+
+export const createContact = async (contact: Omit<Contact, 'id' | 'created_at' | 'updated_at'>): Promise<Contact | null> => {
+  if (!supabaseAdmin) {
+    console.warn('Supabase admin not configured')
+    return null
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('contacts')
+    .insert([contact])
+    .select()
+    .single()
+  
+  if (error) {
+    console.error('Error creating contact:', error)
+    return null
+  }
+  
+  return data
+}
+
+export const updateContact = async (id: string, updates: Partial<Contact>): Promise<Contact | null> => {
+  if (!supabaseAdmin) {
+    console.warn('Supabase admin not configured')
+    return null
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('contacts')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+  
+  if (error) {
+    console.error('Error updating contact:', error)
+    return null
+  }
+  
+  return data
+}
+
+export const deleteContact = async (id: string): Promise<boolean> => {
+  if (!supabaseAdmin) {
+    console.warn('Supabase admin not configured')
+    return false
+  }
+
+  const { error } = await supabaseAdmin
+    .from('contacts')
+    .delete()
+    .eq('id', id)
+  
+  if (error) {
+    console.error('Error deleting contact:', error)
+    return false
+  }
+  
+  return true
 }

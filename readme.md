@@ -42,7 +42,7 @@ A comprehensive web application for managing house and pet sitting instructions,
 - **Next.js configuration** updated for version 14 compatibility
 
 ### ✅ Phase 3: Admin Interface (COMPLETED)
-- **Full CRUD operations** for all data types (dogs, alerts, service people, appointments, daily tasks)
+- **Full CRUD operations** for all data types (dogs, alerts, service people, appointments, daily tasks, stays)
 - **Enhanced pet profile editing** with user-friendly interfaces:
   - **Photo upload** with preview functionality
   - **Feeding schedule builder** with time picker and amount fields
@@ -51,10 +51,33 @@ A comprehensive web application for managing house and pet sitting instructions,
   - **Birthdate field** with automatic age calculation
   - **No more JSON input** - all complex data handled through intuitive UI
 - **Master schedule system** with comprehensive task management:
-  - **Daily tasks management** with full CRUD operations
+  - **Daily tasks management** with full CRUD operations (timed and untimed)
   - **Schedule item deletion** for manageable items (tasks, appointments)
   - **Real-time schedule updates** across all views
   - **Smart deletion logic** that identifies deletable vs. managed items
+  - **Unified schedule structure** with proper separation of timed vs untimed tasks
+- **Stay management system** with sitter context:
+  - **Active stay tracking** with sitter names and date ranges
+  - **Admin-only stay management** (create, edit, delete)
+  - **Sitter view context** showing current stay or "No active stay"
+  - **Date range validation** for stay periods
+- **Stay-gated access control**:
+  - **Portal lockdown** when no active stay is scheduled for current date
+  - **Limited sitter view** showing only "No Active Stay" message and emergency contacts
+  - **Full functionality** only available during active stay periods
+  - **Admin override** allows full access regardless of stay status
+  - **Automatic date-based stay validation** using database queries
+- **Editable contact management**:
+  - **Database-driven contacts** with full CRUD operations
+  - **Clickable phone numbers** with proper tel: links for mobile calling
+  - **Clickable email addresses** with mailto: links
+  - **Categorized contacts** (owners, regular vet, emergency vet, other)
+  - **Admin interface** for adding, editing, and deleting contacts
+  - **Display order control** for custom contact organization
+- **Restructured page organization**:
+  - **Overview page** shows "Today's Schedule" and "Current Stay"
+  - **Schedule page** shows full "Master Schedule" and task management
+  - **Removed confusing duplicate** schedule sections
 - **Admin mode toggle** with comprehensive editing interface
 - **Modal forms** for adding and editing items with organized sections
 - **Real-time data updates** with optimistic UI updates
@@ -85,8 +108,10 @@ A comprehensive web application for managing house and pet sitting instructions,
 - **Emergency contacts** prominently displayed
 - **Safety alerts** (coyotes, septic system, etc.)
 - **Appointment tracking** with detailed instructions
-- **Daily tasks management** with full CRUD operations
+- **Daily tasks management** with full CRUD operations (timed and untimed)
 - **Master schedule system** consolidating all schedulable items
+- **Stay management** with sitter context and date ranges
+- **Unified schedule structure** with proper page organization
 
 ### User Experience
 - Mobile-first responsive design
@@ -169,8 +194,10 @@ house-sitting-app/
 - [x] Add appointment scheduling (backend ready)
 - [x] Connect admin UI to database operations
 - [x] Enhanced pet editing with organized sections and JSON field support
-- [x] Daily tasks management with full CRUD operations
+- [x] Daily tasks management with full CRUD operations (timed and untimed)
 - [x] Master schedule system with item deletion capabilities
+- [x] Stay management system with sitter context and date ranges
+- [x] Restructured page organization (Overview vs Schedule pages)
 
 ### Phase 5: Deployment ✅ (Week 3) - COMPLETED
 - [x] Deploy to Vercel
@@ -308,9 +335,38 @@ CREATE TABLE daily_tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
-  time TEXT NOT NULL,
+  time TEXT,
   category TEXT CHECK (category IN ('pets', 'house', 'general')),
   notes TEXT,
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Stays table (for managing active stays with sitters)
+CREATE TABLE stays (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
+  sitter_name TEXT NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  notes TEXT,
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Contacts table (for emergency contacts and other contact information)
+CREATE TABLE contacts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
+  category TEXT NOT NULL CHECK (category IN ('owners', 'regular_vet', 'emergency_vet', 'other')),
+  name TEXT NOT NULL,
+  phone TEXT,
+  email TEXT,
+  address TEXT,
+  notes TEXT,
+  display_order INTEGER DEFAULT 0,
   active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
@@ -395,6 +451,38 @@ npm run dev
 3. Reference this README for project structure
 4. Use TypeScript for better AI code completion
 
+## 🏠 Stay Management System
+
+### Current Implementation
+- **Stay Tracking**: Active stays with sitter names and date ranges
+- **Admin Management**: Full CRUD operations for stays (admin-only)
+- **Sitter Context**: Shows current stay or "No active stay" message
+- **Date Range Validation**: Proper start/end date handling
+- **Database Integration**: Stays table with proper relationships
+
+### Stay Workflow
+1. **Admin creates stay** with sitter name and date range
+2. **Sitter sees stay context** on Overview page during active period
+3. **Admin can edit/delete** stays as needed
+4. **Outside active stay** → Shows "No active stay" message
+5. **Inside active stay** → Shows stay details normally
+
+### Database Schema
+```sql
+-- Stays table
+CREATE TABLE stays (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
+  sitter_name TEXT NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  notes TEXT,
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
 ## 🔮 Future Enhancements
 
 ### High Priority
@@ -471,7 +559,7 @@ Private project - not for public distribution
 ---
 
 *Last Updated: December 2024*
-*Version: 2.2.0 (Master Schedule & Daily Tasks Management Complete)*
+*Version: 2.4.0 (Editable Contacts & Stay-Gated Access Complete)*
 
 ## 🌐 Live Application
 
@@ -495,12 +583,13 @@ Private project - not for public distribution
 - **CRUD operations** verified functional in production environment
 
 ### 📊 Database Schema
-- **8 tables** with proper relationships and constraints
+- **10 tables** with proper relationships and constraints
 - **UUID primary keys** for all entities
 - **JSONB fields** for flexible data storage (feeding schedules, instructions)
 - **Timestamps** for audit trails and data tracking
 - **Foreign key relationships** maintaining data integrity
-- **Daily tasks management** with full CRUD operations
+- **Daily tasks management** with full CRUD operations (timed and untimed)
+- **Stay management** with sitter context and date ranges
 
 ### 🔧 Technical Implementation
 - **TypeScript types** for all database entities
@@ -517,4 +606,4 @@ Private project - not for public distribution
 4. **Implement email notifications** for appointments
 5. **Create printable PDF export** for offline reference
 
-The application now has full database connectivity, data persistence, and a fully functional admin interface. All mock data has been removed, and the system relies entirely on the Supabase database for dynamic content. Pet sitters can access all necessary information with real-time data from the database, and administrators can manage all data through the secure admin interface. The system includes a comprehensive master schedule system with daily tasks management and schedule item deletion capabilities. The system is production-ready and fully operational with a clean, database-only architecture.
+The application now has full database connectivity, data persistence, and a fully functional admin interface. All mock data has been removed, and the system relies entirely on the Supabase database for dynamic content. Pet sitters can access all necessary information with real-time data from the database, and administrators can manage all data through the secure admin interface. The system includes a comprehensive master schedule system with daily tasks management, stay management with sitter context, and proper page organization. The system is production-ready and fully operational with a clean, database-only architecture.

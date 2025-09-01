@@ -102,6 +102,21 @@ export interface Stay {
   updated_at: string
 }
 
+export interface Contact {
+  id: string
+  property_id: string
+  category: 'owners' | 'regular_vet' | 'emergency_vet' | 'other'
+  name: string
+  phone?: string
+  email?: string
+  address?: string
+  notes?: string
+  display_order: number
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface AccessLog {
   id: string
   property_id: string

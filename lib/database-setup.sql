@@ -115,6 +115,22 @@ CREATE TABLE IF NOT EXISTS stays (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Contacts table (for emergency contacts and other contact information)
+CREATE TABLE IF NOT EXISTS contacts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
+  category TEXT NOT NULL CHECK (category IN ('owners', 'regular_vet', 'emergency_vet', 'other')),
+  name TEXT NOT NULL,
+  phone TEXT,
+  email TEXT,
+  address TEXT,
+  notes TEXT,
+  display_order INTEGER DEFAULT 0,
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Access Logs table (for tracking who accessed when)
 CREATE TABLE IF NOT EXISTS access_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -208,6 +224,13 @@ INSERT INTO house_instructions (property_id, category, subcategory, instructions
 ON CONFLICT DO NOTHING;
 
 -- Insert default service people
+-- Insert sample contacts
+INSERT INTO contacts (property_id, category, name, phone, email, address, notes, display_order) VALUES
+('00000000-0000-0000-0000-000000000001', 'owners', 'Adam', '816-676-8363', NULL, NULL, 'Property owner', 1),
+('00000000-0000-0000-0000-000000000001', 'owners', 'Lauren', '913-375-8699', NULL, NULL, 'Property owner', 2),
+('00000000-0000-0000-0000-000000000001', 'regular_vet', 'Fletcher Hills Animal Hospital', '619-463-6604', NULL, '8807 Grossmont Blvd, La Mesa, CA 91942', 'Regular veterinary care', 3),
+('00000000-0000-0000-0000-000000000001', 'emergency_vet', 'Veterinary Specialty Hospital of San Diego', '858-875-7500', NULL, '10435 Sorrento Valley Road, San Diego, CA 92121', 'Emergency veterinary care', 4);
+
 INSERT INTO service_people (property_id, name, service_day, service_time, payment_amount, payment_status, notes, needs_access) VALUES
 ('00000000-0000-0000-0000-000000000001', 'Hot Tub Maintenance', 'Tuesday', 'Varies', 'Pre-paid', 'Pre-paid', 'Comes to backyard. Will text you heads-up.', true),
 ('00000000-0000-0000-0000-000000000001', 'Antonio', 'Friday 9/6', 'TBD', '$125.00', 'Pending', 'Needs to be paid when done', true)

@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode } from 'lucide-react';
-import { getProperty, getAlerts, getDogs, getServicePeople, getAppointments, getHouseInstructions, getDailyTasks, getStays, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createServicePerson, updateServicePerson, deleteServicePerson, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, generateMasterSchedule } from '../lib/database';
-import { Property, Alert, Dog as DogType, ServicePerson, Appointment, HouseInstruction, DailyTask, Stay, ScheduleItem } from '../lib/types';
+import { getProperty, getAlerts, getDogs, getServicePeople, getAppointments, getHouseInstructions, getDailyTasks, getStays, hasActiveStay, getContacts, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createServicePerson, updateServicePerson, deleteServicePerson, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, createContact, updateContact, deleteContact, generateMasterSchedule } from '../lib/database';
+import { Property, Alert, Dog as DogType, ServicePerson, Appointment, HouseInstruction, DailyTask, Stay, Contact, ScheduleItem } from '../lib/types';
 
 // All data comes from Supabase database - no mock data
 
@@ -31,6 +31,19 @@ const calculateAge = (birthdate: string): string => {
       return 'Less than 1 month';
     }
   }
+};
+
+// Helper function to format phone number for tel: links
+const formatPhoneForTel = (phone: string): string => {
+  if (!phone) return '';
+  // Remove all non-digit characters and add +1 if it's a 10-digit US number
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `+1${digits}`;
+  } else if (digits.length === 11 && digits.startsWith('1')) {
+    return `+${digits}`;
+  }
+  return phone;
 };
 
 // Dog Edit Form Component
@@ -355,6 +368,7 @@ export default function HouseSittingApp() {
   const [activeSection, setActiveSection] = useState('overview');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
+  const [hasActiveStayToday, setHasActiveStayToday] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [dbData, setDbData] = useState<{
@@ -366,6 +380,7 @@ export default function HouseSittingApp() {
     houseInstructions: HouseInstruction[];
     dailyTasks: DailyTask[];
     stays: Stay[];
+    contacts: Contact[];
   }>({
     property: null,
     alerts: [],
@@ -374,7 +389,8 @@ export default function HouseSittingApp() {
     appointments: [],
     houseInstructions: [],
     dailyTasks: [],
-    stays: []
+    stays: [],
+    contacts: []
   });
   const [masterSchedule, setMasterSchedule] = useState<ScheduleItem[]>([]);
 
@@ -392,7 +408,7 @@ export default function HouseSittingApp() {
   const loadDatabaseData = async () => {
     try {
       setIsLoading(true);
-      const [property, alerts, dogs, servicePeople, appointments, houseInstructions, dailyTasks, stays] = await Promise.all([
+      const [property, alerts, dogs, servicePeople, appointments, houseInstructions, dailyTasks, stays, contacts, activeStay] = await Promise.all([
         getProperty(),
         getAlerts(),
         getDogs(),
@@ -400,7 +416,9 @@ export default function HouseSittingApp() {
         getAppointments(),
         getHouseInstructions(),
         getDailyTasks(),
-        getStays()
+        getStays(),
+        getContacts(),
+        hasActiveStay()
       ]);
 
       setDbData({
@@ -411,8 +429,11 @@ export default function HouseSittingApp() {
         appointments: appointments || [],
         houseInstructions: houseInstructions || [],
         dailyTasks: dailyTasks || [],
-        stays: stays || []
+        stays: stays || [],
+        contacts: contacts || []
       });
+      
+      setHasActiveStayToday(activeStay);
     } catch (error) {
       console.error('Error loading database data:', error);
       // Initialize with empty data if database fails
@@ -424,7 +445,8 @@ export default function HouseSittingApp() {
         appointments: [],
         houseInstructions: [],
         dailyTasks: [],
-        stays: []
+        stays: [],
+        contacts: []
       });
     } finally {
       setIsLoading(false);
@@ -489,6 +511,12 @@ export default function HouseSittingApp() {
           result = await createStay({ ...data, property_id: propertyId });
           if (result) {
             setDbData(prev => ({ ...prev, stays: [...prev.stays, result] }));
+          }
+          break;
+        case 'contact':
+          result = await createContact({ ...data, property_id: propertyId });
+          if (result) {
+            setDbData(prev => ({ ...prev, contacts: [...prev.contacts, result] }));
           }
           break;
       }
@@ -567,6 +595,15 @@ export default function HouseSittingApp() {
             }));
           }
           break;
+        case 'contact':
+          result = await updateContact(id, data);
+          if (result) {
+            setDbData(prev => ({ 
+              ...prev, 
+              contacts: prev.contacts.map(contact => contact.id === id ? result : contact)
+            }));
+          }
+          break;
       }
       
       setEditingItem(null);
@@ -620,6 +657,12 @@ export default function HouseSittingApp() {
           success = await deleteStay(id);
           if (success) {
             setDbData(prev => ({ ...prev, stays: prev.stays.filter(stay => stay.id !== id) }));
+          }
+          break;
+        case 'contact':
+          success = await deleteContact(id);
+          if (success) {
+            setDbData(prev => ({ ...prev, contacts: prev.contacts.filter(contact => contact.id !== id) }));
           }
           break;
       }
@@ -743,12 +786,14 @@ export default function HouseSittingApp() {
 
   // Navigation Component
   const Navigation = () => {
-    const sections = [
+    const sections = hasActiveStayToday ? [
       { id: 'overview', label: 'Overview', icon: Home },
       { id: 'dogs', label: 'Pet Care', icon: Dog },
       { id: 'house', label: 'House Instructions', icon: Key },
       { id: 'services', label: 'Service People', icon: Users },
       { id: 'schedule', label: 'Schedule', icon: Calendar }
+    ] : [
+      { id: 'overview', label: 'Overview', icon: Home }
     ];
 
     return (
@@ -816,6 +861,70 @@ export default function HouseSittingApp() {
       },
       alerts: dbData.alerts
     };
+
+    // If no active stay and not admin, show limited view
+    if (!hasActiveStayToday && !isAdmin) {
+      return (
+        <div className="space-y-6">
+          <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-8 text-center">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <AlertCircle className="w-8 h-8 text-yellow-600" />
+              <h2 className="text-2xl font-bold text-yellow-800">No Active Stay</h2>
+            </div>
+            <p className="text-yellow-700 text-lg mb-4">
+              There are currently no active house sitting stays scheduled for today.
+            </p>
+            <p className="text-yellow-600">
+              Please contact the property owners to set up a stay period.
+            </p>
+          </div>
+          
+          {/* Still show emergency contacts */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Phone className="w-6 h-6 text-blue-600" />
+              <h2 className="text-xl font-bold">Emergency Contacts</h2>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {dbData.contacts.map(contact => (
+                <div key={contact.id} className="border rounded-lg p-4">
+                  <h3 className="font-semibold text-gray-800 capitalize mb-2">
+                    {contact.category.replace('_', ' ')}
+                  </h3>
+                  <p className="text-sm font-medium text-gray-800">{contact.name}</p>
+                  {contact.phone && (
+                    <p className="text-gray-700">
+                      <a 
+                        href={`tel:${formatPhoneForTel(contact.phone)}`}
+                        className="text-blue-600 hover:text-blue-800 underline"
+                      >
+                        {contact.phone}
+                      </a>
+                    </p>
+                  )}
+                  {contact.email && (
+                    <p className="text-gray-700">
+                      <a 
+                        href={`mailto:${contact.email}`}
+                        className="text-blue-600 hover:text-blue-800 underline"
+                      >
+                        {contact.email}
+                      </a>
+                    </p>
+                  )}
+                  {contact.address && (
+                    <p className="text-sm text-gray-600">{contact.address}</p>
+                  )}
+                  {contact.notes && (
+                    <p className="text-sm text-gray-500 mt-1">{contact.notes}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className="space-y-6">
@@ -887,28 +996,76 @@ export default function HouseSittingApp() {
 
         {/* All Contacts */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Phone className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-bold">Emergency Contacts</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Phone className="w-6 h-6 text-blue-600" />
+              <h2 className="text-xl font-bold">Emergency Contacts</h2>
+            </div>
+            {isAdmin && (
+              <button
+                onClick={() => setShowAddForm({ type: 'contact' })}
+                className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add Contact
+              </button>
+            )}
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div>
-              <h3 className="font-semibold mb-2 text-gray-800">Owners</h3>
-              <p className="text-gray-700">Adam: 816-676-8363</p>
-              <p className="text-gray-700">Lauren: 913-375-8699</p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2 text-gray-800">Regular Vet</h3>
-              <p className="text-sm font-medium">Fletcher Hills Animal Hospital</p>
-              <p className="text-sm text-gray-600">8807 Grossmont Blvd, La Mesa, CA 91942</p>
-              <p className="text-gray-700">619-463-6604</p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2 text-gray-800">Emergency Vet</h3>
-              <p className="text-sm font-medium">Veterinary Specialty Hospital of San Diego</p>
-              <p className="text-sm text-gray-600">10435 Sorrento Valley Road, San Diego, CA 92121</p>
-              <p className="text-gray-700">858-875-7500</p>
-            </div>
+            {dbData.contacts.map(contact => (
+              <div key={contact.id} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-gray-800 capitalize">
+                    {contact.category.replace('_', ' ')}
+                  </h3>
+                  {isAdmin && (
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => setEditingItem({ type: 'contact', id: contact.id, data: contact })}
+                        className="text-blue-600 hover:text-blue-800"
+                        title="Edit contact"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete('contact', contact.id)}
+                        className="text-red-600 hover:text-red-800"
+                        title="Delete contact"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <p className="text-sm font-medium text-gray-800">{contact.name}</p>
+                {contact.phone && (
+                  <p className="text-gray-700">
+                    <a 
+                      href={`tel:${formatPhoneForTel(contact.phone)}`}
+                      className="text-blue-600 hover:text-blue-800 underline"
+                    >
+                      {contact.phone}
+                    </a>
+                  </p>
+                )}
+                {contact.email && (
+                  <p className="text-gray-700">
+                    <a 
+                      href={`mailto:${contact.email}`}
+                      className="text-blue-600 hover:text-blue-800 underline"
+                    >
+                      {contact.email}
+                    </a>
+                  </p>
+                )}
+                {contact.address && (
+                  <p className="text-sm text-gray-600">{contact.address}</p>
+                )}
+                {contact.notes && (
+                  <p className="text-sm text-gray-500 mt-1">{contact.notes}</p>
+                )}
+              </div>
+            ))}
           </div>
         </div>
 
@@ -1790,6 +1947,44 @@ export default function HouseSittingApp() {
                 </>
               )}
               
+              {formType === 'contact' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Category</label>
+                    <select name="category" defaultValue={formData.category || 'other'} required className="w-full px-3 py-2 border rounded-md">
+                      <option value="owners">Owners</option>
+                      <option value="regular_vet">Regular Vet</option>
+                      <option value="emergency_vet">Emergency Vet</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Name</label>
+                    <input name="name" defaultValue={formData.name || ''} required className="w-full px-3 py-2 border rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Phone</label>
+                    <input name="phone" type="tel" defaultValue={formData.phone || ''} className="w-full px-3 py-2 border rounded-md" placeholder="e.g., 816-676-8363" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Email</label>
+                    <input name="email" type="email" defaultValue={formData.email || ''} className="w-full px-3 py-2 border rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Address</label>
+                    <textarea name="address" defaultValue={formData.address || ''} className="w-full px-3 py-2 border rounded-md" rows={2} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Notes</label>
+                    <textarea name="notes" defaultValue={formData.notes || ''} className="w-full px-3 py-2 border rounded-md" rows={3} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Display Order</label>
+                    <input name="display_order" type="number" defaultValue={formData.display_order || 0} className="w-full px-3 py-2 border rounded-md" />
+                  </div>
+                </>
+              )}
+              
               <div className="flex gap-3 pt-4">
                 <button type="submit" className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
                   {isEditing ? 'Update' : 'Create'}
@@ -1862,6 +2057,11 @@ export default function HouseSittingApp() {
 
   // Render the active section
   const renderSection = () => {
+    // If no active stay, only show overview
+    if (!hasActiveStayToday && !isAdmin) {
+      return <OverviewSection />;
+    }
+    
     switch(activeSection) {
       case 'overview': return <OverviewSection />;
       case 'dogs': return <DogsSection />;
