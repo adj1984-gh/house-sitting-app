@@ -719,3 +719,17 @@ The application now has full database connectivity, data persistence, and a full
 - **Files Changed**: 
   - `components/HouseSittingApp.tsx` - Updated feeding time and appointment time inputs
 - **Result**: No more browser warnings, flexible time entry format (7:00 AM, 2:00 PM, etc.)
+
+### ✅ Welcome PDF Generation Feature (December 2024)
+- **Feature**: Added PDF generation for sitter welcome documents with QR code auto-login
+- **Implementation**: Server-side API route in Vercel for PDF generation
+- **Components**: 
+  - **API Route**: `/api/generate-welcome-pdf` - Generates HTML content for PDF with stay details and QR code
+  - **Admin Button**: Green settings icon in stays section to generate welcome PDF
+  - **QR Code**: Auto-generates login URL with access password for instant portal access
+- **Content**: Welcome document includes sitter name, stay dates, notes, QR code, and emergency contact info
+- **Files Changed**: 
+  - `app/api/generate-welcome-pdf/route.ts` - New API route for PDF generation
+  - `lib/database.ts` - Added getStay function for fetching individual stay details
+  - `components/HouseSittingApp.tsx` - Added generateWelcomePDF function and admin button
+- **Result**: Admins can generate professional welcome documents for sitters with instant portal access

@@ -788,6 +788,40 @@ export default function HouseSittingApp() {
     }
   };
 
+  const generateWelcomePDF = async (stayId: string) => {
+    try {
+      const response = await fetch('/api/generate-welcome-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ stayId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate PDF');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // For now, open the HTML content in a new window for printing
+        // In a full implementation, you'd download the actual PDF
+        const newWindow = window.open('', '_blank');
+        if (newWindow) {
+          newWindow.document.write(result.html);
+          newWindow.document.close();
+          newWindow.print();
+        }
+      } else {
+        throw new Error(result.error || 'Failed to generate PDF');
+      }
+    } catch (error) {
+      console.error('Error generating welcome PDF:', error);
+      alert('Error generating welcome PDF. Please try again.');
+    }
+  };
+
   // Handle schedule item deletion
   const handleScheduleItemDelete = async (item: ScheduleItem) => {
     if (item.source === 'task') {
@@ -1305,6 +1339,13 @@ export default function HouseSittingApp() {
                         </div>
                         {isAdmin && (
                           <div className="flex gap-2">
+                            <button
+                              onClick={() => generateWelcomePDF(stay.id)}
+                              className="text-green-600 hover:text-green-800"
+                              title="Generate Welcome PDF"
+                            >
+                              <Settings className="w-4 h-4" />
+                            </button>
                             <button
                               onClick={() => {
                                 setHasUnsavedChanges(false);
