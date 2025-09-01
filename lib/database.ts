@@ -648,6 +648,7 @@ export const createStay = async (stay: Omit<Stay, 'id' | 'created_at' | 'updated
     return null
   }
 
+  console.log('Database: Creating stay with data:', stay)
   const { data, error } = await supabaseAdmin
     .from('stays')
     .insert([stay])
@@ -659,6 +660,7 @@ export const createStay = async (stay: Omit<Stay, 'id' | 'created_at' | 'updated
     return null
   }
   
+  console.log('Database: Stay created successfully:', data)
   return data
 }
 

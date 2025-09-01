@@ -582,9 +582,14 @@ export default function HouseSittingApp() {
           }
           break;
         case 'stay':
+          console.log('Creating stay with data:', { ...data, property_id: propertyId });
           result = await createStay({ ...data, property_id: propertyId });
+          console.log('Stay creation result:', result);
           if (result) {
             setDbData(prev => ({ ...prev, stays: [...prev.stays, result] }));
+            console.log('Stay added to state');
+          } else {
+            console.error('Failed to create stay');
           }
           break;
         case 'contact':
@@ -1906,7 +1911,7 @@ export default function HouseSittingApp() {
       
       // Handle boolean fields
       if (formType === 'stay') {
-        data.active = data.active === 'on';
+        data.active = true; // Always active when created, determined by date range
       }
       
       if (isEditing) {
@@ -2061,12 +2066,6 @@ export default function HouseSittingApp() {
                   <div>
                     <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
                     <textarea name="notes" defaultValue={formData.notes || ''} className="w-full px-3 py-2 border rounded-md" rows={3} />
-                  </div>
-                  <div>
-                    <label className="flex items-center gap-2">
-                      <input name="active" type="checkbox" defaultChecked={formData.active !== false} className="rounded" />
-                      <span className="text-sm font-medium">Active Stay</span>
-                    </label>
                   </div>
                 </>
               )}
