@@ -1,0 +1,5 @@
+This is a house and pet sitting management system.
+Tech stack: Next.js 14, TypeScript, Supabase, Tailwind CSS
+Reference README.md for project structure and implementation plan.
+Use environment variables for all sensitive data.
+Follow the existing component structure when creating new features.
