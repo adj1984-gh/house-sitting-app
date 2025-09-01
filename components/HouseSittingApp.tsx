@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode, X } from 'lucide-react';
+import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode, X, Info, Moon } from 'lucide-react';
 import { getProperty, getAlerts, getDogs, getServicePeople, getAppointments, getHouseInstructions, getDailyTasks, getStays, hasActiveStay, getCurrentActiveStay, getContacts, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createServicePerson, updateServicePerson, deleteServicePerson, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, createContact, updateContact, deleteContact, generateMasterSchedule } from '../lib/database';
 import { Property, Alert, Dog as DogType, ServicePerson, Appointment, HouseInstruction, DailyTask, Stay, Contact, ScheduleItem } from '../lib/types';
 
@@ -1539,8 +1539,11 @@ export default function HouseSittingApp() {
 
           {/* Special Instructions */}
           {dog.special_instructions && Object.keys(dog.special_instructions).length > 0 && (
-            <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <h4 className="font-semibold mb-2">Special Instructions</h4>
+            <div className="border rounded-lg p-4">
+              <h4 className="font-semibold flex items-center gap-2 mb-3">
+                <Info className="w-4 h-4 text-yellow-600" />
+                Special Instructions
+              </h4>
               <div className="space-y-1 text-sm">
                 {Object.entries(dog.special_instructions).map(([type, instruction]) => (
                   <p key={type}>
@@ -1553,8 +1556,11 @@ export default function HouseSittingApp() {
 
           {/* Sleeping Information */}
           {(dog.sleeping_location || dog.sleeping_notes) && (
-            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-semibold mb-2">Sleeping Information</h4>
+            <div className="border rounded-lg p-4">
+              <h4 className="font-semibold flex items-center gap-2 mb-3">
+                <Moon className="w-4 h-4 text-blue-600" />
+                Sleeping Information
+              </h4>
               <div className="space-y-1 text-sm">
                 {dog.sleeping_location && (
                   <p><span className="font-medium">Location:</span> {dog.sleeping_location}</p>
