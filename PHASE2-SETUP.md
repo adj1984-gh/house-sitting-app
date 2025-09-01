@@ -109,7 +109,7 @@ Your app will be available at `http://localhost:3000`
 
 - The default property ID is hardcoded as `00000000-0000-0000-0000-000000000001`
 - All existing functionality should work exactly the same
-- The app will fall back to mock data if database connection fails
+- The app will initialize with empty data if database connection fails
 - Environment variables are loaded automatically by Next.js
 
 ---

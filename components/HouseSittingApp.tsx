@@ -406,7 +406,7 @@ export default function HouseSittingApp() {
       });
     } catch (error) {
       console.error('Error loading database data:', error);
-      // Fall back to mock data if database fails
+      // Initialize with empty data if database fails
       setDbData({
         property: null,
         alerts: [],
@@ -927,7 +927,7 @@ export default function HouseSittingApp() {
               <div className="flex gap-2">
                 <button 
                   onClick={() => {
-                    console.log('Edit dog clicked:', dog);
+
                     setEditingItem({ type: 'dog', id: String(dog.id), data: dog });
                   }}
                   className="text-blue-600 hover:text-blue-800"
@@ -1303,7 +1303,7 @@ export default function HouseSittingApp() {
 
   // Admin Forms
   const AdminForm = () => {
-    console.log('AdminForm render:', { showAddForm, editingItem });
+
     if (!showAddForm && !editingItem) return null;
 
     const isEditing = !!editingItem;
