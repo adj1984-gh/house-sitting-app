@@ -1535,42 +1535,42 @@ export default function HouseSittingApp() {
                 <p className="text-sm text-gray-500">No scheduled walks</p>
               )}
             </div>
+
+            {/* Special Instructions */}
+            {dog.special_instructions && Object.keys(dog.special_instructions).length > 0 && (
+              <div className="border rounded-lg p-4">
+                <h4 className="font-semibold flex items-center gap-2 mb-3">
+                  <Info className="w-4 h-4 text-yellow-600" />
+                  Special Instructions
+                </h4>
+                <div className="space-y-1 text-sm">
+                  {Object.entries(dog.special_instructions).map(([type, instruction]) => (
+                    <p key={type}>
+                      <span className="font-medium capitalize">{type.replace(/([A-Z])/g, ' $1').trim()}:</span> {instruction as string}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Sleeping Information */}
+            {(dog.sleeping_location || dog.sleeping_notes) && (
+              <div className="border rounded-lg p-4">
+                <h4 className="font-semibold flex items-center gap-2 mb-3">
+                  <Moon className="w-4 h-4 text-blue-600" />
+                  Sleeping Information
+                </h4>
+                <div className="space-y-1 text-sm">
+                  {dog.sleeping_location && (
+                    <p><span className="font-medium">Location:</span> {dog.sleeping_location}</p>
+                  )}
+                  {dog.sleeping_notes && (
+                    <p className="text-gray-600 italic">{dog.sleeping_notes}</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* Special Instructions */}
-          {dog.special_instructions && Object.keys(dog.special_instructions).length > 0 && (
-            <div className="border rounded-lg p-4">
-              <h4 className="font-semibold flex items-center gap-2 mb-3">
-                <Info className="w-4 h-4 text-yellow-600" />
-                Special Instructions
-              </h4>
-              <div className="space-y-1 text-sm">
-                {Object.entries(dog.special_instructions).map(([type, instruction]) => (
-                  <p key={type}>
-                    <span className="font-medium capitalize">{type.replace(/([A-Z])/g, ' $1').trim()}:</span> {instruction as string}
-                  </p>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Sleeping Information */}
-          {(dog.sleeping_location || dog.sleeping_notes) && (
-            <div className="border rounded-lg p-4">
-              <h4 className="font-semibold flex items-center gap-2 mb-3">
-                <Moon className="w-4 h-4 text-blue-600" />
-                Sleeping Information
-              </h4>
-              <div className="space-y-1 text-sm">
-                {dog.sleeping_location && (
-                  <p><span className="font-medium">Location:</span> {dog.sleeping_location}</p>
-                )}
-                {dog.sleeping_notes && (
-                  <p className="text-gray-600 italic">{dog.sleeping_notes}</p>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Dog Appointments */}
           {dbData.appointments.filter(apt => apt.for_dog_id === dog.id).length > 0 && (
