@@ -237,7 +237,7 @@ const DogEditForm = ({ formData }: { formData: any }) => {
         <h4 className="font-semibold text-gray-800 mb-3">Medicine Information</h4>
         <div className="space-y-3">
           {medicineSchedule.map((medicine, index) => (
-            <div key={index} className="border rounded-md p-3 space-y-2">
+            <div key={`medicine-${index}-${medicine.time}-${medicine.medication}`} className="border rounded-md p-3 space-y-2">
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="block text-xs font-medium mb-1">Time</label>
@@ -368,10 +368,7 @@ const DogEditForm = ({ formData }: { formData: any }) => {
             Add Walk Time
           </button>
         </div>
-        <div className="mt-3">
-          <label className="block text-sm font-medium mb-1">General Walk Notes</label>
-          <textarea name="walk_notes" defaultValue={formData.walk_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} placeholder="General notes about walking this dog..." />
-        </div>
+
       </div>
 
       {/* Sleeping Section */}
@@ -468,6 +465,7 @@ export default function HouseSittingApp() {
   });
   const [masterSchedule, setMasterSchedule] = useState<ScheduleItem[]>([]);
   const [currentActiveStay, setCurrentActiveStay] = useState<Stay | null>(null);
+  const [showPastStays, setShowPastStays] = useState(false);
 
   // Admin state
   const [editingItem, setEditingItem] = useState<{type: string, id?: string, data?: any} | null>(null);
@@ -1214,29 +1212,59 @@ export default function HouseSittingApp() {
             <div className="flex items-center gap-2">
               <Users className="w-6 h-6 text-purple-600" />
               <h2 className="text-xl font-bold">
-                {isAdmin ? 'All Stays' : 'Current Stay'}
+                {isAdmin ? (showPastStays ? 'All Stays' : 'Current & Upcoming Stays') : 'Current Stay'}
               </h2>
             </div>
             {isAdmin && (
-              <button
-                onClick={() => {
-                  setHasUnsavedChanges(false);
-                  setShowAddForm({ type: 'stay' });
-                }}
-                className="flex items-center gap-1 px-3 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm"
-              >
-                <Plus className="w-4 h-4" />
-                Add Stay
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setHasUnsavedChanges(false);
+                    setShowAddForm({ type: 'stay' });
+                  }}
+                  className="flex items-center gap-1 px-3 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Stay
+                </button>
+                {(() => {
+                  const today = new Date().toISOString().split('T')[0];
+                  const pastStays = dbData.stays.filter(stay => stay.end_date < today);
+                  return pastStays.length > 0 && (
+                    <button
+                      onClick={() => setShowPastStays(!showPastStays)}
+                      className={`flex items-center gap-1 px-3 py-1 rounded-md text-sm transition-colors ${
+                        showPastStays 
+                          ? 'bg-gray-600 text-white hover:bg-gray-700' 
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {showPastStays ? 'Hide' : 'Show'} Past ({pastStays.length})
+                    </button>
+                  );
+                })()}
+              </div>
             )}
           </div>
           {/* Filter stays based on user role */}
           {(() => {
-            const staysToShow = isAdmin ? dbData.stays : (currentActiveStay ? [currentActiveStay] : []);
+            let staysToShow: Stay[] = [];
+            
+            if (isAdmin) {
+              // For admin: show current + upcoming stays by default, optionally show past stays
+              const today = new Date().toISOString().split('T')[0];
+              const currentAndUpcoming = dbData.stays.filter(stay => stay.end_date >= today);
+              const pastStays = dbData.stays.filter(stay => stay.end_date < today);
+              
+              staysToShow = showPastStays ? dbData.stays : currentAndUpcoming;
+            } else {
+              // For sitter: show only current active stay
+              staysToShow = currentActiveStay ? [currentActiveStay] : [];
+            }
             
             if (staysToShow.length > 0) {
               return (
-                <div className={`space-y-3 ${isAdmin && staysToShow.length > 3 ? 'max-h-96 overflow-y-auto' : ''}`}>
+                <div className={`space-y-3 ${isAdmin && showPastStays && staysToShow.length > 5 ? 'max-h-96 overflow-y-auto pr-2' : ''}`}>
                   {staysToShow.map(stay => (
                     <div key={stay.id} className="bg-white p-4 rounded-md border">
                       <div className="flex items-center justify-between">
@@ -1297,7 +1325,10 @@ export default function HouseSittingApp() {
               return (
                 <div className="bg-white p-4 rounded-md border">
                   <p className="text-gray-600 text-center">
-                    {isAdmin ? 'No stays found' : 'No active stay'}
+                    {isAdmin 
+                      ? (showPastStays ? 'No stays found' : 'No current or upcoming stays')
+                      : 'No active stay'
+                    }
                   </p>
                 </div>
               );
@@ -1455,11 +1486,9 @@ export default function HouseSittingApp() {
               {((dog as any).medicine?.schedule || (dog as any).medicine_schedule || []).map((item: any, idx: number) => (
                 <p key={idx} className="mb-1">
                   <span className="font-medium">{item.time}:</span> {item.medication}
+                  {item.notes && <span className="text-gray-600 italic ml-2">({item.notes})</span>}
                 </p>
               ))}
-              {((dog as any).medicine?.notes || (dog as any).medicine_notes) && (
-                <p className="text-sm text-gray-600 mt-2 italic">{(dog as any).medicine?.notes || (dog as any).medicine_notes}</p>
-              )}
             </div>
 
             {/* Potty */}
@@ -1493,26 +1522,37 @@ export default function HouseSittingApp() {
               ) : (
                 <p className="text-sm text-gray-500">No scheduled walks</p>
               )}
-              {dog.walk_notes && (
-                <p className="text-sm text-gray-600 mt-2 italic">{dog.walk_notes}</p>
-              )}
             </div>
           </div>
 
           {/* Special Instructions */}
-          <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h4 className="font-semibold mb-2">Special Instructions</h4>
-            <div className="space-y-1 text-sm">
-              <p><span className="font-medium">When leaving house:</span> {(dog as any).special?.whenLeaving || 'See notes'}</p>
-              {(dog as any).special?.management && (
-                <p><span className="font-medium">Daily management:</span> {(dog as any).special.management}</p>
-              )}
-              <p><span className="font-medium">Sleeping:</span> {(dog as any).sleeping?.location || (dog as any).sleeping_location}</p>
-              {((dog as any).sleeping?.notes || (dog as any).sleeping_notes) && (
-                <p className="text-gray-600 italic">{(dog as any).sleeping?.notes || (dog as any).sleeping_notes}</p>
-              )}
+          {dog.special_instructions && Object.keys(dog.special_instructions).length > 0 && (
+            <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <h4 className="font-semibold mb-2">Special Instructions</h4>
+              <div className="space-y-1 text-sm">
+                {Object.entries(dog.special_instructions).map(([type, instruction]) => (
+                  <p key={type}>
+                    <span className="font-medium capitalize">{type.replace(/([A-Z])/g, ' $1').trim()}:</span> {instruction as string}
+                  </p>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Sleeping Information */}
+          {(dog.sleeping_location || dog.sleeping_notes) && (
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-semibold mb-2">Sleeping Information</h4>
+              <div className="space-y-1 text-sm">
+                {dog.sleeping_location && (
+                  <p><span className="font-medium">Location:</span> {dog.sleeping_location}</p>
+                )}
+                {dog.sleeping_notes && (
+                  <p className="text-gray-600 italic">{dog.sleeping_notes}</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Dog Appointments */}
           {dbData.appointments.filter(apt => apt.for_dog_id === dog.id).length > 0 && (

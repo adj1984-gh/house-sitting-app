@@ -678,9 +678,36 @@ The application now has full database connectivity, data persistence, and a full
 - **Form State Management**: Improved form state tracking to prevent accidental data loss
 - **Stay Filtering**: Fixed Overview page to show appropriate stays based on user role
   - **Sitter view**: Shows only current active stay
-  - **Admin view**: Shows all stays with status indicators (Current/Past/Future)
-  - **Scrollable list**: Admin view becomes scrollable when many stays exist
+  - **Admin view**: Shows current + upcoming stays by default, with toggle for past stays
+  - **Smart toggle**: "Show Past (X)" button appears only when past stays exist
+  - **Scrollable list**: Auto-scrollable when showing all stays with many entries
+  - **Clean interface**: Prevents overwhelming display of 20-30+ stays
 - **Files Changed**: 
   - `components/HouseSittingApp.tsx` - Enhanced modal UI, form state management, and stay filtering
   - `lib/database.ts` - Added getCurrentActiveStay function for better stay management
 - **Result**: Better user experience with proper photo display, form safety features, and role-appropriate stay display
+
+### ✅ Form-View Data Mapping Fix (December 2024)
+- **Issue**: Disconnect between special instructions form structure and view display
+- **General Walk Notes**: Removed redundant general walk notes field, now only individual scheduled walk notes are shown
+- **Special Instructions**: Fixed form-to-view mapping to properly display custom type/instruction pairs
+- **Data Structure**: Special instructions now dynamically display all form entries instead of hardcoded keys
+- **Sleeping Information**: Separated sleeping info into its own section for better organization
+- **Files Changed**: 
+  - `components/HouseSittingApp.tsx` - Fixed form display logic and removed general walk notes
+  - `lib/database-setup.sql` - Removed walk_notes column from schema
+  - `lib/types.ts` - Updated TypeScript interface
+  - `migration-remove-walk-notes.sql` - Database migration script
+- **Result**: Form data now properly translates to view display with clean, organized sections
+
+### ✅ Medicine Notes Cleanup (December 2024)
+- **Issue**: Standalone `medicine_notes` field was showing orphaned data alongside structured medicine schedule
+- **Solution**: Removed display of standalone medicine_notes field, now only shows structured medicine_schedule entries
+- **Enhanced Display**: Medicine schedule now shows individual notes for each medication entry
+- **Database Cleanup**: Removed medicine_notes column from schema and created migration script
+- **Files Changed**: 
+  - `components/HouseSittingApp.tsx` - Removed standalone medicine_notes display
+  - `lib/database-setup.sql` - Removed medicine_notes column from schema
+  - `lib/types.ts` - Updated TypeScript interface
+  - `migration-remove-medicine-notes.sql` - Database migration script
+- **Result**: Clean medicine display with only structured schedule entries and their individual notes
