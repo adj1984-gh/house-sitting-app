@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode } from 'lucide-react';
-import { getProperty, getAlerts, getDogs, getServicePeople, getAppointments, getHouseInstructions, getDailyTasks, getStays, hasActiveStay, getContacts, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createServicePerson, updateServicePerson, deleteServicePerson, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, createContact, updateContact, deleteContact, generateMasterSchedule } from '../lib/database';
+import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode, X } from 'lucide-react';
+import { getProperty, getAlerts, getDogs, getServicePeople, getAppointments, getHouseInstructions, getDailyTasks, getStays, hasActiveStay, getCurrentActiveStay, getContacts, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createServicePerson, updateServicePerson, deleteServicePerson, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, createContact, updateContact, deleteContact, generateMasterSchedule } from '../lib/database';
 import { Property, Alert, Dog as DogType, ServicePerson, Appointment, HouseInstruction, DailyTask, Stay, Contact, ScheduleItem } from '../lib/types';
 
 // All data comes from Supabase database - no mock data
@@ -467,12 +467,14 @@ export default function HouseSittingApp() {
     contacts: []
   });
   const [masterSchedule, setMasterSchedule] = useState<ScheduleItem[]>([]);
+  const [currentActiveStay, setCurrentActiveStay] = useState<Stay | null>(null);
 
   // Admin state
   const [editingItem, setEditingItem] = useState<{type: string, id?: string, data?: any} | null>(null);
   const [showAddForm, setShowAddForm] = useState<{type: string} | null>(null);
   const [adminPassword, setAdminPassword] = useState('');
   const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Environment variables for authentication
   const SITE_PASSWORD = process.env.NEXT_PUBLIC_SITE_ACCESS_PASSWORD;
@@ -500,7 +502,7 @@ export default function HouseSittingApp() {
   const loadDatabaseData = async () => {
     try {
       setIsLoading(true);
-      const [property, alerts, dogs, servicePeople, appointments, houseInstructions, dailyTasks, stays, contacts, activeStay] = await Promise.all([
+      const [property, alerts, dogs, servicePeople, appointments, houseInstructions, dailyTasks, stays, contacts, activeStay, currentStay] = await Promise.all([
         getProperty(),
         getAlerts(),
         getDogs(),
@@ -510,7 +512,8 @@ export default function HouseSittingApp() {
         getDailyTasks(),
         getStays(),
         getContacts(),
-        hasActiveStay()
+        hasActiveStay(),
+        getCurrentActiveStay()
       ]);
 
       setDbData({
@@ -524,6 +527,8 @@ export default function HouseSittingApp() {
         stays: stays || [],
         contacts: contacts || []
       });
+      
+      setCurrentActiveStay(currentStay);
       
       setHasActiveStayToday(activeStay);
     } catch (error) {
@@ -605,6 +610,9 @@ export default function HouseSittingApp() {
           console.log('Stay creation result:', result);
           if (result) {
             setDbData(prev => ({ ...prev, stays: [...prev.stays, result] }));
+            // Refresh current active stay
+            const newCurrentStay = await getCurrentActiveStay();
+            setCurrentActiveStay(newCurrentStay);
             console.log('Stay added to state');
           } else {
             console.error('Failed to create stay');
@@ -690,6 +698,9 @@ export default function HouseSittingApp() {
               ...prev, 
               stays: prev.stays.map(stay => stay.id === id ? result : stay)
             }));
+            // Refresh current active stay
+            const newCurrentStay = await getCurrentActiveStay();
+            setCurrentActiveStay(newCurrentStay);
           }
           break;
         case 'contact':
@@ -754,6 +765,9 @@ export default function HouseSittingApp() {
           success = await deleteStay(id);
           if (success) {
             setDbData(prev => ({ ...prev, stays: prev.stays.filter(stay => stay.id !== id) }));
+            // Refresh current active stay
+            const newCurrentStay = await getCurrentActiveStay();
+            setCurrentActiveStay(newCurrentStay);
           }
           break;
         case 'contact':
@@ -1059,7 +1073,10 @@ export default function HouseSittingApp() {
             </div>
             {isAdmin && (
               <button
-                onClick={() => setShowAddForm({ type: 'alert' })}
+                onClick={() => {
+                  setHasUnsavedChanges(false);
+                  setShowAddForm({ type: 'alert' });
+                }}
                 className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
               >
                 <Plus className="w-4 h-4" />
@@ -1122,7 +1139,10 @@ export default function HouseSittingApp() {
             </div>
             {isAdmin && (
               <button
-                onClick={() => setShowAddForm({ type: 'contact' })}
+                onClick={() => {
+                  setHasUnsavedChanges(false);
+                  setShowAddForm({ type: 'contact' });
+                }}
                 className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
               >
                 <Plus className="w-4 h-4" />
@@ -1193,11 +1213,16 @@ export default function HouseSittingApp() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Users className="w-6 h-6 text-purple-600" />
-              <h2 className="text-xl font-bold">Current Stay</h2>
+              <h2 className="text-xl font-bold">
+                {isAdmin ? 'All Stays' : 'Current Stay'}
+              </h2>
             </div>
             {isAdmin && (
               <button
-                onClick={() => setShowAddForm({ type: 'stay' })}
+                onClick={() => {
+                  setHasUnsavedChanges(false);
+                  setShowAddForm({ type: 'stay' });
+                }}
                 className="flex items-center gap-1 px-3 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm"
               >
                 <Plus className="w-4 h-4" />
@@ -1205,45 +1230,79 @@ export default function HouseSittingApp() {
               </button>
             )}
           </div>
-          {dbData.stays.length > 0 ? (
-            dbData.stays.map(stay => (
-              <div key={stay.id} className="bg-white p-4 rounded-md border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-lg">{stay.sitter_name}</h3>
-                    <p className="text-gray-600">
-                      {new Date(stay.start_date).toLocaleDateString()} - {new Date(stay.end_date).toLocaleDateString()}
-                    </p>
-                    {stay.notes && (
-                      <p className="text-sm text-gray-500 mt-1">{stay.notes}</p>
-                    )}
-                  </div>
-                  {isAdmin && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setEditingItem({ type: 'stay', id: stay.id, data: stay })}
-                        className="text-blue-600 hover:text-blue-800"
-                        title="Edit stay"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete('stay', stay.id)}
-                        className="text-red-600 hover:text-red-800"
-                        title="Delete stay"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+          {/* Filter stays based on user role */}
+          {(() => {
+            const staysToShow = isAdmin ? dbData.stays : (currentActiveStay ? [currentActiveStay] : []);
+            
+            if (staysToShow.length > 0) {
+              return (
+                <div className={`space-y-3 ${isAdmin && staysToShow.length > 3 ? 'max-h-96 overflow-y-auto' : ''}`}>
+                  {staysToShow.map(stay => (
+                    <div key={stay.id} className="bg-white p-4 rounded-md border">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold text-lg">{stay.sitter_name}</h3>
+                          <p className="text-gray-600">
+                            {new Date(stay.start_date).toLocaleDateString()} - {new Date(stay.end_date).toLocaleDateString()}
+                          </p>
+                          {stay.notes && (
+                            <p className="text-sm text-gray-500 mt-1">{stay.notes}</p>
+                          )}
+                          {/* Show status indicator for admin view */}
+                          {isAdmin && (
+                            <div className="mt-2">
+                              {currentActiveStay && currentActiveStay.id === stay.id ? (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  Current Stay
+                                </span>
+                              ) : new Date(stay.end_date) < new Date() ? (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                  Past Stay
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  Future Stay
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        {isAdmin && (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                setHasUnsavedChanges(false);
+                                setEditingItem({ type: 'stay', id: stay.id, data: stay });
+                              }}
+                              className="text-blue-600 hover:text-blue-800"
+                              title="Edit stay"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete('stay', stay.id)}
+                              className="text-red-600 hover:text-red-800"
+                              title="Delete stay"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
-              </div>
-            ))
-          ) : (
-            <div className="bg-white p-4 rounded-md border">
-              <p className="text-gray-600 text-center">No active stay</p>
-            </div>
-          )}
+              );
+            } else {
+              return (
+                <div className="bg-white p-4 rounded-md border">
+                  <p className="text-gray-600 text-center">
+                    {isAdmin ? 'No stays found' : 'No active stay'}
+                  </p>
+                </div>
+              );
+            }
+          })()}
         </div>
 
         {/* Today's Schedule */}
@@ -1312,7 +1371,10 @@ export default function HouseSittingApp() {
         {isAdmin && (
           <div className="bg-white rounded-lg shadow-md p-4">
             <button
-              onClick={() => setShowAddForm({ type: 'dog' })}
+              onClick={() => {
+                setHasUnsavedChanges(false);
+                setShowAddForm({ type: 'dog' });
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               <Plus className="w-4 h-4" />
@@ -1325,17 +1387,23 @@ export default function HouseSittingApp() {
         <div key={dog.id} className="bg-white rounded-lg shadow-md p-6">
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-3">
-              <span className="text-4xl">{(dog as any).photo || '🐕'}</span>
+              {dog.photo_url ? (
+                <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-200">
+                  <img src={dog.photo_url} alt={`${dog.name} photo`} className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <span className="text-4xl">🐕</span>
+              )}
               <div>
                 <h3 className="text-2xl font-bold">{dog.name}</h3>
-                <p className="text-gray-600">{(dog as any).birthdate ? calculateAge((dog as any).birthdate) : dog.age || 'Age not specified'}</p>
+                <p className="text-gray-600">{dog.birthdate ? calculateAge(dog.birthdate) : dog.age || 'Age not specified'}</p>
               </div>
             </div>
             {isAdmin && (
               <div className="flex gap-2">
                 <button 
                   onClick={() => {
-
+                    setHasUnsavedChanges(false);
                     setEditingItem({ type: 'dog', id: String(dog.id), data: dog });
                   }}
                   className="text-blue-600 hover:text-blue-800"
@@ -1556,7 +1624,10 @@ export default function HouseSittingApp() {
         {isAdmin && (
           <div className="bg-white rounded-lg shadow-md p-4">
             <button
-              onClick={() => setShowAddForm({ type: 'servicePerson' })}
+              onClick={() => {
+                setHasUnsavedChanges(false);
+                setShowAddForm({ type: 'servicePerson' });
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               <Plus className="w-4 h-4" />
@@ -1648,21 +1719,30 @@ export default function HouseSittingApp() {
           <div className="bg-white rounded-lg shadow-md p-4">
             <div className="flex gap-3">
             <button
-              onClick={() => setShowAddForm({ type: 'appointment' })}
+              onClick={() => {
+                setHasUnsavedChanges(false);
+                setShowAddForm({ type: 'appointment' });
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               <Plus className="w-4 h-4" />
               Add Appointment
             </button>
               <button
-                onClick={() => setShowAddForm({ type: 'dailyTask' })}
+                onClick={() => {
+                  setHasUnsavedChanges(false);
+                  setShowAddForm({ type: 'dailyTask' });
+                }}
                 className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
               >
                 <Plus className="w-4 h-4" />
                 Add Daily Task
               </button>
               <button
-                onClick={() => setShowAddForm({ type: 'stay' })}
+                onClick={() => {
+                  setHasUnsavedChanges(false);
+                  setShowAddForm({ type: 'stay' });
+                }}
                 className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
               >
                 <Plus className="w-4 h-4" />
@@ -1952,22 +2032,39 @@ export default function HouseSittingApp() {
         console.log('Form submission - calling handleCreate');
         handleCreate(formType!, data);
       }
+      
+      // Reset unsaved changes flag after successful submission
+      setHasUnsavedChanges(false);
     };
 
     const handleCancel = () => {
+      if (hasUnsavedChanges) {
+        const confirmed = window.confirm('You have unsaved changes. Are you sure you want to close without saving?');
+        if (!confirmed) return;
+      }
       setShowAddForm(null);
       setEditingItem(null);
+      setHasUnsavedChanges(false);
     };
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
         <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <div className="p-6">
-            <h3 className="text-lg font-bold mb-4">
-              {isEditing ? `Edit ${formType}` : `Add New ${formType}`}
-            </h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold">
+                {isEditing ? `Edit ${formType}` : `Add New ${formType}`}
+              </h3>
+              <button
+                onClick={handleCancel}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                title="Close"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
             
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} onChange={() => setHasUnsavedChanges(true)} className="space-y-4">
               {formType === 'dog' && (
                 <DogEditForm formData={formData} />
               )}

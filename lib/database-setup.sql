@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS dogs (
   property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   age TEXT,
+  birthdate DATE,
   photo_url TEXT,
   personality TEXT,
   feeding_schedule JSONB,

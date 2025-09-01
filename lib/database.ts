@@ -642,6 +642,34 @@ export const hasActiveStay = async (propertyId: string = '00000000-0000-0000-000
   return (data && data.length > 0) || false
 }
 
+// Get the current active stay covering today's date
+export const getCurrentActiveStay = async (propertyId: string = '00000000-0000-0000-0000-000000000001'): Promise<Stay | null> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning null')
+    return null
+  }
+
+  const today = new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
+
+  const { data, error } = await supabase
+    .from('stays')
+    .select('*')
+    .eq('property_id', propertyId)
+    .eq('active', true)
+    .lte('start_date', today)
+    .gte('end_date', today)
+    .order('start_date', { ascending: true })
+    .limit(1)
+    .single()
+  
+  if (error) {
+    console.error('Error getting current active stay:', error)
+    return null
+  }
+  
+  return data || null
+}
+
 export const createStay = async (stay: Omit<Stay, 'id' | 'created_at' | 'updated_at'>): Promise<Stay | null> => {
   console.log('createStay called with:', stay)
   

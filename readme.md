@@ -43,8 +43,10 @@ A comprehensive web application for managing house and pet sitting instructions,
 
 ### ✅ Phase 3: Admin Interface (COMPLETED)
 - **Full CRUD operations** for all data types (dogs, alerts, service people, appointments, daily tasks, stays)
-- **Stay creation form** with proper field handling including active status checkbox
+- **Stay creation system** with server-side API routes and proper database integration
 - **Admin access control** - admins have full access to all sections regardless of stay status
+- **Session persistence** - authentication and admin mode persist across page refreshes
+- **Accessibility improvements** - alert symbols for colorblind users (🚨 danger, ⚠️ warning, ℹ️ info)
 - **Enhanced pet profile editing** with user-friendly interfaces:
   - **Photo upload** with preview functionality
   - **Feeding schedule builder** with time picker and amount fields
@@ -129,6 +131,8 @@ A comprehensive web application for managing house and pet sitting instructions,
 - Print-friendly layout
 - Offline-capable (after initial load)
 - Accessibility features for colorblind users
+- Session persistence - no need to re-enter passwords on refresh
+- Seamless switching between sitter and admin modes
 
 ## 🛠 Tech Stack
 
@@ -138,8 +142,9 @@ A comprehensive web application for managing house and pet sitting instructions,
 - **Styling**: Tailwind CSS 4.1.12
 - **Icons**: Lucide React 0.542.0
 - **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
+- **Authentication**: Supabase Auth + localStorage session persistence
 - **State Management**: React useState (local state)
+- **API Routes**: Next.js API routes for server-side database operations
 - **Hosting**: Vercel
 - **File Storage**: Supabase Storage (for pet photos)
 - **Environment Management**: Vercel Environment Variables
@@ -152,22 +157,16 @@ house-sitting-app/
 │   ├── layout.tsx
 │   ├── page.tsx
 │   └── api/
-│       └── auth/
+│       └── stays/
+│           └── route.ts          # Server-side stay CRUD operations
 ├── components/
-│   ├── Navigation.tsx
-│   ├── LoginScreen.tsx
-│   ├── AdminPanel.tsx
-│   └── sections/
-│       ├── OverviewSection.tsx
-│       ├── DogsSection.tsx
-│       ├── HouseSection.tsx
-│       ├── ServicesSection.tsx
-│       └── ScheduleSection.tsx
+│   └── HouseSittingApp.tsx       # Main application component
 ├── lib/
-│   ├── supabase.ts
-│   └── types.ts
+│   ├── supabase.ts               # Supabase client configuration
+│   ├── database.ts               # Database operations
+│   ├── types.ts                  # TypeScript type definitions
+│   └── database-setup.sql        # Database schema and setup
 ├── public/
-│   └── images/
 └── .env.local
 ```
 
@@ -208,6 +207,9 @@ house-sitting-app/
 - [x] Master schedule system with item deletion capabilities
 - [x] Stay management system with sitter context and date ranges
 - [x] Restructured page organization (Overview vs Schedule pages)
+- [x] Server-side API routes for stay operations (fixes Supabase admin client issues)
+- [x] Session persistence with localStorage (no more password re-entry on refresh)
+- [x] Accessibility improvements with alert symbols for colorblind users
 
 ### Phase 5: Deployment ✅ (Week 3) - COMPLETED
 - [x] Deploy to Vercel
@@ -569,7 +571,7 @@ Private project - not for public distribution
 ---
 
 *Last Updated: December 2024*
-*Version: 2.7.0 (Alert Accessibility Symbols Added)*
+*Version: 2.8.0 (Session Persistence & Stay Creation Fixes)*
 
 ## 🌐 Live Application
 
@@ -617,3 +619,68 @@ Private project - not for public distribution
 5. **Create printable PDF export** for offline reference
 
 The application now has full database connectivity, data persistence, and a fully functional admin interface. All mock data has been removed, and the system relies entirely on the Supabase database for dynamic content. Pet sitters can access all necessary information with real-time data from the database, and administrators can manage all data through the secure admin interface. The system includes a comprehensive master schedule system with daily tasks management, stay management with sitter context, and proper page organization. The system is production-ready and fully operational with a clean, database-only architecture.
+
+## 🔧 Recent Fixes & Improvements (December 2024)
+
+### ✅ Stay Creation System Fixed
+- **Issue**: Stay creation was failing with "Supabase admin not configured" errors
+- **Root Cause**: `SUPABASE_SERVICE_ROLE_KEY` is server-side only, not accessible in client-side code
+- **Solution**: Created server-side API routes (`/api/stays`) for all stay operations
+- **Result**: Stay creation, editing, and deletion now work perfectly
+
+### ✅ Session Persistence Added
+- **Issue**: Users had to re-enter passwords on every page refresh
+- **Solution**: Implemented localStorage-based session persistence
+- **Features**:
+  - Main authentication persists across refreshes
+  - Admin mode persists across refreshes
+  - Easy switching between sitter and admin views
+  - Proper logout functionality clears all sessions
+
+### ✅ Accessibility Improvements
+- **Issue**: Colorblind users couldn't distinguish alert importance levels
+- **Solution**: Added emoji symbols to alerts:
+  - 🚨 **Danger alerts** (critical/safety issues)
+  - ⚠️ **Warning alerts** (important notices)
+  - ℹ️ **Info alerts** (general information)
+- **Result**: Clear visual hierarchy independent of color perception
+
+### ✅ Admin Access Control Enhanced
+- **Issue**: Admin mode was gated by stay status, limiting functionality
+- **Solution**: Modified access control to allow admins full access regardless of stay status
+- **Result**: Admins can manage all data even when no active stay exists
+
+### 🧪 Database Testing & Verification
+- **Created comprehensive SQL test scripts** to verify database setup
+- **Confirmed database schema** is properly configured
+- **Verified manual stay creation** works correctly
+- **All database constraints and relationships** are functioning properly
+
+### 📁 New Files Added
+- `app/api/stays/route.ts` - Server-side API routes for stay operations
+- `test-database.sql` - Database testing and verification scripts
+- `cleanup-test-data.sql` - Test data cleanup script
+- `migration-add-birthdate.sql` - Database migration to add birthdate column
+
+### ✅ Photo Upload Fix (December 2024)
+- **Issue**: Photo upload failing with "Could not find the 'birthdate' column" error
+- **Root Cause**: Database schema missing `birthdate` column that TypeScript interface expected
+- **Solution**: Added `birthdate DATE` column to dogs table schema and created migration script
+- **Files Changed**: 
+  - `lib/database-setup.sql` - Added birthdate column to dogs table
+  - `migration-add-birthdate.sql` - Migration script for existing databases
+- **Result**: Photo upload and dog editing now work correctly
+
+### ✅ UI/UX Improvements (December 2024)
+- **Photo Display**: Fixed dog photos to display properly on summary page instead of emoji
+- **Close Button**: Added X close button to all edit popup forms for better UX
+- **Unsaved Changes Warning**: Added confirmation prompt when closing forms with unsaved changes
+- **Form State Management**: Improved form state tracking to prevent accidental data loss
+- **Stay Filtering**: Fixed Overview page to show appropriate stays based on user role
+  - **Sitter view**: Shows only current active stay
+  - **Admin view**: Shows all stays with status indicators (Current/Past/Future)
+  - **Scrollable list**: Admin view becomes scrollable when many stays exist
+- **Files Changed**: 
+  - `components/HouseSittingApp.tsx` - Enhanced modal UI, form state management, and stay filtering
+  - `lib/database.ts` - Added getCurrentActiveStay function for better stay management
+- **Result**: Better user experience with proper photo display, form safety features, and role-appropriate stay display
