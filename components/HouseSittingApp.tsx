@@ -190,13 +190,14 @@ const DogEditForm = ({ formData }: { formData: any }) => {
         <h4 className="font-semibold text-gray-800 mb-3">Feeding Information</h4>
         <div className="space-y-3">
           {feedingSchedule.map((feeding, index) => (
-            <div key={index} className="flex gap-2 items-end">
+            <div key={`feeding-${index}-${feeding.time}-${feeding.amount}`} className="flex gap-2 items-end">
               <div className="flex-1">
                 <label className="block text-xs font-medium mb-1">Time</label>
                 <input
-                  type="time"
+                  type="text"
                   value={feeding.time}
                   onChange={(e) => updateFeedingTime(index, 'time', e.target.value)}
+                  placeholder="e.g., 7:00 AM"
                   className="w-full px-3 py-2 border rounded-md text-sm"
                 />
               </div>
@@ -250,10 +251,9 @@ const DogEditForm = ({ formData }: { formData: any }) => {
                 <div className="flex-1">
                   <label className="block text-xs font-medium mb-1">Time</label>
                   <input
-                    type="text"
+                    type="time"
                     value={medicine.time}
                     onChange={(e) => updateMedicine(index, 'time', e.target.value)}
-                    placeholder="Morning, Evening, etc."
                     className="w-full px-3 py-2 border rounded-md text-sm"
                   />
                 </div>
@@ -317,7 +317,7 @@ const DogEditForm = ({ formData }: { formData: any }) => {
       <div className="border-t pt-4">
         <h4 className="font-semibold text-gray-800 mb-3">Walk Schedule</h4>
         {walkSchedule.map((walk, index) => (
-          <div key={index} className="border rounded-lg p-3 mb-3 bg-gray-50">
+          <div key={`walk-${index}-${walk.time}-${walk.duration}`} className="border rounded-lg p-3 mb-3 bg-gray-50">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <label className="block text-sm font-medium mb-1">Time</label>
@@ -397,7 +397,7 @@ const DogEditForm = ({ formData }: { formData: any }) => {
         <h4 className="font-semibold text-gray-800 mb-3">Special Instructions</h4>
         <div className="space-y-3">
           {specialInstructions.map((instruction, index) => (
-            <div key={index} className="flex gap-2 items-end">
+            <div key={`instruction-${index}-${instruction.type}-${instruction.instruction}`} className="flex gap-2 items-end">
               <div className="flex-1">
                 <label className="block text-xs font-medium mb-1">Title</label>
                 <input
@@ -1492,10 +1492,14 @@ export default function HouseSittingApp() {
                 Medicine Schedule
               </h4>
               {((dog as any).medicine?.schedule || (dog as any).medicine_schedule || []).map((item: any, idx: number) => (
-                <p key={idx} className="mb-1">
-                  <span className="font-medium">{item.time}:</span> {item.medication}
-                  {item.notes && <span className="text-gray-600 italic ml-2">({item.notes})</span>}
-                </p>
+                <div key={idx} className="mb-2">
+                  <p className="mb-1">
+                    <span className="font-medium">{item.time}:</span> {item.medication}
+                  </p>
+                  {item.notes && (
+                    <p className="text-gray-600 text-sm ml-0">{item.notes}</p>
+                  )}
+                </div>
               ))}
             </div>
 
@@ -1520,7 +1524,7 @@ export default function HouseSittingApp() {
               {dog.walk_schedule && Array.isArray(dog.walk_schedule) && dog.walk_schedule.length > 0 ? (
                 <div className="space-y-2">
                   {dog.walk_schedule.map((walk: any, index: number) => (
-                    <div key={index} className="text-sm">
+                    <div key={`walk-display-${index}-${walk.time}-${walk.duration}`} className="text-sm">
                       <span className="font-medium">{walk.time}</span>
                       {walk.duration && <span className="text-gray-600"> - {walk.duration}</span>}
                       {walk.notes && <p className="text-gray-600 italic mt-1">{walk.notes}</p>}
@@ -2190,7 +2194,7 @@ export default function HouseSittingApp() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Time</label>
-                    <input name="time" type="time" defaultValue={formData.time || ''} className="w-full px-3 py-2 border rounded-md" />
+                    <input name="time" type="text" defaultValue={formData.time || ''} placeholder="e.g., 2:00 PM" className="w-full px-3 py-2 border rounded-md" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Type</label>
