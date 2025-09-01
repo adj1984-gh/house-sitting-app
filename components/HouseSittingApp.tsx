@@ -1173,6 +1173,25 @@ export default function HouseSittingApp() {
       const formData = new FormData(e.target as HTMLFormElement);
       const data = Object.fromEntries(formData.entries());
       
+      // Parse JSON fields for dog forms
+      if (formType === 'dog') {
+        try {
+          if (data.feeding_schedule) {
+            data.feeding_schedule = JSON.parse(data.feeding_schedule as string);
+          }
+          if (data.medicine_schedule) {
+            data.medicine_schedule = JSON.parse(data.medicine_schedule as string);
+          }
+          if (data.special_instructions) {
+            data.special_instructions = JSON.parse(data.special_instructions as string);
+          }
+        } catch (error) {
+          console.error('Error parsing JSON fields:', error);
+          alert('Error: Invalid JSON format in one of the fields. Please check your JSON syntax.');
+          return;
+        }
+      }
+      
       if (isEditing) {
         handleUpdate(formType!, editingItem.id!, data);
       } else {
@@ -1187,7 +1206,7 @@ export default function HouseSittingApp() {
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <div className="p-6">
             <h3 className="text-lg font-bold mb-4">
               {isEditing ? `Edit ${formType}` : `Add New ${formType}`}
@@ -1205,8 +1224,108 @@ export default function HouseSittingApp() {
                     <input name="age" defaultValue={formData.age || ''} className="w-full px-3 py-2 border rounded-md" />
                   </div>
                   <div>
+                    <label className="block text-sm font-medium mb-1">Photo URL</label>
+                    <input name="photo_url" defaultValue={formData.photo_url || ''} className="w-full px-3 py-2 border rounded-md" placeholder="https://example.com/photo.jpg" />
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium mb-1">Personality</label>
                     <textarea name="personality" defaultValue={formData.personality || ''} className="w-full px-3 py-2 border rounded-md" rows={3} />
+                  </div>
+                  
+                  {/* Feeding Section */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold text-gray-800 mb-3">Feeding Information</h4>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Feeding Schedule (JSON)</label>
+                      <textarea 
+                        name="feeding_schedule" 
+                        defaultValue={typeof formData.feeding_schedule === 'object' ? JSON.stringify(formData.feeding_schedule, null, 2) : formData.feeding_schedule || '[]'} 
+                        className="w-full px-3 py-2 border rounded-md font-mono text-sm" 
+                        rows={4}
+                        placeholder='[{"time": "7:00 AM", "amount": "1½ cups"}]'
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Feeding Location</label>
+                      <input name="feeding_location" defaultValue={formData.feeding_location || ''} className="w-full px-3 py-2 border rounded-md" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Feeding Notes</label>
+                      <textarea name="feeding_notes" defaultValue={formData.feeding_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} />
+                    </div>
+                  </div>
+
+                  {/* Medicine Section */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold text-gray-800 mb-3">Medicine Information</h4>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Medicine Schedule (JSON)</label>
+                      <textarea 
+                        name="medicine_schedule" 
+                        defaultValue={typeof formData.medicine_schedule === 'object' ? JSON.stringify(formData.medicine_schedule, null, 2) : formData.medicine_schedule || '[]'} 
+                        className="w-full px-3 py-2 border rounded-md font-mono text-sm" 
+                        rows={4}
+                        placeholder='[{"time": "Evening", "medication": "1 Benadryl (25mg)"}]'
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Medicine Notes</label>
+                      <textarea name="medicine_notes" defaultValue={formData.medicine_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} />
+                    </div>
+                  </div>
+
+                  {/* Potty Section */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold text-gray-800 mb-3">Potty Training</h4>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Potty Trained Status</label>
+                      <input name="potty_trained" defaultValue={formData.potty_trained || ''} className="w-full px-3 py-2 border rounded-md" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Potty Notes</label>
+                      <textarea name="potty_notes" defaultValue={formData.potty_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} />
+                    </div>
+                  </div>
+
+                  {/* Walking Section */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold text-gray-800 mb-3">Walking Information</h4>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Walk Frequency</label>
+                      <input name="walk_frequency" defaultValue={formData.walk_frequency || ''} className="w-full px-3 py-2 border rounded-md" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Walk Notes</label>
+                      <textarea name="walk_notes" defaultValue={formData.walk_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} />
+                    </div>
+                  </div>
+
+                  {/* Sleeping Section */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold text-gray-800 mb-3">Sleeping Information</h4>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Sleeping Location</label>
+                      <input name="sleeping_location" defaultValue={formData.sleeping_location || ''} className="w-full px-3 py-2 border rounded-md" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Sleeping Notes</label>
+                      <textarea name="sleeping_notes" defaultValue={formData.sleeping_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} />
+                    </div>
+                  </div>
+
+                  {/* Special Instructions Section */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold text-gray-800 mb-3">Special Instructions</h4>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Special Instructions (JSON)</label>
+                      <textarea 
+                        name="special_instructions" 
+                        defaultValue={typeof formData.special_instructions === 'object' ? JSON.stringify(formData.special_instructions, null, 2) : formData.special_instructions || '{}'} 
+                        className="w-full px-3 py-2 border rounded-md font-mono text-sm" 
+                        rows={4}
+                        placeholder='{"whenLeaving": "Goes in small cage", "management": "Keep bedroom doors closed"}'
+                      />
+                    </div>
                   </div>
                 </>
               )}
