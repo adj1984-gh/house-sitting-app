@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode, X, Info, Moon } from 'lucide-react';
 import { getProperty, getAlerts, getDogs, getServicePeople, getAppointments, getHouseInstructions, getDailyTasks, getStays, hasActiveStay, getCurrentActiveStay, getContacts, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createServicePerson, updateServicePerson, deleteServicePerson, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, createContact, updateContact, deleteContact, generateMasterSchedule } from '../lib/database';
 import { Property, Alert, Dog as DogType, ServicePerson, Appointment, HouseInstruction, DailyTask, Stay, Contact, ScheduleItem } from '../lib/types';
@@ -481,6 +481,7 @@ export default function HouseSittingApp() {
   const [adminPassword, setAdminPassword] = useState('');
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const hasUnsavedChangesRef = useRef(false);
 
   // Environment variables for authentication
   const SITE_PASSWORD = process.env.NEXT_PUBLIC_SITE_ACCESS_PASSWORD;
@@ -2139,16 +2140,18 @@ export default function HouseSittingApp() {
       
       // Reset unsaved changes flag after successful submission
       setHasUnsavedChanges(false);
+      hasUnsavedChangesRef.current = false;
     };
 
     const handleCancel = () => {
-      if (hasUnsavedChanges) {
+      if (hasUnsavedChangesRef.current) {
         const confirmed = window.confirm('You have unsaved changes. Are you sure you want to close without saving?');
         if (!confirmed) return;
       }
       setShowAddForm(null);
       setEditingItem(null);
       setHasUnsavedChanges(false);
+      hasUnsavedChangesRef.current = false;
     };
 
     return (
@@ -2168,7 +2171,13 @@ export default function HouseSittingApp() {
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} onChange={() => setHasUnsavedChanges(true)} className="space-y-4">
+            <form onSubmit={handleSubmit} onChange={() => {
+              // Use ref to track unsaved changes without causing re-render
+              hasUnsavedChangesRef.current = true;
+              if (!hasUnsavedChanges) {
+                setHasUnsavedChanges(true);
+              }
+            }} className="space-y-4">
               {formType === 'dog' && (
                 <DogEditForm formData={formData} />
               )}
