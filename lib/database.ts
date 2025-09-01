@@ -8,7 +8,7 @@ export const getProperty = async (id: string = '00000000-0000-0000-0000-00000000
     return null
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!!
     .from('properties')
     .select('*')
     .eq('id', id)
@@ -28,7 +28,7 @@ export const updateProperty = async (id: string, updates: Partial<Property>): Pr
     return null
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!!
     .from('properties')
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', id)
@@ -50,7 +50,7 @@ export const getAlerts = async (propertyId: string = '00000000-0000-0000-0000-00
     return []
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!!
     .from('alerts')
     .select('*')
     .eq('property_id', propertyId)
@@ -71,7 +71,7 @@ export const createAlert = async (alert: Omit<Alert, 'id' | 'created_at'>): Prom
     return null
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!!
     .from('alerts')
     .insert(alert)
     .select()
@@ -91,7 +91,7 @@ export const updateAlert = async (id: string, updates: Partial<Alert>): Promise<
     return null
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!
     .from('alerts')
     .update(updates)
     .eq('id', id)
@@ -112,7 +112,7 @@ export const deleteAlert = async (id: string): Promise<boolean> => {
     return false
   }
 
-  const { error } = await supabase
+  const { error } = await supabase!
     .from('alerts')
     .delete()
     .eq('id', id)
@@ -132,7 +132,7 @@ export const getDogs = async (propertyId: string = '00000000-0000-0000-0000-0000
     return []
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!
     .from('dogs')
     .select('*')
     .eq('property_id', propertyId)
@@ -152,7 +152,7 @@ export const getDog = async (id: string): Promise<Dog | null> => {
     return null
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!
     .from('dogs')
     .select('*')
     .eq('id', id)
@@ -172,7 +172,7 @@ export const createDog = async (dog: Omit<Dog, 'id' | 'created_at' | 'updated_at
     return null
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!
     .from('dogs')
     .insert(dog)
     .select()
@@ -192,7 +192,7 @@ export const updateDog = async (id: string, updates: Partial<Dog>): Promise<Dog 
     return null
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!
     .from('dogs')
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', id)
@@ -213,7 +213,7 @@ export const deleteDog = async (id: string): Promise<boolean> => {
     return false
   }
 
-  const { error } = await supabase
+  const { error } = await supabase!
     .from('dogs')
     .delete()
     .eq('id', id)
@@ -233,7 +233,7 @@ export const getServicePeople = async (propertyId: string = '00000000-0000-0000-
     return []
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!
     .from('service_people')
     .select('*')
     .eq('property_id', propertyId)
@@ -253,7 +253,7 @@ export const createServicePerson = async (servicePerson: Omit<ServicePerson, 'id
     return null
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!
     .from('service_people')
     .insert(servicePerson)
     .select()
@@ -273,7 +273,7 @@ export const updateServicePerson = async (id: string, updates: Partial<ServicePe
     return null
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!
     .from('service_people')
     .update(updates)
     .eq('id', id)
@@ -294,7 +294,7 @@ export const deleteServicePerson = async (id: string): Promise<boolean> => {
     return false
   }
 
-  const { error } = await supabase
+  const { error } = await supabase!
     .from('service_people')
     .delete()
     .eq('id', id)
@@ -314,7 +314,7 @@ export const getAppointments = async (propertyId: string = '00000000-0000-0000-0
     return []
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!
     .from('appointments')
     .select('*')
     .eq('property_id', propertyId)
@@ -335,7 +335,7 @@ export const createAppointment = async (appointment: Omit<Appointment, 'id' | 'c
     return null
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!
     .from('appointments')
     .insert(appointment)
     .select()
@@ -355,7 +355,7 @@ export const updateAppointment = async (id: string, updates: Partial<Appointment
     return null
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!
     .from('appointments')
     .update(updates)
     .eq('id', id)
@@ -376,7 +376,7 @@ export const deleteAppointment = async (id: string): Promise<boolean> => {
     return false
   }
 
-  const { error } = await supabase
+  const { error } = await supabase!
     .from('appointments')
     .delete()
     .eq('id', id)
@@ -396,7 +396,7 @@ export const getHouseInstructions = async (propertyId: string = '00000000-0000-0
     return []
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!
     .from('house_instructions')
     .select('*')
     .eq('property_id', propertyId)
@@ -416,7 +416,7 @@ export const createHouseInstruction = async (instruction: Omit<HouseInstruction,
     return null
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!
     .from('house_instructions')
     .insert(instruction)
     .select()
@@ -436,7 +436,7 @@ export const updateHouseInstruction = async (id: string, updates: Partial<HouseI
     return null
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!
     .from('house_instructions')
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', id)
@@ -457,7 +457,7 @@ export const deleteHouseInstruction = async (id: string): Promise<boolean> => {
     return false
   }
 
-  const { error } = await supabase
+  const { error } = await supabase!
     .from('house_instructions')
     .delete()
     .eq('id', id)
@@ -477,7 +477,7 @@ export const logAccess = async (accessLog: Omit<AccessLog, 'id' | 'accessed_at'>
     return null
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!
     .from('access_logs')
     .insert(accessLog)
     .select()
@@ -497,7 +497,7 @@ export const getAccessLogs = async (propertyId: string = '00000000-0000-0000-000
     return []
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabase!
     .from('access_logs')
     .select('*')
     .eq('property_id', propertyId)
