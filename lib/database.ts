@@ -644,116 +644,76 @@ export const hasActiveStay = async (propertyId: string = '00000000-0000-0000-000
 
 export const createStay = async (stay: Omit<Stay, 'id' | 'created_at' | 'updated_at'>): Promise<Stay | null> => {
   console.log('createStay called with:', stay)
-  console.log('supabaseAdmin exists:', !!supabaseAdmin)
   
-  if (!supabaseAdmin) {
-    console.warn('Supabase admin not configured')
-    return null
-  }
-
-  console.log('Database: Creating stay with data:', stay)
-  console.log('Database: Stay data types:', {
-    property_id: typeof stay.property_id,
-    sitter_name: typeof stay.sitter_name,
-    start_date: typeof stay.start_date,
-    end_date: typeof stay.end_date,
-    notes: typeof stay.notes,
-    active: typeof stay.active
-  })
-  
-  // First check if property exists
-  const { data: propertyCheck, error: propertyError } = await supabaseAdmin
-    .from('properties')
-    .select('id')
-    .eq('id', stay.property_id)
-    .single()
-  
-  if (propertyError) {
-    console.error('Property does not exist:', propertyError)
-    console.log('Creating default property...')
+  try {
+    const response = await fetch('/api/stays', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(stay),
+    })
     
-    // Create the default property if it doesn't exist
-    const { data: newProperty, error: createPropertyError } = await supabaseAdmin
-      .from('properties')
-      .insert([{
-        id: stay.property_id,
-        name: '9441 Alto Drive',
-        address: '9441 Alto Drive, La Mesa, CA 91941',
-        wifi_ssid: 'Frenchie Den / Frenchie Den2',
-        wifi_password: 'Fir3fly1'
-      }])
-      .select()
-      .single()
-    
-    if (createPropertyError) {
-      console.error('Failed to create property:', createPropertyError)
+    if (!response.ok) {
+      const errorData = await response.json()
+      console.error('API error:', errorData)
       return null
     }
     
-    console.log('Property created:', newProperty)
-  }
-  
-  console.log('Property exists:', propertyCheck)
-  
-  const { data, error } = await supabaseAdmin
-    .from('stays')
-    .insert([stay])
-    .select()
-    .single()
-  
-  if (error) {
+    const data = await response.json()
+    console.log('Stay created successfully:', data)
+    return data
+  } catch (error) {
     console.error('Error creating stay:', error)
-    console.error('Error details:', {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code
-    })
     return null
   }
-  
-  console.log('Database: Stay created successfully:', data)
-  return data
 }
 
 export const updateStay = async (id: string, updates: Partial<Stay>): Promise<Stay | null> => {
-  if (!supabaseAdmin) {
-    console.warn('Supabase admin not configured')
-    return null
-  }
-
-  const { data, error } = await supabaseAdmin
-    .from('stays')
-    .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .select()
-    .single()
-  
-  if (error) {
+  try {
+    const response = await fetch('/api/stays', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id, ...updates }),
+    })
+    
+    if (!response.ok) {
+      const errorData = await response.json()
+      console.error('API error:', errorData)
+      return null
+    }
+    
+    const data = await response.json()
+    return data
+  } catch (error) {
     console.error('Error updating stay:', error)
     return null
   }
-  
-  return data
 }
 
 export const deleteStay = async (id: string): Promise<boolean> => {
-  if (!supabaseAdmin) {
-    console.warn('Supabase admin not configured')
-    return false
-  }
-
-  const { error } = await supabaseAdmin
-    .from('stays')
-    .update({ active: false, updated_at: new Date().toISOString() })
-    .eq('id', id)
-  
-  if (error) {
+  try {
+    const response = await fetch('/api/stays', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id, active: false }),
+    })
+    
+    if (!response.ok) {
+      const errorData = await response.json()
+      console.error('API error:', errorData)
+      return false
+    }
+    
+    return true
+  } catch (error) {
     console.error('Error deleting stay:', error)
     return false
   }
-  
-  return true
 }
 
 // Master Schedule Generation
