@@ -86,9 +86,11 @@ const DogEditForm = ({ formData }: { formData: any }) => {
   };
 
   const updateFeedingTime = (index: number, field: 'time' | 'amount', value: string) => {
-    const updated = [...feedingSchedule];
-    updated[index][field] = value;
-    setFeedingSchedule(updated);
+    setFeedingSchedule(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
   };
 
   const addMedicine = () => {
@@ -100,9 +102,11 @@ const DogEditForm = ({ formData }: { formData: any }) => {
   };
 
   const updateMedicine = (index: number, field: 'time' | 'medication' | 'notes', value: string) => {
-    const updated = [...medicineSchedule];
-    updated[index][field] = value;
-    setMedicineSchedule(updated);
+    setMedicineSchedule(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
   };
 
   const addSpecialInstruction = () => {
@@ -114,9 +118,11 @@ const DogEditForm = ({ formData }: { formData: any }) => {
   };
 
   const updateSpecialInstruction = (index: number, field: 'type' | 'instruction', value: string) => {
-    const updated = [...specialInstructions];
-    updated[index][field] = value;
-    setSpecialInstructions(updated);
+    setSpecialInstructions(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
   };
 
   const addWalkTime = () => {
@@ -128,9 +134,11 @@ const DogEditForm = ({ formData }: { formData: any }) => {
   };
 
   const updateWalkTime = (index: number, field: 'time' | 'duration' | 'notes', value: string) => {
-    const updated = [...walkSchedule];
-    updated[index][field] = value;
-    setWalkSchedule(updated);
+    setWalkSchedule(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
   };
 
   return (
@@ -237,7 +245,7 @@ const DogEditForm = ({ formData }: { formData: any }) => {
         <h4 className="font-semibold text-gray-800 mb-3">Medicine Information</h4>
         <div className="space-y-3">
           {medicineSchedule.map((medicine, index) => (
-            <div key={`medicine-${index}-${medicine.time}-${medicine.medication}`} className="border rounded-md p-3 space-y-2">
+            <div key={`medicine-${index}`} className="border rounded-md p-3 space-y-2">
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="block text-xs font-medium mb-1">Time</label>
@@ -2051,6 +2059,11 @@ export default function HouseSittingApp() {
           }
           if (data.special_instructions) {
             data.special_instructions = JSON.parse(data.special_instructions as string);
+          }
+          
+          // Fix empty date fields - convert empty strings to null
+          if (data.birthdate === '') {
+            data.birthdate = null;
           }
         } catch (error) {
           console.error('Error parsing JSON fields:', error);
