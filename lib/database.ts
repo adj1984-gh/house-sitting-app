@@ -66,6 +66,11 @@ export const getAlerts = async (propertyId: string = '00000000-0000-0000-0000-00
 }
 
 export const createAlert = async (alert: Omit<Alert, 'id' | 'created_at'>): Promise<Alert | null> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning null')
+    return null
+  }
+
   const { data, error } = await supabase
     .from('alerts')
     .insert(alert)
@@ -81,6 +86,11 @@ export const createAlert = async (alert: Omit<Alert, 'id' | 'created_at'>): Prom
 }
 
 export const updateAlert = async (id: string, updates: Partial<Alert>): Promise<Alert | null> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning null')
+    return null
+  }
+
   const { data, error } = await supabase
     .from('alerts')
     .update(updates)
@@ -97,6 +107,11 @@ export const updateAlert = async (id: string, updates: Partial<Alert>): Promise<
 }
 
 export const deleteAlert = async (id: string): Promise<boolean> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning false')
+    return false
+  }
+
   const { error } = await supabase
     .from('alerts')
     .delete()
@@ -132,6 +147,11 @@ export const getDogs = async (propertyId: string = '00000000-0000-0000-0000-0000
 }
 
 export const getDog = async (id: string): Promise<Dog | null> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning null')
+    return null
+  }
+
   const { data, error } = await supabase
     .from('dogs')
     .select('*')
@@ -147,6 +167,11 @@ export const getDog = async (id: string): Promise<Dog | null> => {
 }
 
 export const createDog = async (dog: Omit<Dog, 'id' | 'created_at' | 'updated_at'>): Promise<Dog | null> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning null')
+    return null
+  }
+
   const { data, error } = await supabase
     .from('dogs')
     .insert(dog)
@@ -162,6 +187,11 @@ export const createDog = async (dog: Omit<Dog, 'id' | 'created_at' | 'updated_at
 }
 
 export const updateDog = async (id: string, updates: Partial<Dog>): Promise<Dog | null> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning null')
+    return null
+  }
+
   const { data, error } = await supabase
     .from('dogs')
     .update({ ...updates, updated_at: new Date().toISOString() })
@@ -178,6 +208,11 @@ export const updateDog = async (id: string, updates: Partial<Dog>): Promise<Dog 
 }
 
 export const deleteDog = async (id: string): Promise<boolean> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning false')
+    return false
+  }
+
   const { error } = await supabase
     .from('dogs')
     .delete()
@@ -213,6 +248,11 @@ export const getServicePeople = async (propertyId: string = '00000000-0000-0000-
 }
 
 export const createServicePerson = async (servicePerson: Omit<ServicePerson, 'id' | 'created_at'>): Promise<ServicePerson | null> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning null')
+    return null
+  }
+
   const { data, error } = await supabase
     .from('service_people')
     .insert(servicePerson)
@@ -228,6 +268,11 @@ export const createServicePerson = async (servicePerson: Omit<ServicePerson, 'id
 }
 
 export const updateServicePerson = async (id: string, updates: Partial<ServicePerson>): Promise<ServicePerson | null> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning null')
+    return null
+  }
+
   const { data, error } = await supabase
     .from('service_people')
     .update(updates)
@@ -244,6 +289,11 @@ export const updateServicePerson = async (id: string, updates: Partial<ServicePe
 }
 
 export const deleteServicePerson = async (id: string): Promise<boolean> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning false')
+    return false
+  }
+
   const { error } = await supabase
     .from('service_people')
     .delete()
@@ -280,6 +330,11 @@ export const getAppointments = async (propertyId: string = '00000000-0000-0000-0
 }
 
 export const createAppointment = async (appointment: Omit<Appointment, 'id' | 'created_at'>): Promise<Appointment | null> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning null')
+    return null
+  }
+
   const { data, error } = await supabase
     .from('appointments')
     .insert(appointment)
@@ -295,6 +350,11 @@ export const createAppointment = async (appointment: Omit<Appointment, 'id' | 'c
 }
 
 export const updateAppointment = async (id: string, updates: Partial<Appointment>): Promise<Appointment | null> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning null')
+    return null
+  }
+
   const { data, error } = await supabase
     .from('appointments')
     .update(updates)
@@ -311,6 +371,11 @@ export const updateAppointment = async (id: string, updates: Partial<Appointment
 }
 
 export const deleteAppointment = async (id: string): Promise<boolean> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning false')
+    return false
+  }
+
   const { error } = await supabase
     .from('appointments')
     .delete()
@@ -346,6 +411,11 @@ export const getHouseInstructions = async (propertyId: string = '00000000-0000-0
 }
 
 export const createHouseInstruction = async (instruction: Omit<HouseInstruction, 'id' | 'created_at' | 'updated_at'>): Promise<HouseInstruction | null> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning null')
+    return null
+  }
+
   const { data, error } = await supabase
     .from('house_instructions')
     .insert(instruction)
@@ -361,6 +431,11 @@ export const createHouseInstruction = async (instruction: Omit<HouseInstruction,
 }
 
 export const updateHouseInstruction = async (id: string, updates: Partial<HouseInstruction>): Promise<HouseInstruction | null> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning null')
+    return null
+  }
+
   const { data, error } = await supabase
     .from('house_instructions')
     .update({ ...updates, updated_at: new Date().toISOString() })
@@ -377,6 +452,11 @@ export const updateHouseInstruction = async (id: string, updates: Partial<HouseI
 }
 
 export const deleteHouseInstruction = async (id: string): Promise<boolean> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning false')
+    return false
+  }
+
   const { error } = await supabase
     .from('house_instructions')
     .delete()
@@ -412,6 +492,11 @@ export const logAccess = async (accessLog: Omit<AccessLog, 'id' | 'accessed_at'>
 }
 
 export const getAccessLogs = async (propertyId: string = '00000000-0000-0000-0000-000000000001'): Promise<AccessLog[]> => {
+  if (!supabase) {
+    console.warn('Supabase not configured, returning empty array')
+    return []
+  }
+
   const { data, error } = await supabase
     .from('access_logs')
     .select('*')
