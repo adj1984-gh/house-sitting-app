@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode } from 'lucide-react';
-import { getProperty, getAlerts, getDogs, getServicePeople, getAppointments, getHouseInstructions, logAccess } from '../lib/database';
+import { getProperty, getAlerts, getDogs, getServicePeople, getAppointments, getHouseInstructions, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createServicePerson, updateServicePerson, deleteServicePerson, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction } from '../lib/database';
 import { Property, Alert, Dog as DogType, ServicePerson, Appointment, HouseInstruction } from '../lib/types';
 
 // Simulated database - in production, this would connect to Supabase
@@ -203,6 +203,10 @@ export default function HouseSittingApp() {
     houseInstructions: []
   });
 
+  // Admin state
+  const [editingItem, setEditingItem] = useState<{type: string, id?: string, data?: any} | null>(null);
+  const [showAddForm, setShowAddForm] = useState<{type: string} | null>(null);
+
   // In production, this would be stored securely in environment variables
   const SITE_PASSWORD = process.env.NEXT_PUBLIC_SITE_ACCESS_PASSWORD || 'frenchies2024';
 
@@ -240,6 +244,150 @@ export default function HouseSittingApp() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Admin CRUD operations
+  const handleCreate = async (type: string, data: any) => {
+    try {
+      let result: any;
+      const propertyId = '00000000-0000-0000-0000-000000000001';
+      
+      switch (type) {
+        case 'dog':
+          result = await createDog({ ...data, property_id: propertyId });
+          if (result) {
+            setDbData(prev => ({ ...prev, dogs: [...prev.dogs, result] }));
+          }
+          break;
+        case 'alert':
+          result = await createAlert({ ...data, property_id: propertyId });
+          if (result) {
+            setDbData(prev => ({ ...prev, alerts: [...prev.alerts, result] }));
+          }
+          break;
+        case 'servicePerson':
+          result = await createServicePerson({ ...data, property_id: propertyId });
+          if (result) {
+            setDbData(prev => ({ ...prev, servicePeople: [...prev.servicePeople, result] }));
+          }
+          break;
+        case 'appointment':
+          result = await createAppointment({ ...data, property_id: propertyId });
+          if (result) {
+            setDbData(prev => ({ ...prev, appointments: [...prev.appointments, result] }));
+          }
+          break;
+        case 'houseInstruction':
+          result = await createHouseInstruction({ ...data, property_id: propertyId });
+          if (result) {
+            setDbData(prev => ({ ...prev, houseInstructions: [...prev.houseInstructions, result] }));
+          }
+          break;
+      }
+      
+      setShowAddForm(null);
+    } catch (error) {
+      console.error(`Error creating ${type}:`, error);
+    }
+  };
+
+  const handleUpdate = async (type: string, id: string, data: any) => {
+    try {
+      let result: any;
+      
+      switch (type) {
+        case 'dog':
+          result = await updateDog(id, data);
+          if (result) {
+            setDbData(prev => ({ 
+              ...prev, 
+              dogs: prev.dogs.map(dog => dog.id === id ? result : dog)
+            }));
+          }
+          break;
+        case 'alert':
+          result = await updateAlert(id, data);
+          if (result) {
+            setDbData(prev => ({ 
+              ...prev, 
+              alerts: prev.alerts.map(alert => alert.id === id ? result : alert)
+            }));
+          }
+          break;
+        case 'servicePerson':
+          result = await updateServicePerson(id, data);
+          if (result) {
+            setDbData(prev => ({ 
+              ...prev, 
+              servicePeople: prev.servicePeople.map(sp => sp.id === id ? result : sp)
+            }));
+          }
+          break;
+        case 'appointment':
+          result = await updateAppointment(id, data);
+          if (result) {
+            setDbData(prev => ({ 
+              ...prev, 
+              appointments: prev.appointments.map(apt => apt.id === id ? result : apt)
+            }));
+          }
+          break;
+        case 'houseInstruction':
+          result = await updateHouseInstruction(id, data);
+          if (result) {
+            setDbData(prev => ({ 
+              ...prev, 
+              houseInstructions: prev.houseInstructions.map(hi => hi.id === id ? result : hi)
+            }));
+          }
+          break;
+      }
+      
+      setEditingItem(null);
+    } catch (error) {
+      console.error(`Error updating ${type}:`, error);
+    }
+  };
+
+  const handleDelete = async (type: string, id: string) => {
+    try {
+      let success = false;
+      
+      switch (type) {
+        case 'dog':
+          success = await deleteDog(id);
+          if (success) {
+            setDbData(prev => ({ ...prev, dogs: prev.dogs.filter(dog => dog.id !== id) }));
+          }
+          break;
+        case 'alert':
+          success = await deleteAlert(id);
+          if (success) {
+            setDbData(prev => ({ ...prev, alerts: prev.alerts.filter(alert => alert.id !== id) }));
+          }
+          break;
+        case 'servicePerson':
+          success = await deleteServicePerson(id);
+          if (success) {
+            setDbData(prev => ({ ...prev, servicePeople: prev.servicePeople.filter(sp => sp.id !== id) }));
+          }
+          break;
+        case 'appointment':
+          success = await deleteAppointment(id);
+          if (success) {
+            setDbData(prev => ({ ...prev, appointments: prev.appointments.filter(apt => apt.id !== id) }));
+          }
+          break;
+        case 'houseInstruction':
+          success = await deleteHouseInstruction(id);
+          if (success) {
+            setDbData(prev => ({ ...prev, houseInstructions: prev.houseInstructions.filter(hi => hi.id !== id) }));
+          }
+          break;
+      }
+    } catch (error) {
+      console.error(`Error deleting ${type}:`, error);
     }
   };
 
@@ -431,18 +579,49 @@ export default function HouseSittingApp() {
 
         {/* All Alerts */}
         <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <AlertCircle className="w-6 h-6 text-red-600" />
-            <h2 className="text-xl font-bold text-red-800">Important Alerts</h2>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-6 h-6 text-red-600" />
+              <h2 className="text-xl font-bold text-red-800">Important Alerts</h2>
+            </div>
+            {isAdmin && (
+              <button
+                onClick={() => setShowAddForm({ type: 'alert' })}
+                className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add Alert
+              </button>
+            )}
           </div>
           <div className="space-y-2">
             {currentData.alerts.map(alert => (
-              <div key={alert.id} className={`flex items-start gap-2 ${
+              <div key={alert.id} className={`flex items-start justify-between gap-2 ${
                 alert.type === 'danger' ? 'text-red-700' : 
                 alert.type === 'warning' ? 'text-orange-700' : 'text-blue-700'
               }`}>
-                <span className="font-bold">•</span>
-                <span className="font-medium">{alert.text}</span>
+                <div className="flex items-start gap-2">
+                  <span className="font-bold">•</span>
+                  <span className="font-medium">{alert.text}</span>
+                </div>
+                {isAdmin && (
+                  <div className="flex gap-1">
+                    <button 
+                      onClick={() => setEditingItem({ type: 'alert', id: String(alert.id), data: alert })}
+                      className="text-blue-600 hover:text-blue-800"
+                      title="Edit alert"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete('alert', String(alert.id))}
+                      className="text-red-600 hover:text-red-800"
+                      title="Delete alert"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -499,22 +678,50 @@ export default function HouseSittingApp() {
   };
 
   // Dogs Section
-  const DogsSection = () => (
-    <div className="space-y-6">
-      {data.dogs.map(dog => (
+  const DogsSection = () => {
+    const currentDogs = dbData.dogs.length > 0 ? dbData.dogs : data.dogs;
+    
+    return (
+      <div className="space-y-6">
+        {isAdmin && (
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <button
+              onClick={() => setShowAddForm({ type: 'dog' })}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              <Plus className="w-4 h-4" />
+              Add New Dog
+            </button>
+          </div>
+        )}
+        
+        {currentDogs.map(dog => (
         <div key={dog.id} className="bg-white rounded-lg shadow-md p-6">
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-3">
-              <span className="text-4xl">{dog.photo}</span>
+              <span className="text-4xl">{(dog as any).photo || '🐕'}</span>
               <div>
                 <h3 className="text-2xl font-bold">{dog.name}</h3>
                 <p className="text-gray-600">{dog.age}</p>
               </div>
             </div>
             {isAdmin && (
-              <button className="text-blue-600 hover:text-blue-800">
-                <Edit className="w-5 h-5" />
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setEditingItem({ type: 'dog', id: String(dog.id), data: dog })}
+                  className="text-blue-600 hover:text-blue-800"
+                  title="Edit dog"
+                >
+                  <Edit className="w-5 h-5" />
+                </button>
+                <button 
+                  onClick={() => handleDelete('dog', String(dog.id))}
+                  className="text-red-600 hover:text-red-800"
+                  title="Delete dog"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
             )}
           </div>
 
@@ -527,18 +734,18 @@ export default function HouseSittingApp() {
                 <Cookie className="w-4 h-4 text-orange-600" />
                 Feeding Schedule
               </h4>
-              {dog.feeding.schedule.map((item, idx) => (
+              {((dog as any).feeding?.schedule || (dog as any).feeding_schedule || []).map((item: any, idx: number) => (
                 <p key={idx} className="mb-1">
                   <span className="font-medium">{item.time}:</span> {item.amount}
                 </p>
               ))}
-              {dog.feeding.location && (
+              {((dog as any).feeding?.location || (dog as any).feeding_location) && (
                 <p className="mt-3 text-sm">
-                  <span className="font-medium">Food Location:</span> {dog.feeding.location}
+                  <span className="font-medium">Food Location:</span> {(dog as any).feeding?.location || (dog as any).feeding_location}
                 </p>
               )}
-              {dog.feeding.notes && (
-                <p className="text-sm text-gray-600 mt-2 italic">{dog.feeding.notes}</p>
+              {((dog as any).feeding?.notes || (dog as any).feeding_notes) && (
+                <p className="text-sm text-gray-600 mt-2 italic">{(dog as any).feeding?.notes || (dog as any).feeding_notes}</p>
               )}
             </div>
 
@@ -548,13 +755,13 @@ export default function HouseSittingApp() {
                 <Pill className="w-4 h-4 text-purple-600" />
                 Medicine Schedule
               </h4>
-              {dog.medicine.schedule.map((item, idx) => (
+              {((dog as any).medicine?.schedule || (dog as any).medicine_schedule || []).map((item: any, idx: number) => (
                 <p key={idx} className="mb-1">
                   <span className="font-medium">{item.time}:</span> {item.medication}
                 </p>
               ))}
-              {dog.medicine.notes && (
-                <p className="text-sm text-gray-600 mt-2 italic">{dog.medicine.notes}</p>
+              {((dog as any).medicine?.notes || (dog as any).medicine_notes) && (
+                <p className="text-sm text-gray-600 mt-2 italic">{(dog as any).medicine?.notes || (dog as any).medicine_notes}</p>
               )}
             </div>
 
@@ -564,9 +771,9 @@ export default function HouseSittingApp() {
                 <Droplets className="w-4 h-4 text-blue-600" />
                 Potty Training
               </h4>
-              <p className="text-sm">{dog.potty.trained}</p>
-              {dog.potty.notes && (
-                <p className="text-sm text-gray-600 mt-2 italic">{dog.potty.notes}</p>
+              <p className="text-sm">{(dog as any).potty?.trained || (dog as any).potty_trained}</p>
+              {((dog as any).potty?.notes || (dog as any).potty_notes) && (
+                <p className="text-sm text-gray-600 mt-2 italic">{(dog as any).potty?.notes || (dog as any).potty_notes}</p>
               )}
             </div>
 
@@ -576,9 +783,9 @@ export default function HouseSittingApp() {
                 <MapPin className="w-4 h-4 text-green-600" />
                 Exercise & Walks
               </h4>
-              <p className="text-sm">{dog.walks.frequency}</p>
-              {dog.walks.notes && (
-                <p className="text-sm text-gray-600 mt-2 italic">{dog.walks.notes}</p>
+              <p className="text-sm">{(dog as any).walks?.frequency || (dog as any).walk_frequency}</p>
+              {((dog as any).walks?.notes || (dog as any).walk_notes) && (
+                <p className="text-sm text-gray-600 mt-2 italic">{(dog as any).walks?.notes || (dog as any).walk_notes}</p>
               )}
             </div>
           </div>
@@ -587,13 +794,13 @@ export default function HouseSittingApp() {
           <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <h4 className="font-semibold mb-2">Special Instructions</h4>
             <div className="space-y-1 text-sm">
-              <p><span className="font-medium">When leaving house:</span> {dog.special.whenLeaving}</p>
-              {dog.special.management && (
-                <p><span className="font-medium">Daily management:</span> {dog.special.management}</p>
+              <p><span className="font-medium">When leaving house:</span> {(dog as any).special?.whenLeaving || 'See notes'}</p>
+              {(dog as any).special?.management && (
+                <p><span className="font-medium">Daily management:</span> {(dog as any).special.management}</p>
               )}
-              <p><span className="font-medium">Sleeping:</span> {dog.sleeping.location}</p>
-              {dog.sleeping.notes && (
-                <p className="text-gray-600 italic">{dog.sleeping.notes}</p>
+              <p><span className="font-medium">Sleeping:</span> {(dog as any).sleeping?.location || (dog as any).sleeping_location}</p>
+              {((dog as any).sleeping?.notes || (dog as any).sleeping_notes) && (
+                <p className="text-gray-600 italic">{(dog as any).sleeping?.notes || (dog as any).sleeping_notes}</p>
               )}
             </div>
           </div>
@@ -619,7 +826,8 @@ export default function HouseSittingApp() {
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   // House Instructions Section
   const HouseSection = () => (
@@ -715,34 +923,69 @@ export default function HouseSittingApp() {
   );
 
   // Service People Section
-  const ServicesSection = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-bold mb-4">Scheduled Service Visits</h3>
+  const ServicesSection = () => {
+    const currentServicePeople = dbData.servicePeople.length > 0 ? dbData.servicePeople : data.servicePeople;
+    
+    return (
+      <div className="space-y-6">
+        {isAdmin && (
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <button
+              onClick={() => setShowAddForm({ type: 'servicePerson' })}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              <Plus className="w-4 h-4" />
+              Add Service Person
+            </button>
+          </div>
+        )}
+        
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-xl font-bold mb-4">Scheduled Service Visits</h3>
         <div className="space-y-4">
-          {data.servicePeople.map(service => (
+          {currentServicePeople.map(service => (
             <div key={service.id} className={`border rounded-lg p-4 ${
-              service.payment !== 'Pre-paid' ? 'border-orange-300 bg-orange-50' : 'border-gray-200'
+              ((service as any).payment_status || (service as any).payment) !== 'Pre-paid' ? 'border-orange-300 bg-orange-50' : 'border-gray-200'
             }`}>
               <div className="flex justify-between items-start">
                 <div>
                   <h4 className="font-bold text-lg">{service.name}</h4>
                   <p className="text-sm text-gray-600">
-                    <span className="font-medium">When:</span> {service.day} {service.time && `at ${service.time}`}
+                    <span className="font-medium">When:</span> {(service as any).service_day || (service as any).day} {((service as any).service_time || (service as any).time) && `at ${(service as any).service_time || (service as any).time}`}
                   </p>
-                  {service.payment !== 'Pre-paid' && (
+                  {((service as any).payment_status || (service as any).payment) !== 'Pre-paid' && (
                     <p className="text-sm font-bold text-orange-700 mt-2 flex items-center gap-1">
                       <DollarSign className="w-4 h-4" />
-                      Payment Required: {service.payment}
+                      Payment Required: {(service as any).payment_amount || (service as any).payment}
                     </p>
                   )}
                   <p className="text-sm text-gray-700 mt-1">{service.notes}</p>
                 </div>
-                {service.needsAccess && (
-                  <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">
-                    Needs Access
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {((service as any).needs_access || (service as any).needsAccess) && (
+                    <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">
+                      Needs Access
+                    </span>
+                  )}
+                  {isAdmin && (
+                    <div className="flex gap-1">
+                      <button 
+                        onClick={() => setEditingItem({ type: 'servicePerson', id: String(service.id), data: service })}
+                        className="text-blue-600 hover:text-blue-800"
+                        title="Edit service person"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete('servicePerson', String(service.id))}
+                        className="text-red-600 hover:text-red-800"
+                        title="Delete service person"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -761,33 +1004,67 @@ export default function HouseSittingApp() {
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   // Schedule Section
   const ScheduleSection = () => {
     const today = new Date();
     const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const currentAppointments = dbData.appointments.length > 0 ? dbData.appointments : data.appointments;
     
     return (
       <div className="space-y-6">
+        {isAdmin && (
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <button
+              onClick={() => setShowAddForm({ type: 'appointment' })}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              <Plus className="w-4 h-4" />
+              Add Appointment
+            </button>
+          </div>
+        )}
+        
         {/* Appointments */}
-        {data.appointments.length > 0 && (
+        {currentAppointments.length > 0 && (
           <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <Calendar className="w-6 h-6 text-yellow-700" />
               <h2 className="text-xl font-bold text-yellow-800">Upcoming Appointments</h2>
             </div>
-            {data.appointments.map(apt => (
+            {currentAppointments.map(apt => (
               <div key={apt.id} className="bg-white rounded p-4 mb-2">
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="font-bold">{apt.date} at {apt.time}</p>
-                    <p className="font-medium text-gray-700">{apt.type} - {apt.who}</p>
+                    <p className="font-medium text-gray-700">{apt.type} - {((apt as any).for_dog_id || (apt as any).who) ? ((apt as any).who || 'Dog appointment') : 'General'}</p>
                     <p className="text-sm text-gray-600 mt-1">{apt.notes}</p>
                   </div>
-                  <span className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded">
-                    {apt.location}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded">
+                      {apt.location}
+                    </span>
+                    {isAdmin && (
+                      <div className="flex gap-1">
+                        <button 
+                          onClick={() => setEditingItem({ type: 'appointment', id: String(apt.id), data: apt })}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="Edit appointment"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete('appointment', String(apt.id))}
+                          className="text-red-600 hover:text-red-800"
+                          title="Delete appointment"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -865,6 +1142,157 @@ export default function HouseSittingApp() {
     );
   };
 
+  // Admin Forms
+  const AdminForm = () => {
+    if (!showAddForm && !editingItem) return null;
+
+    const isEditing = !!editingItem;
+    const formType = isEditing ? editingItem.type : showAddForm?.type;
+    const formData = isEditing ? editingItem.data : {};
+
+    const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      const formData = new FormData(e.target as HTMLFormElement);
+      const data = Object.fromEntries(formData.entries());
+      
+      if (isEditing) {
+        handleUpdate(formType!, editingItem.id!, data);
+      } else {
+        handleCreate(formType!, data);
+      }
+    };
+
+    const handleCancel = () => {
+      setShowAddForm(null);
+      setEditingItem(null);
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <div className="p-6">
+            <h3 className="text-lg font-bold mb-4">
+              {isEditing ? `Edit ${formType}` : `Add New ${formType}`}
+            </h3>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {formType === 'dog' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Name</label>
+                    <input name="name" defaultValue={formData.name || ''} required className="w-full px-3 py-2 border rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Age</label>
+                    <input name="age" defaultValue={formData.age || ''} className="w-full px-3 py-2 border rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Personality</label>
+                    <textarea name="personality" defaultValue={formData.personality || ''} className="w-full px-3 py-2 border rounded-md" rows={3} />
+                  </div>
+                </>
+              )}
+              
+              {formType === 'alert' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Type</label>
+                    <select name="type" defaultValue={formData.type || 'info'} required className="w-full px-3 py-2 border rounded-md">
+                      <option value="danger">Danger</option>
+                      <option value="warning">Warning</option>
+                      <option value="info">Info</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Category</label>
+                    <select name="category" defaultValue={formData.category || 'general'} required className="w-full px-3 py-2 border rounded-md">
+                      <option value="pets">Pets</option>
+                      <option value="house">House</option>
+                      <option value="general">General</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Text</label>
+                    <textarea name="text" defaultValue={formData.text || ''} required className="w-full px-3 py-2 border rounded-md" rows={3} />
+                  </div>
+                </>
+              )}
+              
+              {formType === 'servicePerson' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Name</label>
+                    <input name="name" defaultValue={formData.name || ''} required className="w-full px-3 py-2 border rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Service Day</label>
+                    <input name="service_day" defaultValue={formData.service_day || ''} className="w-full px-3 py-2 border rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Service Time</label>
+                    <input name="service_time" defaultValue={formData.service_time || ''} className="w-full px-3 py-2 border rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Payment Amount</label>
+                    <input name="payment_amount" defaultValue={formData.payment_amount || ''} className="w-full px-3 py-2 border rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Payment Status</label>
+                    <input name="payment_status" defaultValue={formData.payment_status || ''} className="w-full px-3 py-2 border rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Notes</label>
+                    <textarea name="notes" defaultValue={formData.notes || ''} className="w-full px-3 py-2 border rounded-md" rows={3} />
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-2">
+                      <input name="needs_access" type="checkbox" defaultChecked={formData.needs_access || false} className="rounded" />
+                      <span className="text-sm font-medium">Needs Access</span>
+                    </label>
+                  </div>
+                </>
+              )}
+              
+              {formType === 'appointment' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Date</label>
+                    <input name="date" type="date" defaultValue={formData.date || ''} required className="w-full px-3 py-2 border rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Time</label>
+                    <input name="time" type="time" defaultValue={formData.time || ''} className="w-full px-3 py-2 border rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Type</label>
+                    <input name="type" defaultValue={formData.type || ''} required className="w-full px-3 py-2 border rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Location</label>
+                    <input name="location" defaultValue={formData.location || ''} className="w-full px-3 py-2 border rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Notes</label>
+                    <textarea name="notes" defaultValue={formData.notes || ''} className="w-full px-3 py-2 border rounded-md" rows={3} />
+                  </div>
+                </>
+              )}
+              
+              <div className="flex gap-3 pt-4">
+                <button type="submit" className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
+                  {isEditing ? 'Update' : 'Create'}
+                </button>
+                <button type="button" onClick={handleCancel} className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Render the active section
   const renderSection = () => {
     switch(activeSection) {
@@ -900,6 +1328,7 @@ export default function HouseSittingApp() {
       <div className="max-w-7xl mx-auto p-4 pb-8">
         {renderSection()}
       </div>
+      <AdminForm />
     </div>
   );
 }
