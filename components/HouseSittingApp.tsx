@@ -61,6 +61,9 @@ const DogEditForm = ({ formData }: { formData: any }) => {
       ? Object.entries(formData.special_instructions).map(([type, instruction]) => ({ type, instruction: instruction as string }))
       : []
   );
+  const [walkSchedule, setWalkSchedule] = useState<Array<{time: string, duration: string, notes: string}>>(
+    Array.isArray(formData.walk_schedule) ? formData.walk_schedule : []
+  );
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -114,6 +117,20 @@ const DogEditForm = ({ formData }: { formData: any }) => {
     const updated = [...specialInstructions];
     updated[index][field] = value;
     setSpecialInstructions(updated);
+  };
+
+  const addWalkTime = () => {
+    setWalkSchedule([...walkSchedule, { time: '', duration: '', notes: '' }]);
+  };
+
+  const removeWalkTime = (index: number) => {
+    setWalkSchedule(walkSchedule.filter((_, i) => i !== index));
+  };
+
+  const updateWalkTime = (index: number, field: 'time' | 'duration' | 'notes', value: string) => {
+    const updated = [...walkSchedule];
+    updated[index][field] = value;
+    setWalkSchedule(updated);
   };
 
   return (
@@ -272,6 +289,7 @@ const DogEditForm = ({ formData }: { formData: any }) => {
           </button>
         </div>
         <input type="hidden" name="medicine_schedule" value={JSON.stringify(medicineSchedule)} />
+        <input type="hidden" name="walk_schedule" value={JSON.stringify(walkSchedule)} />
       </div>
 
       {/* Potty Section */}
@@ -289,14 +307,70 @@ const DogEditForm = ({ formData }: { formData: any }) => {
 
       {/* Walking Section */}
       <div className="border-t pt-4">
-        <h4 className="font-semibold text-gray-800 mb-3">Walking Information</h4>
-        <div>
-          <label className="block text-sm font-medium mb-1">Walk Frequency</label>
-          <input name="walk_frequency" defaultValue={formData.walk_frequency || ''} className="w-full px-3 py-2 border rounded-md" />
+        <h4 className="font-semibold text-gray-800 mb-3">Walk Schedule</h4>
+        {walkSchedule.map((walk, index) => (
+          <div key={index} className="border rounded-lg p-3 mb-3 bg-gray-50">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Time</label>
+                <select 
+                  value={walk.time} 
+                  onChange={(e) => updateWalkTime(index, 'time', e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md"
+                >
+                  <option value="">Select time</option>
+                  <option value="Morning">Morning</option>
+                  <option value="Afternoon">Afternoon</option>
+                  <option value="Evening">Evening</option>
+                  <option value="Night">Night</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Duration</label>
+                <input 
+                  type="text" 
+                  value={walk.duration} 
+                  onChange={(e) => updateWalkTime(index, 'duration', e.target.value)}
+                  placeholder="e.g., 30 minutes"
+                  className="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  onClick={() => removeWalkTime(index)}
+                  className="w-full bg-red-100 text-red-700 py-2 px-3 rounded-md hover:bg-red-200 flex items-center justify-center gap-1"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Remove
+                </button>
+              </div>
+            </div>
+            <div className="mt-3">
+              <label className="block text-sm font-medium mb-1">Notes</label>
+              <textarea 
+                value={walk.notes} 
+                onChange={(e) => updateWalkTime(index, 'notes', e.target.value)}
+                placeholder="Special instructions for this walk..."
+                className="w-full px-3 py-2 border rounded-md" 
+                rows={2} 
+              />
+            </div>
+          </div>
+        ))}
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={addWalkTime}
+            className="bg-green-100 text-green-700 py-2 px-4 rounded-md hover:bg-green-200 flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Walk Time
+          </button>
         </div>
         <div className="mt-3">
-          <label className="block text-sm font-medium mb-1">Walk Notes</label>
-          <textarea name="walk_notes" defaultValue={formData.walk_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} />
+          <label className="block text-sm font-medium mb-1">General Walk Notes</label>
+          <textarea name="walk_notes" defaultValue={formData.walk_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} placeholder="General notes about walking this dog..." />
         </div>
       </div>
 
@@ -1071,9 +1145,20 @@ export default function HouseSittingApp() {
 
         {/* Current Stay */}
         <div className="bg-purple-50 rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Users className="w-6 h-6 text-purple-600" />
-            <h2 className="text-xl font-bold">Current Stay</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Users className="w-6 h-6 text-purple-600" />
+              <h2 className="text-xl font-bold">Current Stay</h2>
+            </div>
+            {isAdmin && (
+              <button
+                onClick={() => setShowAddForm({ type: 'stay' })}
+                className="flex items-center gap-1 px-3 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add Stay
+              </button>
+            )}
           </div>
           {dbData.stays.length > 0 ? (
             dbData.stays.map(stay => (
@@ -1282,9 +1367,21 @@ export default function HouseSittingApp() {
                 <MapPin className="w-4 h-4 text-green-600" />
                 Exercise & Walks
               </h4>
-              <p className="text-sm">{(dog as any).walks?.frequency || (dog as any).walk_frequency}</p>
-              {((dog as any).walks?.notes || (dog as any).walk_notes) && (
-                <p className="text-sm text-gray-600 mt-2 italic">{(dog as any).walks?.notes || (dog as any).walk_notes}</p>
+              {dog.walk_schedule && Array.isArray(dog.walk_schedule) && dog.walk_schedule.length > 0 ? (
+                <div className="space-y-2">
+                  {dog.walk_schedule.map((walk: any, index: number) => (
+                    <div key={index} className="text-sm">
+                      <span className="font-medium">{walk.time}</span>
+                      {walk.duration && <span className="text-gray-600"> - {walk.duration}</span>}
+                      {walk.notes && <p className="text-gray-600 italic mt-1">{walk.notes}</p>}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No scheduled walks</p>
+              )}
+              {dog.walk_notes && (
+                <p className="text-sm text-gray-600 mt-2 italic">{dog.walk_notes}</p>
               )}
             </div>
           </div>
@@ -1780,6 +1877,9 @@ export default function HouseSittingApp() {
           }
           if (data.medicine_schedule) {
             data.medicine_schedule = JSON.parse(data.medicine_schedule as string);
+          }
+          if (data.walk_schedule) {
+            data.walk_schedule = JSON.parse(data.walk_schedule as string);
           }
           if (data.special_instructions) {
             data.special_instructions = JSON.parse(data.special_instructions as string);

@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS dogs (
   medicine_notes TEXT,
   potty_trained TEXT,
   potty_notes TEXT,
-  walk_frequency TEXT,
+  walk_schedule JSONB,
   walk_notes TEXT,
   sleeping_location TEXT,
   sleeping_notes TEXT,
@@ -168,7 +168,7 @@ INSERT INTO alerts (property_id, type, category, text) VALUES
 ON CONFLICT DO NOTHING;
 
 -- Insert default dogs data
-INSERT INTO dogs (id, property_id, name, age, personality, feeding_schedule, feeding_location, feeding_notes, medicine_schedule, medicine_notes, potty_trained, potty_notes, walk_frequency, walk_notes, sleeping_location, sleeping_notes, special_instructions) VALUES
+INSERT INTO dogs (id, property_id, name, age, personality, feeding_schedule, feeding_location, feeding_notes, medicine_schedule, medicine_notes, potty_trained, potty_notes, walk_schedule, walk_notes, sleeping_location, sleeping_notes, special_instructions) VALUES
 (
   '00000000-0000-0000-0000-000000000002',
   '00000000-0000-0000-0000-000000000001',
@@ -182,7 +182,7 @@ INSERT INTO dogs (id, property_id, name, age, personality, feeding_schedule, fee
   '',
   '99% trained but needs frequent trips outside',
   'Often needs verbal command ''go potty''. May need baby wipes after.',
-  'Optional walks only',
+  '[]',
   'Leash in laundry room',
   'Normally sleeps with owners',
   'Alternative: Keep in kitchen',
@@ -201,7 +201,7 @@ INSERT INTO dogs (id, property_id, name, age, personality, feeding_schedule, fee
   'Wipe top of head once daily with wipes. Currently on medicine for diarrhea.',
   'Fully trained',
   'May whine to go outside at night. May need baby wipes for cleanup. If won''t come back, use leaf blower trigger.',
-  'Loves long daily walks',
+  '[{"time": "Morning", "duration": "30-45 minutes", "notes": "Use black harness on left side. Not good with other dogs - redirect if you see any."}, {"time": "Evening", "duration": "20-30 minutes", "notes": "Shorter evening walk, same harness and precautions."}]',
   'Use black harness on left side. Not good with other dogs - redirect if you see any.',
   'Normally sleeps with owners',
   'Alternative: Keep in kitchen',

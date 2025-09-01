@@ -33,7 +33,7 @@ export interface Dog {
   medicine_notes?: string
   potty_trained?: string
   potty_notes?: string
-  walk_frequency?: string
+  walk_schedule: any // JSONB
   walk_notes?: string
   sleeping_location?: string
   sleeping_notes?: string

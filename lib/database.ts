@@ -755,18 +755,22 @@ export const generateMasterSchedule = (
   
   // Add walk schedules from dogs
   dogs.forEach(dog => {
-    if (dog.walk_frequency && dog.walk_frequency !== 'Optional walks only') {
-      scheduleItems.push({
-        id: `walk-${dog.id}`,
-        type: 'walk',
-        title: `Walk ${dog.name}`,
-        time: 'Afternoon',
-        date: today,
-        dog_id: dog.id,
-        dog_name: dog.name,
-        notes: dog.walk_notes,
-        recurring: true,
-        source: 'dog'
+    if (dog.walk_schedule && Array.isArray(dog.walk_schedule)) {
+      dog.walk_schedule.forEach((walk: any, index: number) => {
+        if (walk.time) {
+          scheduleItems.push({
+            id: `walk-${dog.id}-${index}`,
+            type: 'walk',
+            title: `Walk ${dog.name}`,
+            time: walk.time,
+            date: today,
+            dog_id: dog.id,
+            dog_name: dog.name,
+            notes: walk.duration ? `${walk.duration}${walk.notes ? ` - ${walk.notes}` : ''}` : walk.notes,
+            recurring: true,
+            source: 'dog'
+          })
+        }
       })
     }
   })
