@@ -1471,7 +1471,7 @@ export default function HouseSittingApp() {
                 Feeding Schedule
               </h4>
               {((dog as any).feeding?.schedule || (dog as any).feeding_schedule || []).map((item: any, idx: number) => (
-                <p key={idx} className="mb-1">
+                <p key={`feeding-display-${idx}-${item.time}-${item.amount}`} className="mb-1">
                   <span className="font-medium">{item.time}:</span> {item.amount}
                 </p>
               ))}
@@ -1492,12 +1492,12 @@ export default function HouseSittingApp() {
                 Medicine Schedule
               </h4>
               {((dog as any).medicine?.schedule || (dog as any).medicine_schedule || []).map((item: any, idx: number) => (
-                <div key={idx} className="mb-2">
+                <div key={`medicine-display-${idx}-${item.time}-${item.medication}`} className="mb-2">
                   <p className="mb-1">
                     <span className="font-medium">{item.time}:</span> {item.medication}
                   </p>
                   {item.notes && (
-                    <p className="text-gray-600 text-sm ml-0">{item.notes}</p>
+                    <p className="text-gray-600 text-sm ml-0 italic">{item.notes}</p>
                   )}
                 </div>
               ))}
