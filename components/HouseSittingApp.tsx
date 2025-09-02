@@ -2670,7 +2670,7 @@ export default function HouseSittingApp() {
             
             <form onSubmit={handleSubmit} onChange={handleFormChange} className="space-y-4">
               {formType === 'dog' && (
-                <DogEditForm formData={formData} contacts={contacts} />
+                <DogEditForm formData={formData} contacts={dbData.contacts} />
               )}
               
               {formType === 'alert' && (
