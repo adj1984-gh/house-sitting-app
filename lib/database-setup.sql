@@ -122,6 +122,8 @@ CREATE TABLE IF NOT EXISTS stays (
   sitter_name TEXT NOT NULL,
   start_date DATE NOT NULL,
   end_date DATE NOT NULL,
+  start_time TEXT,
+  end_time TEXT,
   notes TEXT,
   active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

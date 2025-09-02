@@ -1203,61 +1203,63 @@ export const getContacts = async (propertyId: string = '00000000-0000-0000-0000-
 }
 
 export const createContact = async (contact: Omit<Contact, 'id' | 'created_at' | 'updated_at'>): Promise<Contact | null> => {
-  if (!supabaseAdmin) {
-    console.warn('Supabase admin not configured')
-    return null
-  }
+  try {
+    const response = await fetch('/api/contacts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(contact),
+    });
 
-  const { data, error } = await supabaseAdmin
-    .from('contacts')
-    .insert([contact])
-    .select()
-    .single()
-  
-  if (error) {
-    console.error('Error creating contact:', error)
-    return null
+    if (!response.ok) {
+      console.error('Error creating contact:', response.statusText);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating contact:', error);
+    return null;
   }
-  
-  return data
 }
 
 export const updateContact = async (id: string, updates: Partial<Contact>): Promise<Contact | null> => {
-  if (!supabaseAdmin) {
-    console.warn('Supabase admin not configured')
-    return null
-  }
+  try {
+    const response = await fetch('/api/contacts', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id, updates }),
+    });
 
-  const { data, error } = await supabaseAdmin
-    .from('contacts')
-    .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .select()
-    .single()
-  
-  if (error) {
-    console.error('Error updating contact:', error)
-    return null
+    if (!response.ok) {
+      console.error('Error updating contact:', response.statusText);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating contact:', error);
+    return null;
   }
-  
-  return data
 }
 
 export const deleteContact = async (id: string): Promise<boolean> => {
-  if (!supabaseAdmin) {
-    console.warn('Supabase admin not configured')
-    return false
-  }
+  try {
+    const response = await fetch(`/api/contacts?id=${id}`, {
+      method: 'DELETE',
+    });
 
-  const { error } = await supabaseAdmin
-    .from('contacts')
-    .delete()
-    .eq('id', id)
-  
-  if (error) {
-    console.error('Error deleting contact:', error)
-    return false
+    if (!response.ok) {
+      console.error('Error deleting contact:', response.statusText);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting contact:', error);
+    return false;
   }
-  
-  return true
 }

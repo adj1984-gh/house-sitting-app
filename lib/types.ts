@@ -119,6 +119,8 @@ export interface Stay {
   sitter_name: string
   start_date: string
   end_date: string
+  start_time?: string
+  end_time?: string
   notes?: string
   active: boolean
   created_at: string

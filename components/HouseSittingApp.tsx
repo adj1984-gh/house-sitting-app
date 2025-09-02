@@ -1842,7 +1842,7 @@ export default function HouseSittingApp() {
                         <div>
                           <h3 className="font-semibold text-lg">{stay.sitter_name}</h3>
                           <p className="text-gray-600">
-                            {new Date(stay.start_date).toLocaleDateString()} - {new Date(stay.end_date).toLocaleDateString()}
+                            {new Date(stay.start_date).toLocaleDateString()}{stay.start_time && ` at ${formatTimeForDisplay(stay.start_time)}`} - {new Date(stay.end_date).toLocaleDateString()}{stay.end_time && ` at ${formatTimeForDisplay(stay.end_time)}`}
                           </p>
                           {stay.notes && (
                             <p className="text-sm text-gray-500 mt-1">{stay.notes}</p>
@@ -3255,14 +3255,29 @@ export default function HouseSittingApp() {
                     <label className="block text-sm font-medium mb-1">Sitter Name</label>
                     <input name="sitter_name" defaultValue={formData.sitter_name || ''} required className="w-full px-3 py-2 border rounded-md" />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Start Date</label>
-                    <input name="start_date" type="date" defaultValue={formData.start_date || ''} required className="w-full px-3 py-2 border rounded-md" />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Start Date</label>
+                      <input name="start_date" type="date" defaultValue={formData.start_date || ''} required className="w-full px-3 py-2 border rounded-md" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Start Time (Optional)</label>
+                      <input name="start_time" type="time" defaultValue={formData.start_time || ''} className="w-full px-3 py-2 border rounded-md" />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">End Date</label>
-                    <input name="end_date" type="date" defaultValue={formData.end_date || ''} required className="w-full px-3 py-2 border rounded-md" />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">End Date</label>
+                      <input name="end_date" type="date" defaultValue={formData.end_date || ''} required className="w-full px-3 py-2 border rounded-md" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">End Time (Optional)</label>
+                      <input name="end_time" type="time" defaultValue={formData.end_time || ''} className="w-full px-3 py-2 border rounded-md" />
+                    </div>
                   </div>
+                  
                   <div>
                     <label className="block text-sm font-medium mb-1">Notes (Optional)</label>
                     <textarea name="notes" defaultValue={formData.notes || ''} className="w-full px-3 py-2 border rounded-md" rows={3} />
