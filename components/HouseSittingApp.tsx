@@ -2192,7 +2192,7 @@ export default function HouseSittingApp() {
                         )}
 
                         {/* Scheduling Information */}
-                        {instruction.schedule_frequency && instruction.schedule_frequency !== 'none' && instruction.schedule_frequency !== 'one_time' && (
+                        {instruction.schedule_frequency && instruction.schedule_frequency !== 'none' && (
                           <div className="mt-3 p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
                             <div className="flex items-center gap-2 mb-1">
                               <Calendar className="w-4 h-4 text-blue-600" />
@@ -2205,6 +2205,9 @@ export default function HouseSittingApp() {
                                 )}
                                 {instruction.schedule_frequency === 'weekly' && (
                                   <>Weekly{instruction.schedule_day && `, on ${instruction.schedule_day.charAt(0).toUpperCase() + instruction.schedule_day.slice(1)}`}{instruction.schedule_time && `, at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
+                                )}
+                                {instruction.schedule_frequency === 'one_time' && (
+                                  <>One-time event{instruction.schedule_date && ` on ${new Date(instruction.schedule_date).toLocaleDateString()}`}{instruction.schedule_time && ` at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
                                 )}
                               </p>
                               {instruction.remind_day_before && (
