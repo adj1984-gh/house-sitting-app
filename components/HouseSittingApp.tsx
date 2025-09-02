@@ -2788,40 +2788,44 @@ export default function HouseSittingApp() {
                               const customContainer = customField?.parentElement;
                               
                               if (e.target.value === 'daily') {
-                                dayContainer.style.display = 'none';
-                                customContainer.style.display = 'none';
+                                if (dayContainer) dayContainer.style.display = 'none';
+                                if (customContainer) customContainer.style.display = 'none';
                               } else if (e.target.value === 'weekly') {
-                                dayContainer.style.display = 'block';
-                                customContainer.style.display = 'none';
+                                if (dayContainer) dayContainer.style.display = 'block';
+                                if (customContainer) customContainer.style.display = 'none';
                                 // Update day options for weekly
-                                dayField.innerHTML = `
-                                  <option value="sunday">Sunday</option>
-                                  <option value="monday">Monday</option>
-                                  <option value="tuesday">Tuesday</option>
-                                  <option value="wednesday">Wednesday</option>
-                                  <option value="thursday">Thursday</option>
-                                  <option value="friday">Friday</option>
-                                  <option value="saturday">Saturday</option>
-                                `;
+                                if (dayField) {
+                                  dayField.innerHTML = `
+                                    <option value="sunday">Sunday</option>
+                                    <option value="monday">Monday</option>
+                                    <option value="tuesday">Tuesday</option>
+                                    <option value="wednesday">Wednesday</option>
+                                    <option value="thursday">Thursday</option>
+                                    <option value="friday">Friday</option>
+                                    <option value="saturday">Saturday</option>
+                                  `;
+                                }
                               } else if (e.target.value === 'monthly') {
-                                dayContainer.style.display = 'block';
-                                customContainer.style.display = 'none';
+                                if (dayContainer) dayContainer.style.display = 'block';
+                                if (customContainer) customContainer.style.display = 'none';
                                 // Update day options for monthly
-                                dayField.innerHTML = `
-                                  <option value="1st">1st of month</option>
-                                  <option value="2nd">2nd of month</option>
-                                  <option value="3rd">3rd of month</option>
-                                  <option value="4th">4th of month</option>
-                                  <option value="5th">5th of month</option>
-                                  <option value="10th">10th of month</option>
-                                  <option value="15th">15th of month</option>
-                                  <option value="20th">20th of month</option>
-                                  <option value="25th">25th of month</option>
-                                  <option value="last">Last day of month</option>
-                                `;
+                                if (dayField) {
+                                  dayField.innerHTML = `
+                                    <option value="1st">1st of month</option>
+                                    <option value="2nd">2nd of month</option>
+                                    <option value="3rd">3rd of month</option>
+                                    <option value="4th">4th of month</option>
+                                    <option value="5th">5th of month</option>
+                                    <option value="10th">10th of month</option>
+                                    <option value="15th">15th of month</option>
+                                    <option value="20th">20th of month</option>
+                                    <option value="25th">25th of month</option>
+                                    <option value="last">Last day of month</option>
+                                  `;
+                                }
                               } else if (e.target.value === 'custom') {
-                                dayContainer.style.display = 'none';
-                                customContainer.style.display = 'block';
+                                if (dayContainer) dayContainer.style.display = 'none';
+                                if (customContainer) customContainer.style.display = 'block';
                               }
                             }}
                           >
