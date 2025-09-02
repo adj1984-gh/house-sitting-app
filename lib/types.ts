@@ -144,6 +144,7 @@ export interface ScheduleItem {
   dog_name?: string
   location?: string
   notes?: string
+  video_url?: string
   recurring?: boolean
   source: 'dog' | 'appointment' | 'service' | 'task' | 'house'
 }

@@ -1732,7 +1732,20 @@ export default function HouseSittingApp() {
                         }`}></div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
-                            <p className="font-medium">{item.title}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{item.title}</p>
+                              {item.video_url && (
+                                <button
+                                  onClick={() => window.open(item.video_url, '_blank')}
+                                  className="text-red-600 hover:text-red-800"
+                                  title="Watch video instructions"
+                                >
+                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"/>
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
                             {isAdmin && (item.source === 'task' || item.source === 'appointment') && (
                               <button
                                 onClick={() => handleScheduleItemDelete(item)}
@@ -1891,51 +1904,42 @@ export default function HouseSittingApp() {
                   return true; // Show medications without end dates
                 })
                 .map((item: any, idx: number) => (
-                <div key={`medicine-display-${idx}-${item.medication || item.time}-${item.medication}`} className="mb-2">
+                <div key={`medicine-display-${idx}-${item.medication || item.time}-${item.medication}`} className="mb-3 p-3 bg-white rounded-lg border">
                   {item.dose_times ? (
-                    // New smart format
-                    <div>
-                      <p className="mb-1 font-medium">{item.medication}</p>
-                      {item.dose_times.map((dose: any, doseIdx: number) => (
-                        <p key={doseIdx} className="text-sm ml-4">
-                          <span className="font-medium">{dose.time}:</span> {dose.dose_amount}
-                        </p>
-                      ))}
-                      {item.calculated_end_date && (
-                        <p className="text-sm text-gray-500 ml-4">
-                          (until {new Date(item.calculated_end_date).toLocaleDateString()} - {item.remaining_doses} doses remaining)
-                        </p>
-                      )}
-                      {item.notes && (
-                        <p className="text-gray-600 text-sm ml-4 italic">{item.notes}</p>
-                      )}
-                      {item.video_url && (
-                        <div className="ml-4 mt-2">
-                          <YouTubeVideo
-                            value={item.video_url}
-                            onChange={() => {}} // Read-only in view mode
-                            disabled={true}
-                          />
+                    // New smart format - show each dose time as separate clean entry
+                    item.dose_times.map((dose: any, doseIdx: number) => (
+                      <div key={doseIdx} className="flex items-start gap-3">
+                        <div className="flex-shrink-0">
+                          <span className="font-medium text-blue-600">{formatTimeForDisplay(dose.time)}</span>
                         </div>
-                      )}
-                    </div>
-                  ) : (
-                    // Old format
-                    <div>
-                      <p className="mb-1">
-                        <span className="font-medium">{formatTimeForDisplay(item.time)}:</span> {item.medication}
-                        {item.end_date && (
-                          <span className="text-sm text-gray-500 ml-2">
-                            (until {new Date(item.end_date).toLocaleDateString()}
-                            {item.end_time && ` at ${item.end_time}`})
-                          </span>
+                        <div className="flex-grow">
+                          <span className="font-medium text-gray-800">{item.medication}</span>
+                          {dose.dose_amount && (
+                            <span className="text-gray-600 ml-2">- {dose.dose_amount}</span>
+                          )}
+                        </div>
+                        {item.video_url && doseIdx === 0 && (
+                          <div className="flex-shrink-0">
+                            <YouTubeVideo
+                              value={item.video_url}
+                              onChange={() => {}} // Read-only in view mode
+                              disabled={true}
+                            />
+                          </div>
                         )}
-                      </p>
-                      {item.notes && (
-                        <p className="text-gray-600 text-sm ml-0 italic">{item.notes}</p>
-                      )}
+                      </div>
+                    ))
+                  ) : (
+                    // Old format - clean single line display
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0">
+                        <span className="font-medium text-blue-600">{formatTimeForDisplay(item.time)}</span>
+                      </div>
+                      <div className="flex-grow">
+                        <span className="font-medium text-gray-800">{item.medication}</span>
+                      </div>
                       {item.video_url && (
-                        <div className="ml-0 mt-2">
+                        <div className="flex-shrink-0">
                           <YouTubeVideo
                             value={item.video_url}
                             onChange={() => {}} // Read-only in view mode
@@ -2608,13 +2612,15 @@ export default function HouseSittingApp() {
         if (data.schedule_frequency === 'none') {
           data.schedule_day = '';
           data.schedule_time = '';
-          data.schedule_duration = '';
+          data.schedule_duration = null;
           data.remind_day_before = false;
         }
         
-        // Handle duration - convert to number if provided
-        if (data.schedule_duration) {
+        // Handle duration - convert to number if provided, otherwise set to null
+        if (data.schedule_duration && data.schedule_duration !== '') {
           data.schedule_duration = parseInt(data.schedule_duration);
+        } else {
+          data.schedule_duration = null;
         }
         
         // Handle time selection - combine time type and time value

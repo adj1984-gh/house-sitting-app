@@ -841,12 +841,13 @@ export const generateMasterSchedule = (
                 scheduleItems.push({
                   id: `medicine-${dog.id}-${index}-${doseIndex}`,
                   type: 'medicine',
-                  title: `Medicine for ${dog.name}`,
+                  title: medicine.medication,
                   time: dose.time,
                   date: today,
                   dog_id: dog.id,
                   dog_name: dog.name,
-                  notes: `${medicine.medication} (${dose.dose_amount})`,
+                  notes: dose.dose_amount,
+                  video_url: medicine.video_url,
                   recurring: true,
                   source: 'dog'
                 })
@@ -857,12 +858,13 @@ export const generateMasterSchedule = (
             scheduleItems.push({
               id: `medicine-${dog.id}-${index}`,
               type: 'medicine',
-              title: `Medicine for ${dog.name}`,
+              title: medicine.medication,
               time: medicine.time,
               date: today,
               dog_id: dog.id,
               dog_name: dog.name,
-              notes: medicine.medication,
+              notes: medicine.notes,
+              video_url: medicine.video_url,
               recurring: true,
               source: 'dog'
             })
