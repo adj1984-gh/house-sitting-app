@@ -263,7 +263,7 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
         <h4 className="font-semibold text-gray-800 mb-3">Medicine Information</h4>
         <div className="space-y-3">
           {medicineSchedule.map((medicine, index) => (
-            <div key={`medicine-${index}`} className="border rounded-md p-3 space-y-2">
+            <div key={`medicine-${index}-${medicine.time}-${medicine.medication}-${medicine.notes}`} className="border rounded-md p-3 space-y-2">
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="block text-xs font-medium mb-1">Time</label>
