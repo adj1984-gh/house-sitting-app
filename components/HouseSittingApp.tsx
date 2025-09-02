@@ -676,6 +676,13 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
 export default function HouseSittingApp() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
+
+  // Function to handle tab switching with scroll to top
+  const handleTabSwitch = (sectionId: string) => {
+    setActiveSection(sectionId);
+    // Scroll to top when switching tabs
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [hasActiveStayToday, setHasActiveStayToday] = useState(false);
@@ -1027,7 +1034,14 @@ export default function HouseSittingApp() {
         if (newWindow) {
           newWindow.document.write(result.html);
           newWindow.document.close();
-          newWindow.print();
+          
+          // Show user feedback about the delay
+          alert('Welcome document opened! Print dialog will appear in 5 seconds to allow QR code to load properly.');
+          
+          // Wait for QR code to load before printing
+          setTimeout(() => {
+            newWindow.print();
+          }, 5000); // 5 second delay to allow QR code to render
         }
       } else {
         throw new Error(result.error || 'Failed to generate PDF');
@@ -1168,9 +1182,10 @@ export default function HouseSittingApp() {
     return (
       <div className="bg-white border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between py-3">
-            <h1 className="text-2xl font-bold text-gray-800">House Sitting Portal</h1>
-            <div className="flex items-center gap-2">
+          {/* Header - compact on mobile */}
+          <div className="flex items-center justify-between py-2 md:py-3">
+            <h1 className="text-lg md:text-2xl font-bold text-gray-800">House Sitting Portal</h1>
+            <div className="flex items-center gap-1 md:gap-2">
               <button
                 onClick={() => {
                   setIsAuthenticated(false);
@@ -1178,10 +1193,10 @@ export default function HouseSittingApp() {
                   localStorage.removeItem('houseSittingAuth');
                   localStorage.removeItem('houseSittingAdmin');
                 }}
-                className="px-3 py-2 text-gray-600 hover:text-gray-800"
+                className="p-2 md:px-3 md:py-2 text-gray-600 hover:text-gray-800"
                 title="Lock"
               >
-                <Lock className="w-5 h-5" />
+                <Lock className="w-4 h-4 md:w-5 md:h-5" />
               </button>
               <button
                 onClick={() => {
@@ -1192,32 +1207,41 @@ export default function HouseSittingApp() {
                     setShowAdminLogin(true);
                   }
                 }}
-                className={`px-4 py-2 rounded-md ${
+                className={`px-2 py-1 md:px-4 md:py-2 rounded-md text-xs md:text-sm ${
                   isAdmin ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'
                 }`}
               >
-                {isAdmin ? 'Admin Mode' : 'Sitter View'}
+                {isAdmin ? 'Admin' : 'Sitter'}
               </button>
             </div>
           </div>
-          <div className="flex space-x-1 overflow-x-auto pb-2">
-            {sections.map(section => {
-              const Icon = section.icon;
-              return (
-                <button
-                  key={section.id}
-                  onClick={() => setActiveSection(section.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors whitespace-nowrap ${
-                    activeSection === section.id
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {section.label}
-                </button>
-              );
-            })}
+          
+          {/* Navigation tabs with scroll indicators */}
+          <div className="relative">
+            <div className="flex space-x-1 overflow-x-auto pb-2 scrollbar-hide">
+              {sections.map(section => {
+                const Icon = section.icon;
+                return (
+                  <button
+                    key={section.id}
+                    onClick={() => handleTabSwitch(section.id)}
+                    className={`flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 rounded-md transition-colors whitespace-nowrap text-sm md:text-base ${
+                      activeSection === section.id
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="hidden sm:inline">{section.label}</span>
+                    <span className="sm:hidden">{section.label.split(' ')[0]}</span>
+                  </button>
+                );
+              })}
+            </div>
+            
+            {/* Scroll indicators */}
+            <div className="absolute left-0 top-0 bottom-2 w-4 bg-gradient-to-r from-white to-transparent pointer-events-none"></div>
+            <div className="absolute right-0 top-0 bottom-2 w-4 bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
           </div>
         </div>
       </div>
