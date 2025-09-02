@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS dogs (
   sleeping_location TEXT,
   sleeping_notes TEXT,
   special_instructions JSONB,
+  vet_visits JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

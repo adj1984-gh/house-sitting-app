@@ -896,6 +896,54 @@ export const generateMasterSchedule = (
     }
   })
   
+  // Add vet visits from dogs
+  dogs.forEach(dog => {
+    if (dog.vet_visits && Array.isArray(dog.vet_visits)) {
+      dog.vet_visits.forEach((visit: any, index: number) => {
+        const visitDate = visit.date
+        if (visitDate === today) {
+          // Add the actual vet visit
+          scheduleItems.push({
+            id: `vet-visit-${dog.id}-${index}`,
+            type: 'appointment',
+            title: `${visit.visit_type || 'Vet Visit'} - ${dog.name}`,
+            time: visit.time || 'TBD',
+            date: visitDate,
+            dog_id: dog.id,
+            dog_name: dog.name,
+            location: visit.vet_address,
+            notes: visit.notes ? `${visit.notes}${visit.vet_phone ? ` (${visit.vet_phone})` : ''}` : visit.vet_phone,
+            recurring: false,
+            source: 'dog'
+          })
+        }
+        
+        // Add reminder if configured
+        if (visit.reminder_days_before && visit.reminder_days_before > 0) {
+          const reminderDate = new Date(visitDate)
+          reminderDate.setDate(reminderDate.getDate() - visit.reminder_days_before)
+          const reminderDateStr = reminderDate.toISOString().split('T')[0]
+          
+          if (reminderDateStr === today) {
+            scheduleItems.push({
+              id: `vet-reminder-${dog.id}-${index}`,
+              type: 'appointment',
+              title: `🔔 Reminder: ${visit.visit_type || 'Vet Visit'} - ${dog.name}`,
+              time: 'TBD',
+              date: today,
+              dog_id: dog.id,
+              dog_name: dog.name,
+              location: visit.vet_address,
+              notes: `Vet visit scheduled for ${new Date(visitDate).toLocaleDateString()}${visit.time ? ` at ${visit.time}` : ''}${visit.vet_phone ? ` (${visit.vet_phone})` : ''}`,
+              recurring: false,
+              source: 'dog'
+            })
+          }
+        }
+      })
+    }
+  })
+  
   // Add appointments
   appointments.forEach(appointment => {
     const appointmentDate = appointment.date.split('T')[0]

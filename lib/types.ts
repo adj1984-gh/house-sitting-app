@@ -18,6 +18,17 @@ export interface Alert {
   created_at: string
 }
 
+export interface VetVisit {
+  visit_type: string
+  date: string
+  time?: string
+  vet_name?: string
+  vet_address?: string
+  vet_phone?: string
+  notes?: string
+  reminder_days_before?: number
+}
+
 export interface Dog {
   id: string
   property_id: string
@@ -36,6 +47,7 @@ export interface Dog {
   sleeping_location?: string
   sleeping_notes?: string
   special_instructions: any // JSONB
+  vet_visits: VetVisit[] // JSONB array
   created_at: string
   updated_at: string
 }

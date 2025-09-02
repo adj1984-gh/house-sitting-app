@@ -55,6 +55,7 @@ A comprehensive web application for managing house and pet sitting instructions,
   - **Medicine management** with add/remove/edit capabilities for each medication
   - **Special instructions** with categorized add/remove interface
   - **Birthdate field** with automatic age calculation
+  - **Vet visits scheduling** with automatic vet information pre-population from regular vet contact
   - **No more JSON input** - all complex data handled through intuitive UI
 - **Master schedule system** with comprehensive task management:
   - **Daily tasks management** with full CRUD operations (timed and untimed)
@@ -1364,6 +1365,29 @@ The application now has full database connectivity, data persistence, and a full
   - `components/HouseSittingApp.tsx` - Removed Schedule tab, added date selector, integrated schedule into Overview
 - **Result**: Cleaner, more intuitive interface with multi-day schedule viewing capability
 
+### ✅ Scheduling Logic & Display Fixes (December 2024)
+- **Issues Fixed**: Multiple scheduling problems with house instruction services
+- **Problems Resolved**:
+  - **Timezone Issues**: House cleaning scheduled for Tuesday was showing on Wednesday due to timezone handling
+  - **Reminder Timing**: Reminders were showing on the same day as the event instead of the day before
+  - **One-Time Event Display**: House instructions changed to one-time events weren't showing scheduling information in the UI
+- **Solutions Implemented**:
+  - **PST/PDT Timezone Fix**: Hardcoded all date calculations to use PST timezone (`-08:00` offset) for consistent scheduling
+  - **Corrected Reminder Logic**: Fixed reminder calculation to show on the day before the scheduled event
+  - **One-Time Event Support**: Updated House Instructions section to display scheduling information for one-time events
+- **Technical Details**:
+  - **Date Parsing**: All dates now use `'T00:00:00-08:00'` format to force PST timezone
+  - **Day Calculations**: `getDay()` now returns correct day of week in PST regardless of user's local timezone
+  - **Display Logic**: Added support for one-time events in House Instructions scheduling display
+- **User Experience Improvements**:
+  - **Accurate Scheduling**: Events now appear on the correct dates as intended
+  - **Proper Reminders**: Day-before reminders show on the correct day
+  - **Complete Information**: All scheduled services show their timing details in the House Instructions section
+- **Files Changed**: 
+  - `lib/database.ts` - Fixed timezone handling and reminder logic for house instruction scheduling
+  - `components/HouseSittingApp.tsx` - Added one-time event display support in House Instructions section
+- **Result**: Reliable scheduling system that works consistently in PST/PDT timezone with proper reminder timing
+
 ### ✅ Service Reminder Display Enhancement (December 2024)
 - **Enhancement**: Improved service reminder display to show reminders at the bottom of the schedule instead of specific time slots
 - **User Request**: When "set reminder" option is chosen on house instructions, show reminders at bottom of schedule, not at a specific time
@@ -1400,3 +1424,33 @@ The application now has full database connectivity, data persistence, and a full
   - `lib/database.ts` - Modified reminder generation to use empty time values
   - `components/HouseSittingApp.tsx` - Enhanced schedule grouping to handle reminders separately
 - **Result**: Service reminders now appear in a dedicated section at the bottom of the schedule, providing clearer organization and better user experience
+
+### ✅ Vet Visits Scheduling System (December 2024)
+- **Enhancement**: Added comprehensive vet visits scheduling system to pet care forms with automatic vet information integration
+- **New Features**:
+  - **Vet Visits Section**: New section in pet editing forms for scheduling veterinary appointments
+  - **Automatic Vet Information**: Vet name, address, and phone are auto-populated from regular vet contact
+  - **Flexible Scheduling**: Support for specific dates and times with reminder options
+  - **Reminder System**: Configurable reminders (1-7 days before) with automatic schedule integration
+  - **Complete Information**: Visit type, vet details, notes, and contact information all in one place
+- **User Experience Improvements**:
+  - **Smart Pre-population**: New vet visits automatically fill in regular vet information
+  - **Clear Organization**: Each vet visit has its own card with all relevant details
+  - **Intuitive Interface**: Date picker, time picker, and reminder dropdown for easy scheduling
+  - **Helpful Guidance**: Clear instructions that vet info comes from regular vet contact
+- **Schedule Integration**:
+  - **Master Schedule**: Vet visits appear in daily schedule alongside other appointments
+  - **Reminder Notifications**: Day-before reminders show in schedule with 🔔 icon
+  - **Proper Categorization**: Vet visits appear as appointments in the schedule system
+- **Database Schema**:
+  - **New Field**: Added `vet_visits` JSONB field to dogs table
+  - **Migration Script**: Created migration for existing databases
+  - **TypeScript Types**: Added VetVisit interface for type safety
+- **Example Use Case**: Schedule Barolo's annual checkup for next month with 3-day reminder
+- **Files Changed**: 
+  - `lib/database-setup.sql` - Added vet_visits JSONB field to dogs table
+  - `lib/types.ts` - Added VetVisit interface and updated Dog interface
+  - `components/HouseSittingApp.tsx` - Added vet visits form section and state management
+  - `lib/database.ts` - Integrated vet visits into master schedule generation
+  - `migration-add-vet-visits.sql` - Database migration script for existing installations
+- **Result**: Complete vet visits scheduling system with automatic vet information integration and schedule reminders
