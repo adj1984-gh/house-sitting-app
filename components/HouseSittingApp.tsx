@@ -67,19 +67,84 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
     dose_times: Array<{time: string, dose_amount: string}>,
     start_date: string,
     calculated_end_date: string
-  }>>(
-    Array.isArray(formData.medicine_schedule) 
-      ? formData.medicine_schedule.map((item: any) => ({
-          medication: item.medication || '',
-          notes: item.notes || '',
-          frequency_per_day: item.frequency_per_day || 1,
-          remaining_doses: item.remaining_doses || 30,
-          dose_times: item.dose_times || [{ time: item.time || '', dose_amount: '1 dose' }],
-          start_date: item.start_date || new Date().toISOString().split('T')[0],
-          calculated_end_date: item.calculated_end_date || ''
-        }))
-      : []
-  );
+  }>>(() => {
+    if (Array.isArray(formData.medicine_schedule)) {
+      return formData.medicine_schedule.map((item: any) => {
+        // Handle both old and new formats
+        const isNewFormat = item.frequency_per_day !== undefined;
+        
+        if (isNewFormat) {
+          // New smart format - ensure dose_times have proper numbering
+          const doseTimes = item.dose_times || [{ time: '', dose_amount: 'Dose 1' }];
+          const numberedDoseTimes = doseTimes.map((dose: any, index: number) => ({
+            time: dose.time || '',
+            dose_amount: dose.dose_amount || `Dose ${index + 1}`
+          }));
+          
+          return {
+            medication: item.medication || '',
+            notes: item.notes || '',
+            frequency_per_day: item.frequency_per_day || 1,
+            remaining_doses: item.remaining_doses || 30,
+            dose_times: numberedDoseTimes,
+            start_date: item.start_date || new Date().toISOString().split('T')[0],
+            calculated_end_date: item.calculated_end_date || ''
+          };
+        } else {
+          // Old format - convert to new format
+          return {
+            medication: item.medication || '',
+            notes: item.notes || '',
+            frequency_per_day: 1,
+            remaining_doses: 30,
+            dose_times: [{ time: item.time || '', dose_amount: 'Dose 1' }],
+            start_date: new Date().toISOString().split('T')[0],
+            calculated_end_date: ''
+          };
+        }
+      });
+    }
+    return [];
+  });
+
+  // Update medicine schedule when formData changes (for editing)
+  useEffect(() => {
+    if (isEditing && editingItem?.data?.medicine_schedule) {
+      const newMedicineSchedule = editingItem.data.medicine_schedule.map((item: any) => {
+        const isNewFormat = item.frequency_per_day !== undefined;
+        
+        if (isNewFormat) {
+          // New smart format - ensure dose_times have proper numbering
+          const doseTimes = item.dose_times || [{ time: '', dose_amount: 'Dose 1' }];
+          const numberedDoseTimes = doseTimes.map((dose: any, index: number) => ({
+            time: dose.time || '',
+            dose_amount: dose.dose_amount || `Dose ${index + 1}`
+          }));
+          
+          return {
+            medication: item.medication || '',
+            notes: item.notes || '',
+            frequency_per_day: item.frequency_per_day || 1,
+            remaining_doses: item.remaining_doses || 30,
+            dose_times: numberedDoseTimes,
+            start_date: item.start_date || new Date().toISOString().split('T')[0],
+            calculated_end_date: item.calculated_end_date || ''
+          };
+        } else {
+          return {
+            medication: item.medication || '',
+            notes: item.notes || '',
+            frequency_per_day: 1,
+            remaining_doses: 30,
+            dose_times: [{ time: item.time || '', dose_amount: 'Dose 1' }],
+            start_date: new Date().toISOString().split('T')[0],
+            calculated_end_date: ''
+          };
+        }
+      });
+      setMedicineSchedule(newMedicineSchedule);
+    }
+  }, [isEditing, editingItem?.data?.medicine_schedule]);
   const [specialInstructions, setSpecialInstructions] = useState<Array<{type: string, instruction: string}>>(
     formData.special_instructions && typeof formData.special_instructions === 'object' 
       ? Object.entries(formData.special_instructions).map(([type, instruction]) => ({ type, instruction: instruction as string }))
@@ -117,26 +182,26 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
     });
   };
 
-  const addMedicine = () => {
+  const addMedicine = useCallback(() => {
     const newMedicine = {
       medication: '',
       notes: '',
       frequency_per_day: 1,
       remaining_doses: 30,
-      dose_times: [{ time: '', dose_amount: '1 dose' }],
+      dose_times: [{ time: '', dose_amount: 'Dose 1' }],
       start_date: new Date().toISOString().split('T')[0],
       calculated_end_date: ''
     };
     newMedicine.calculated_end_date = calculateEndDate(newMedicine.remaining_doses, newMedicine.frequency_per_day, newMedicine.start_date);
-    setMedicineSchedule([...medicineSchedule, newMedicine]);
-  };
+    setMedicineSchedule(prev => [...prev, newMedicine]);
+  }, [calculateEndDate]);
 
-  const removeMedicine = (index: number) => {
-    setMedicineSchedule(medicineSchedule.filter((_, i) => i !== index));
-  };
+  const removeMedicine = useCallback((index: number) => {
+    setMedicineSchedule(prev => prev.filter((_, i) => i !== index));
+  }, []);
 
   // Helper function to calculate end date based on remaining doses and frequency
-  const calculateEndDate = (remainingDoses: number, frequencyPerDay: number, startDate: string): string => {
+  const calculateEndDate = useCallback((remainingDoses: number, frequencyPerDay: number, startDate: string): string => {
     if (remainingDoses <= 0 || frequencyPerDay <= 0) return '';
     
     const daysNeeded = Math.ceil(remainingDoses / frequencyPerDay);
@@ -145,12 +210,31 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
     endDate.setDate(start.getDate() + daysNeeded - 1);
     
     return endDate.toISOString().split('T')[0];
-  };
+  }, []);
 
-  const updateMedicine = (index: number, field: string, value: any) => {
+  const updateMedicine = useCallback((index: number, field: string, value: any) => {
     setMedicineSchedule(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
+      
+      // Auto-generate dose times when frequency changes
+      if (field === 'frequency_per_day') {
+        const newFrequency = parseInt(value);
+        const currentDoseTimes = updated[index].dose_times;
+        
+        if (newFrequency > currentDoseTimes.length) {
+          // Add new dose times
+          for (let i = currentDoseTimes.length; i < newFrequency; i++) {
+            updated[index].dose_times.push({ 
+              time: '', 
+              dose_amount: `Dose ${i + 1}` 
+            });
+          }
+        } else if (newFrequency < currentDoseTimes.length) {
+          // Remove excess dose times
+          updated[index].dose_times = currentDoseTimes.slice(0, newFrequency);
+        }
+      }
       
       // Auto-calculate end date when frequency or remaining doses change
       if (field === 'frequency_per_day' || field === 'remaining_doses' || field === 'start_date') {
@@ -164,9 +248,9 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
       
       return updated;
     });
-  };
+  }, [calculateEndDate]);
 
-  const updateDoseTime = (medicineIndex: number, doseIndex: number, field: 'time' | 'dose_amount', value: string) => {
+  const updateDoseTime = useCallback((medicineIndex: number, doseIndex: number, field: 'time' | 'dose_amount', value: string) => {
     setMedicineSchedule(prev => {
       const updated = [...prev];
       updated[medicineIndex].dose_times[doseIndex] = {
@@ -175,23 +259,23 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
       };
       return updated;
     });
-  };
+  }, []);
 
-  const addDoseTime = (medicineIndex: number) => {
+  const addDoseTime = useCallback((medicineIndex: number) => {
     setMedicineSchedule(prev => {
       const updated = [...prev];
       updated[medicineIndex].dose_times.push({ time: '', dose_amount: '1 dose' });
       return updated;
     });
-  };
+  }, []);
 
-  const removeDoseTime = (medicineIndex: number, doseIndex: number) => {
+  const removeDoseTime = useCallback((medicineIndex: number, doseIndex: number) => {
     setMedicineSchedule(prev => {
       const updated = [...prev];
       updated[medicineIndex].dose_times = updated[medicineIndex].dose_times.filter((_, i) => i !== doseIndex);
       return updated;
     });
-  };
+  }, []);
 
   const addSpecialInstruction = () => {
     setSpecialInstructions([...specialInstructions, { type: '', instruction: '' }]);
@@ -433,21 +517,12 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
 
               {/* Dose Times */}
               <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium">Dose Times</label>
-                  <button
-                    type="button"
-                    onClick={() => addDoseTime(index)}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    <Plus className="w-4 h-4 inline mr-1" />
-                    Add Time
-                  </button>
-                </div>
+                <label className="block text-sm font-medium mb-2">Dose Times</label>
                 <div className="space-y-2">
                   {medicine.dose_times.map((dose, doseIndex) => (
                     <div key={`dose-${index}-${doseIndex}`} className="flex gap-2 items-center">
                       <div className="flex-1">
+                        <label className="block text-xs font-medium mb-1">{dose.dose_amount}</label>
                         <input
                           type="time"
                           value={dose.time}
@@ -455,24 +530,6 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
                           className="w-full px-3 py-2 border rounded-md text-sm"
                         />
                       </div>
-                      <div className="flex-1">
-                        <input
-                          type="text"
-                          value={dose.dose_amount}
-                          onChange={(e) => updateDoseTime(index, doseIndex, 'dose_amount', e.target.value)}
-                          placeholder="1 pill"
-                          className="w-full px-3 py-2 border rounded-md text-sm"
-                        />
-                      </div>
-                      {medicine.dose_times.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeDoseTime(index, doseIndex)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -2420,6 +2477,14 @@ export default function HouseSittingApp() {
       // Reset unsaved changes flag after successful submission
       setHasUnsavedChanges(false);
       hasUnsavedChangesRef.current = false;
+      
+      // Force a data refresh to ensure UI is up to date
+      await loadData();
+      
+      // Close the form after successful save
+      setShowAddForm(null);
+      setEditingItem(null);
+      
     } catch (error) {
       console.error('Form submission error:', error);
       alert('Error saving data. Please try again.');
