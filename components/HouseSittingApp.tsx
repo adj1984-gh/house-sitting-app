@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode, X, Info, Moon } from 'lucide-react';
 import { getProperty, getAlerts, getDogs, getServicePeople, getAppointments, getHouseInstructions, getDailyTasks, getStays, hasActiveStay, getCurrentActiveStay, getContacts, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createServicePerson, updateServicePerson, deleteServicePerson, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, createContact, updateContact, deleteContact, generateMasterSchedule } from '../lib/database';
 import { Property, Alert, Dog as DogType, ServicePerson, Appointment, HouseInstruction, DailyTask, Stay, Contact, ScheduleItem } from '../lib/types';
@@ -440,6 +440,9 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
       </div>
     </>
   );
+}, (prevProps, nextProps) => {
+  // Custom comparison function to prevent unnecessary re-renders
+  return JSON.stringify(prevProps.formData) === JSON.stringify(nextProps.formData);
 });
 
 export default function HouseSittingApp() {
@@ -2092,7 +2095,11 @@ export default function HouseSittingApp() {
 
     const isEditing = !!editingItem;
     const formType = isEditing ? editingItem.type : showAddForm?.type;
-    const formData = isEditing ? editingItem.data : {};
+    
+    // Memoize formData to prevent unnecessary re-renders
+    const formData = useMemo(() => {
+      return isEditing ? editingItem.data : {};
+    }, [isEditing, editingItem?.data]);
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
