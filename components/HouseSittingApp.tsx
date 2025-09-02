@@ -50,8 +50,14 @@ const formatPhoneForTel = (phone: string): string => {
 const DogEditForm = React.memo(({ formData }: { formData: any }) => {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>(formData.photo_url || '');
-  const [feedingSchedule, setFeedingSchedule] = useState<Array<{time: string, amount: string}>>(
-    Array.isArray(formData.feeding_schedule) ? formData.feeding_schedule : []
+  const [feedingSchedule, setFeedingSchedule] = useState<Array<{time: string, amount: string, notes: string}>>(
+    Array.isArray(formData.feeding_schedule) 
+      ? formData.feeding_schedule.map((item: any) => ({
+          time: item.time || '',
+          amount: item.amount || '',
+          notes: item.notes || ''
+        }))
+      : []
   );
   const [medicineSchedule, setMedicineSchedule] = useState<Array<{time: string, medication: string, notes: string}>>(
     Array.isArray(formData.medicine_schedule) ? formData.medicine_schedule : []
@@ -78,14 +84,14 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
   };
 
   const addFeedingTime = () => {
-    setFeedingSchedule([...feedingSchedule, { time: '', amount: '' }]);
+    setFeedingSchedule([...feedingSchedule, { time: '', amount: '', notes: '' }]);
   };
 
   const removeFeedingTime = (index: number) => {
     setFeedingSchedule(feedingSchedule.filter((_, i) => i !== index));
   };
 
-  const updateFeedingTime = (index: number, field: 'time' | 'amount', value: string) => {
+  const updateFeedingTime = (index: number, field: 'time' | 'amount' | 'notes', value: string) => {
     setFeedingSchedule(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
@@ -190,34 +196,45 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
         <h4 className="font-semibold text-gray-800 mb-3">Feeding Information</h4>
         <div className="space-y-3">
           {feedingSchedule.map((feeding, index) => (
-            <div key={`feeding-${index}-${feeding.time}-${feeding.amount}`} className="flex gap-2 items-end">
-              <div className="flex-1">
-                <label className="block text-xs font-medium mb-1">Time</label>
+            <div key={`feeding-${index}-${feeding.time}-${feeding.amount}-${feeding.notes}`} className="border border-gray-200 rounded-lg p-3 space-y-3">
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium mb-1">Time</label>
+                  <input
+                    type="time"
+                    value={feeding.time}
+                    onChange={(e) => updateFeedingTime(index, 'time', e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md text-sm"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium mb-1">Amount</label>
+                  <input
+                    type="text"
+                    value={feeding.amount}
+                    onChange={(e) => updateFeedingTime(index, 'amount', e.target.value)}
+                    placeholder="1½ cups"
+                    className="w-full px-3 py-2 border rounded-md text-sm"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeFeedingTime(index)}
+                  className="px-3 py-2 text-red-600 hover:text-red-800"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1">Notes</label>
                 <input
                   type="text"
-                  value={feeding.time}
-                  onChange={(e) => updateFeedingTime(index, 'time', e.target.value)}
-                  placeholder="e.g., 7:00 AM"
+                  value={feeding.notes}
+                  onChange={(e) => updateFeedingTime(index, 'notes', e.target.value)}
+                  placeholder="With water, special bowl, etc."
                   className="w-full px-3 py-2 border rounded-md text-sm"
                 />
               </div>
-              <div className="flex-1">
-                <label className="block text-xs font-medium mb-1">Amount</label>
-                <input
-                  type="text"
-                  value={feeding.amount}
-                  onChange={(e) => updateFeedingTime(index, 'amount', e.target.value)}
-                  placeholder="1½ cups"
-                  className="w-full px-3 py-2 border rounded-md text-sm"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => removeFeedingTime(index)}
-                className="px-3 py-2 text-red-600 hover:text-red-800"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
             </div>
           ))}
           <button
@@ -1521,9 +1538,16 @@ export default function HouseSittingApp() {
                 Feeding Schedule
               </h4>
               {((dog as any).feeding?.schedule || (dog as any).feeding_schedule || []).map((item: any, idx: number) => (
-                <p key={`feeding-display-${idx}-${item.time}-${item.amount}`} className="mb-1">
-                  <span className="font-medium">{item.time}:</span> {item.amount}
-                </p>
+                <div key={`feeding-display-${idx}-${item.time}-${item.amount}-${item.notes || ''}`} className="mb-2">
+                  <p className="mb-1">
+                    <span className="font-medium">{item.time}:</span> {item.amount}
+                  </p>
+                  {item.notes && (
+                    <p className="text-sm text-gray-600 ml-2">
+                      <em>{item.notes}</em>
+                    </p>
+                  )}
+                </div>
               ))}
               {((dog as any).feeding?.location || (dog as any).feeding_location) && (
                 <p className="mt-3 text-sm">
