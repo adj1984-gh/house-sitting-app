@@ -117,7 +117,15 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({
       return;
     }
 
-    // No size limit - we'll compress everything aggressively
+    // Mobile-friendly size limits to prevent crashes
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const maxSizeMB = isMobile ? 10 : 25; // Smaller limit for mobile
+    const fileSizeMB = file.size / 1024 / 1024;
+    
+    if (fileSizeMB > maxSizeMB) {
+      alert(`File too large for ${isMobile ? 'mobile' : 'this device'}. Maximum size: ${maxSizeMB}MB. Please use a YouTube/Vimeo URL instead for larger videos.`);
+      return;
+    }
 
     setIsUploading(true);
     setUploadProgress(0);
@@ -126,18 +134,33 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({
       // Show initial progress
       setUploadProgress(10);
       
-      // Check file size and decide compression strategy
-      const originalSizeMB = (file.size / 1024 / 1024).toFixed(2);
-      console.log(`Original video size: ${originalSizeMB}MB`);
+      const originalSizeMB = fileSizeMB.toFixed(2);
+      console.log(`Original video size: ${originalSizeMB}MB (${isMobile ? 'mobile' : 'desktop'} device)`);
       
       setUploadProgress(30);
       
       let processedVideo: string;
       
-      // Always apply aggressive compression regardless of file size
-      setUploadProgress(50);
-      processedVideo = await compressVideo(file);
-      console.log(`Applied aggressive compression to ${(file.size / 1024 / 1024).toFixed(2)}MB file`);
+      // Use simpler compression for mobile to prevent crashes
+      if (isMobile && fileSizeMB < 5) {
+        // For small files on mobile, use direct upload without compression
+        setUploadProgress(50);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result as string;
+          console.log(`Direct upload on mobile: ${(result.length / 1024 / 1024).toFixed(2)}MB base64`);
+          onChange(result);
+          setIsUploading(false);
+          setUploadProgress(0);
+        };
+        reader.readAsDataURL(file);
+        return;
+      } else {
+        // Use compression for larger files or desktop
+        setUploadProgress(50);
+        processedVideo = await compressVideo(file);
+        console.log(`Applied compression to ${originalSizeMB}MB file`);
+      }
       
       setUploadProgress(80);
       
@@ -150,9 +173,17 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({
       }, 300);
       
     } catch (error) {
-      console.error('Error compressing video:', error);
+      console.error('Error processing video:', error);
       
-      // Fallback to direct file reading without size limits
+      // Better error handling for mobile crashes
+      if (isMobile) {
+        alert('Video processing failed on mobile. Please try:\n1. A smaller video file (<5MB)\n2. Upload to YouTube/Vimeo and paste the URL\n3. Try on a desktop computer');
+        setIsUploading(false);
+        setUploadProgress(0);
+        return;
+      }
+      
+      // Fallback for desktop
       try {
         const reader = new FileReader();
         reader.onprogress = (e) => {

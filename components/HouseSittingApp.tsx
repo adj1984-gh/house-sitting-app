@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode, X, Info, Moon } from 'lucide-react';
-import VideoUpload from './VideoUpload';
+import CloudinaryUpload from './CloudinaryUpload';
 import { getProperty, getAlerts, getDogs, getAppointments, getHouseInstructions, getDailyTasks, getStays, hasActiveStay, getCurrentActiveStay, getContacts, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, createContact, updateContact, deleteContact, generateMasterSchedule } from '../lib/database';
 import { Property, Alert, Dog as DogType, Appointment, HouseInstruction, DailyTask, Stay, Contact, ScheduleItem } from '../lib/types';
 
@@ -510,7 +510,7 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
               {/* Video Instructions */}
               <div>
                 <label className="block text-sm font-medium mb-2">Video Instructions (Optional)</label>
-                <VideoUpload
+                <CloudinaryUpload
                   value={medicine.video_url}
                   onChange={(url) => updateMedicine(index, 'video_url', url)}
                   placeholder="Add video instructions for this medication..."
@@ -1886,7 +1886,7 @@ export default function HouseSittingApp() {
                       )}
                       {item.video_url && (
                         <div className="ml-4 mt-2">
-                          <VideoUpload
+                          <CloudinaryUpload
                             value={item.video_url}
                             onChange={() => {}} // Read-only in view mode
                             disabled={true}
@@ -1911,7 +1911,7 @@ export default function HouseSittingApp() {
                       )}
                       {item.video_url && (
                         <div className="ml-0 mt-2">
-                          <VideoUpload
+                          <CloudinaryUpload
                             value={item.video_url}
                             onChange={() => {}} // Read-only in view mode
                             disabled={true}
