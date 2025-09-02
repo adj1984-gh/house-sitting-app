@@ -399,4 +399,11 @@ Private project - not for public distribution
 - **Improved schedule organization** - Schedule sections now show meaningful time groupings instead of generic "Reminders" section
 - **Files Modified**: `lib/utils.ts`, `components/HouseSittingApp.tsx`
 
+#### One-Time Event Date Display Fix
+- **Fixed timezone handling** - One-time events now display the correct day of the week by using PST timezone consistently
+- **Prevented day shifting** - Date parsing now uses explicit PST offset to avoid timezone-related day changes
+- **Accurate date formatting** - September 9th, 2025 now correctly displays as "Tuesday, September 9th" instead of "Monday, September 8th"
+- **Consistent timezone usage** - All date formatting now uses America/Los_Angeles timezone for proper PST/PDT handling
+- **Files Modified**: `components/HouseSittingApp.tsx`
+
 *Last Updated: December 2024*

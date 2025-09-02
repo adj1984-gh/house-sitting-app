@@ -2870,16 +2870,27 @@ export default function HouseSittingApp() {
                                   const eventDate = instruction.schedule_date || instruction.schedule_day;
                                   if (eventDate) {
                                     try {
-                                      const date = new Date(eventDate);
+                                      // Use PST timezone to prevent day shifting
+                                      const date = new Date(eventDate + 'T00:00:00-08:00');
                                       // Ensure the date is valid
                                       if (!isNaN(date.getTime())) {
                                         // Format date in a more natural way: "Tuesday, September 9th"
-                                        const weekday = date.toLocaleDateString('en-US', { weekday: 'long' });
-                                        const month = date.toLocaleDateString('en-US', { month: 'long' });
-                                        const day = date.getDate();
-                                        const dayWithSuffix = day + (day === 1 || day === 21 || day === 31 ? 'st' : 
-                                                                     day === 2 || day === 22 ? 'nd' : 
-                                                                     day === 3 || day === 23 ? 'rd' : 'th');
+                                        const weekday = date.toLocaleDateString('en-US', { 
+                                          weekday: 'long',
+                                          timeZone: 'America/Los_Angeles'
+                                        });
+                                        const month = date.toLocaleDateString('en-US', { 
+                                          month: 'long',
+                                          timeZone: 'America/Los_Angeles'
+                                        });
+                                        const day = date.toLocaleDateString('en-US', { 
+                                          day: 'numeric',
+                                          timeZone: 'America/Los_Angeles'
+                                        });
+                                        const dayNum = parseInt(day);
+                                        const dayWithSuffix = dayNum + (dayNum === 1 || dayNum === 21 || dayNum === 31 ? 'st' : 
+                                                                       dayNum === 2 || dayNum === 22 ? 'nd' : 
+                                                                       dayNum === 3 || dayNum === 23 ? 'rd' : 'th');
                                         
                                         return ` on ${weekday}, ${month} ${dayWithSuffix}`;
                                       } else {
