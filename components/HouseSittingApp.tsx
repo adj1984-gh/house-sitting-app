@@ -2633,6 +2633,7 @@ export default function HouseSittingApp() {
         delete data.schedule_time_general;
         delete data.schedule_custom;
         delete data.schedule_days_per_week;
+        delete data.schedule_date; // Clean up the form field, actual date is stored in schedule_day for compatibility
         
         console.log('Form submission - processed house instruction data:', data);
       }

@@ -983,7 +983,7 @@ export const generateMasterSchedule = (
   
   // Add scheduled house instructions
   houseInstructions.forEach(instruction => {
-    if (instruction.schedule_frequency && instruction.schedule_frequency !== 'one_time' && instruction.schedule_day) {
+    if (instruction.schedule_frequency && instruction.schedule_frequency !== 'none') {
       const todayDate = new Date(today);
       const dayOfWeek = todayDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
       const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -992,35 +992,28 @@ export const generateMasterSchedule = (
       let shouldShowToday = false;
       let shouldShowReminder = false;
       
-      // Check if this instruction should appear today
+      // Check if this instruction should appear today (the actual event)
       if (instruction.schedule_frequency === 'daily') {
         shouldShowToday = true;
-        shouldShowReminder = instruction.remind_day_before || false;
       } else if (instruction.schedule_frequency === 'weekly' && instruction.schedule_day === currentDayName) {
         shouldShowToday = true;
-        shouldShowReminder = instruction.remind_day_before || false;
-      } else if (instruction.schedule_frequency === 'days_per_week') {
-        // For custom days per week, we'll show it every day for now
-        // In a more sophisticated implementation, you could track which days have been used
-        shouldShowToday = true;
-        shouldShowReminder = instruction.remind_day_before || false;
-      } else if (instruction.schedule_frequency === 'monthly') {
-        const dayOfMonth = todayDate.getDate();
-        if (instruction.schedule_day === '1st' && dayOfMonth === 1) {
-          shouldShowToday = true;
-          shouldShowReminder = instruction.remind_day_before || false;
-        } else if (instruction.schedule_day === '15th' && dayOfMonth === 15) {
-          shouldShowToday = true;
-          shouldShowReminder = instruction.remind_day_before || false;
+      } else if (instruction.schedule_frequency === 'one_time') {
+        // For one-time events, check if the date matches today
+        if (instruction.schedule_date) {
+          const eventDate = new Date(instruction.schedule_date);
+          const todayStr = todayDate.toISOString().split('T')[0];
+          const eventDateStr = eventDate.toISOString().split('T')[0];
+          shouldShowToday = todayStr === eventDateStr;
+        } else if (instruction.schedule_day) {
+          // Fallback for legacy one-time events stored in schedule_day
+          const eventDate = new Date(instruction.schedule_day);
+          const todayStr = todayDate.toISOString().split('T')[0];
+          const eventDateStr = eventDate.toISOString().split('T')[0];
+          shouldShowToday = todayStr === eventDateStr;
         }
-      } else if (instruction.schedule_frequency === 'custom') {
-        // For custom scheduling, show based on the custom text
-        // This is a simplified implementation - you could make it more sophisticated
-        shouldShowToday = true;
-        shouldShowReminder = instruction.remind_day_before || false;
       }
       
-      // Check for reminder (day before)
+      // Check for reminder (day before the event)
       if (instruction.remind_day_before && !shouldShowToday) {
         const tomorrowDate = new Date(todayDate);
         tomorrowDate.setDate(tomorrowDate.getDate() + 1);
@@ -1028,21 +1021,25 @@ export const generateMasterSchedule = (
         const tomorrowDayName = dayNames[tomorrowDayOfWeek];
         
         if (instruction.schedule_frequency === 'daily') {
+          // Daily events: show reminder every day (since event happens tomorrow too)
           shouldShowReminder = true;
         } else if (instruction.schedule_frequency === 'weekly' && instruction.schedule_day === tomorrowDayName) {
+          // Weekly events: show reminder only if tomorrow is the scheduled day
           shouldShowReminder = true;
-        } else if (instruction.schedule_frequency === 'days_per_week') {
-          // For custom days per week, show reminder every day
-          shouldShowReminder = true;
-        } else if (instruction.schedule_frequency === 'monthly') {
-          const tomorrowDayOfMonth = tomorrowDate.getDate();
-          if ((instruction.schedule_day === '1st' && tomorrowDayOfMonth === 1) ||
-              (instruction.schedule_day === '15th' && tomorrowDayOfMonth === 15)) {
-            shouldShowReminder = true;
+        } else if (instruction.schedule_frequency === 'one_time') {
+          // One-time events: show reminder if tomorrow is the event date
+          if (instruction.schedule_date) {
+            const eventDate = new Date(instruction.schedule_date);
+            const tomorrowStr = tomorrowDate.toISOString().split('T')[0];
+            const eventDateStr = eventDate.toISOString().split('T')[0];
+            shouldShowReminder = tomorrowStr === eventDateStr;
+          } else if (instruction.schedule_day) {
+            // Fallback for legacy one-time events
+            const eventDate = new Date(instruction.schedule_day);
+            const tomorrowStr = tomorrowDate.toISOString().split('T')[0];
+            const eventDateStr = eventDate.toISOString().split('T')[0];
+            shouldShowReminder = tomorrowStr === eventDateStr;
           }
-        } else if (instruction.schedule_frequency === 'custom') {
-          // For custom scheduling, show reminder
-          shouldShowReminder = true;
         }
       }
       

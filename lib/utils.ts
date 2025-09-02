@@ -110,27 +110,37 @@ export const normalizeTime = (timeStr: string): string => {
 export const formatTimeForDisplay = (timeStr: string): string => {
   if (!timeStr || timeStr.trim() === '') return '';
   
-  // Handle general times
-  if (['Morning', 'Afternoon', 'Evening', 'Night', 'TBD', 'No time specified'].includes(timeStr)) {
+  // Handle general times and special cases
+  if (['Morning', 'Afternoon', 'Evening', 'Night', 'TBD', 'No time specified', 'Reminders'].includes(timeStr)) {
     return timeStr;
   }
   
-  const normalizedTime = normalizeTime(timeStr);
-  if (!normalizedTime || normalizedTime === timeStr) return timeStr;
-  
-  const [hoursStr, minutesStr] = normalizedTime.split(':');
-  const hours = parseInt(hoursStr);
-  const minutes = parseInt(minutesStr);
-  
-  if (hours === 0) {
-    return `12:${minutesStr} AM`;
-  } else if (hours < 12) {
-    return `${hours}:${minutesStr} AM`;
-  } else if (hours === 12) {
-    return `12:${minutesStr} PM`;
-  } else {
-    return `${hours - 12}:${minutesStr} PM`;
+  // If it's already in 24-hour format (HH:MM), convert directly
+  const militaryTimeMatch = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+  if (militaryTimeMatch) {
+    const hours = parseInt(militaryTimeMatch[1]);
+    const minutesStr = militaryTimeMatch[2];
+    
+    if (hours === 0) {
+      return `12:${minutesStr} AM`;
+    } else if (hours < 12) {
+      return `${hours}:${minutesStr} AM`;
+    } else if (hours === 12) {
+      return `12:${minutesStr} PM`;
+    } else {
+      return `${hours - 12}:${minutesStr} PM`;
+    }
   }
+  
+  // Try to normalize the time first
+  const normalizedTime = normalizeTime(timeStr);
+  if (normalizedTime && normalizedTime !== timeStr && normalizedTime.match(/^\d{2}:\d{2}$/)) {
+    // If normalization worked, format the normalized time
+    return formatTimeForDisplay(normalizedTime);
+  }
+  
+  // If we can't parse it, return as-is
+  return timeStr;
 };
 
 // Helper function to calculate end time based on start time and duration
