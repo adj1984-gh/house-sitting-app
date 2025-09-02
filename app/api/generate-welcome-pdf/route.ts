@@ -175,6 +175,26 @@ export async function POST(request: NextRequest) {
             </div>
           </div>
 
+          <div class="qr-section" style="background-color: #f0f9ff; border: 1px solid #0ea5e9;">
+            <div class="qr-title" style="color: #0c4a6e;">📶 WiFi Access</div>
+            <div class="qr-instructions" style="color: #075985;">
+              Scan these QR codes to connect to the WiFi networks:
+            </div>
+            <div style="display: flex; justify-content: space-around; margin: 20px 0; flex-wrap: wrap;">
+              <div style="text-align: center; margin: 10px;">
+                <div style="font-weight: bold; margin-bottom: 10px; color: #0c4a6e;">Frenchie Den</div>
+                <img src="https://housesit.9441altodrive.com/wifi_qr_frenchie_den.png" alt="Frenchie Den WiFi QR Code" style="width: 150px; height: 150px; border: 1px solid #e5e7eb;" />
+              </div>
+              <div style="text-align: center; margin: 10px;">
+                <div style="font-weight: bold; margin-bottom: 10px; color: #0c4a6e;">Frenchie Den2</div>
+                <img src="https://housesit.9441altodrive.com/wifi_qr_frenchie_den2.png" alt="Frenchie Den2 WiFi QR Code" style="width: 150px; height: 150px; border: 1px solid #e5e7eb;" />
+              </div>
+            </div>
+            <div style="margin-top: 15px; font-size: 12px; color: #075985;">
+              Simply scan with your phone's camera to connect automatically
+            </div>
+          </div>
+
           <div class="emergency">
             <div class="emergency-title">🚨 Emergency Contacts</div>
             <p>In case of emergency, please contact the homeowners immediately. All emergency contact information is available in the portal.</p>

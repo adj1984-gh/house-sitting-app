@@ -1410,15 +1410,10 @@ export default function HouseSittingApp() {
         {/* Property Info */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-bold mb-4">Property Information</h2>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-1 gap-4">
             <div>
               <p className="text-gray-600 text-sm">Address</p>
               <p className="font-medium">{currentData.property.address}</p>
-            </div>
-            <div>
-              <p className="text-gray-600 text-sm">WiFi</p>
-              <p className="font-medium">Network: {currentData.property.wifi.ssid}</p>
-              <p className="font-medium">Password: {currentData.property.wifi.password}</p>
             </div>
           </div>
         </div>
