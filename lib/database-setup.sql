@@ -87,8 +87,9 @@ CREATE TABLE IF NOT EXISTS house_instructions (
   category TEXT NOT NULL,
   subcategory TEXT,
   instructions JSONB NOT NULL,
-  schedule_frequency TEXT CHECK (schedule_frequency IN ('one_time', 'daily', 'weekly', 'days_per_week', 'monthly', 'custom')),
+  schedule_frequency TEXT CHECK (schedule_frequency IN ('none', 'one_time', 'daily', 'weekly')),
   schedule_day TEXT,
+  schedule_date DATE, -- For one-time events
   schedule_time TEXT,
   schedule_time_type TEXT CHECK (schedule_time_type IN ('specific', 'general')) DEFAULT 'specific',
   schedule_duration INTEGER,

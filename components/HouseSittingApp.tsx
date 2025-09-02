@@ -2516,10 +2516,8 @@ export default function HouseSittingApp() {
           instructions: data.instructions.text || '',
           // Handle time type - default to 'specific' if not set
           schedule_time_type: data.schedule_time_type || 'specific',
-          // Handle custom scheduling - if schedule_day contains custom text, set frequency to custom
-          schedule_custom: data.schedule_frequency === 'custom' ? data.schedule_day : '',
-          // Handle days per week - if schedule_day is a number, set frequency to days_per_week
-          schedule_days_per_week: data.schedule_frequency === 'days_per_week' ? data.schedule_day : ''
+          // Handle schedule date for one-time events
+          schedule_date: data.schedule_frequency === 'one_time' ? data.schedule_day : ''
         };
       }
       
@@ -2595,14 +2593,23 @@ export default function HouseSittingApp() {
         // Handle scheduling fields
         data.remind_day_before = data.remind_day_before === 'on';
         
-        // Handle custom scheduling - if custom is selected, use custom field instead of day
-        if (data.schedule_frequency === 'custom') {
-          data.schedule_day = data.schedule_custom || '';
+        // Handle schedule date for one-time events
+        if (data.schedule_frequency === 'one_time' && data.schedule_date) {
+          // For one-time events, store the date in schedule_day field for compatibility
+          data.schedule_day = data.schedule_date;
         }
         
-        // Handle days per week - if days_per_week is selected, use that field
-        if (data.schedule_frequency === 'days_per_week') {
-          data.schedule_day = data.schedule_days_per_week || '1';
+        // Clear schedule_day for daily events (no specific day needed)
+        if (data.schedule_frequency === 'daily') {
+          data.schedule_day = '';
+        }
+        
+        // Clear scheduling fields if no schedule selected
+        if (data.schedule_frequency === 'none') {
+          data.schedule_day = '';
+          data.schedule_time = '';
+          data.schedule_duration = '';
+          data.remind_day_before = false;
         }
         
         // Handle duration - convert to number if provided
@@ -2759,97 +2766,64 @@ export default function HouseSittingApp() {
                   
                   {/* Scheduling Section */}
                   <div className="border-t pt-4">
-                    <h4 className="font-semibold text-gray-800 mb-3">Scheduling</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <input 
-                          type="checkbox" 
-                          name="remind_day_before" 
-                          defaultChecked={formData.remind_day_before || false}
-                          className="rounded"
-                        />
-                        <label className="text-sm font-medium">Remind the day before (e.g., for trash pickup)</label>
-                      </div>
+                    <h4 className="font-semibold text-gray-800 mb-3">Scheduling (Optional)</h4>
+                    <div className="space-y-4">
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Frequency</label>
-                          <select 
-                            name="schedule_frequency" 
-                            defaultValue={formData.schedule_frequency || 'one_time'} 
-                            className="w-full px-3 py-2 border rounded-md"
-                            onChange={(e) => {
-                              const dayField = document.querySelector('[name="schedule_day"]') as HTMLSelectElement;
-                              const customField = document.querySelector('[name="schedule_custom"]') as HTMLInputElement;
-                              const daysPerWeekField = document.querySelector('[name="schedule_days_per_week"]') as HTMLInputElement;
-                              const dayContainer = dayField?.parentElement;
-                              const customContainer = customField?.parentElement;
-                              const daysPerWeekContainer = daysPerWeekField?.parentElement;
+                      {/* Schedule Type Selection */}
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Schedule Type</label>
+                        <select 
+                          name="schedule_frequency" 
+                          defaultValue={formData.schedule_frequency || 'none'} 
+                          className="w-full px-3 py-2 border rounded-md"
+                          onChange={(e) => {
+                            const scheduleDetailsDiv = document.getElementById('schedule-details');
+                            const datePickerDiv = document.getElementById('date-picker-section');
+                            const weeklyDayDiv = document.getElementById('weekly-day-section');
+                            const reminderDiv = document.getElementById('reminder-section');
+                            
+                            if (e.target.value === 'none') {
+                              // Hide all scheduling options
+                              if (scheduleDetailsDiv) scheduleDetailsDiv.style.display = 'none';
+                              if (reminderDiv) reminderDiv.style.display = 'none';
+                            } else {
+                              // Show scheduling details
+                              if (scheduleDetailsDiv) scheduleDetailsDiv.style.display = 'block';
+                              if (reminderDiv) reminderDiv.style.display = 'block';
                               
-                              if (e.target.value === 'one_time') {
-                                if (dayContainer) dayContainer.style.display = 'none';
-                                if (customContainer) customContainer.style.display = 'none';
-                                if (daysPerWeekContainer) daysPerWeekContainer.style.display = 'none';
-                              } else if (e.target.value === 'daily') {
-                                if (dayContainer) dayContainer.style.display = 'none';
-                                if (customContainer) customContainer.style.display = 'none';
-                                if (daysPerWeekContainer) daysPerWeekContainer.style.display = 'none';
-                              } else if (e.target.value === 'weekly') {
-                                if (dayContainer) dayContainer.style.display = 'block';
-                                if (customContainer) customContainer.style.display = 'none';
-                                if (daysPerWeekContainer) daysPerWeekContainer.style.display = 'none';
-                                // Update day options for weekly
-                                if (dayField) {
-                                  dayField.innerHTML = `
-                                    <option value="sunday">Sunday</option>
-                                    <option value="monday">Monday</option>
-                                    <option value="tuesday">Tuesday</option>
-                                    <option value="wednesday">Wednesday</option>
-                                    <option value="thursday">Thursday</option>
-                                    <option value="friday">Friday</option>
-                                    <option value="saturday">Saturday</option>
-                                  `;
-                                }
-                              } else if (e.target.value === 'days_per_week') {
-                                if (dayContainer) dayContainer.style.display = 'none';
-                                if (customContainer) customContainer.style.display = 'none';
-                                if (daysPerWeekContainer) daysPerWeekContainer.style.display = 'block';
-                              } else if (e.target.value === 'monthly') {
-                                if (dayContainer) dayContainer.style.display = 'block';
-                                if (customContainer) customContainer.style.display = 'none';
-                                if (daysPerWeekContainer) daysPerWeekContainer.style.display = 'none';
-                                // Update day options for monthly
-                                if (dayField) {
-                                  dayField.innerHTML = `
-                                    <option value="1st">1st of month</option>
-                                    <option value="2nd">2nd of month</option>
-                                    <option value="3rd">3rd of month</option>
-                                    <option value="4th">4th of month</option>
-                                    <option value="5th">5th of month</option>
-                                    <option value="10th">10th of month</option>
-                                    <option value="15th">15th of month</option>
-                                    <option value="20th">20th of month</option>
-                                    <option value="25th">25th of month</option>
-                                    <option value="last">Last day of month</option>
-                                  `;
-                                }
-                              } else if (e.target.value === 'custom') {
-                                if (dayContainer) dayContainer.style.display = 'none';
-                                if (customContainer) customContainer.style.display = 'block';
-                                if (daysPerWeekContainer) daysPerWeekContainer.style.display = 'none';
-                              }
-                            }}
-                          >
-                            <option value="one_time">One Time</option>
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Once per Week</option>
-                            <option value="days_per_week">Custom Days per Week</option>
-                            <option value="monthly">Monthly</option>
-                            <option value="custom">Custom (specific dates)</option>
-                          </select>
+                              // Show/hide date picker based on type
+                              const needsDatePicker = ['one_time'].includes(e.target.value);
+                              const needsWeeklyDay = ['weekly'].includes(e.target.value);
+                              
+                              if (datePickerDiv) datePickerDiv.style.display = needsDatePicker ? 'block' : 'none';
+                              if (weeklyDayDiv) weeklyDayDiv.style.display = needsWeeklyDay ? 'block' : 'none';
+                            }
+                          }}
+                        >
+                          <option value="none">No schedule (information only)</option>
+                          <option value="one_time">One time (specific date)</option>
+                          <option value="daily">Daily</option>
+                          <option value="weekly">Weekly</option>
+                        </select>
+                      </div>
+
+                      {/* Schedule Details (hidden by default) */}
+                      <div id="schedule-details" style={{ display: formData.schedule_frequency && formData.schedule_frequency !== 'none' ? 'block' : 'none' }}>
+                        
+                        {/* Date Picker for One-time events */}
+                        <div id="date-picker-section" style={{ display: formData.schedule_frequency === 'one_time' ? 'block' : 'none' }}>
+                          <label className="block text-sm font-medium mb-1">Date</label>
+                          <input 
+                            name="schedule_date" 
+                            type="date" 
+                            defaultValue={formData.schedule_date || ''} 
+                            className="w-full px-3 py-2 border rounded-md"
+                          />
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Day/Date</label>
+
+                        {/* Day of Week for Weekly events */}
+                        <div id="weekly-day-section" style={{ display: formData.schedule_frequency === 'weekly' ? 'block' : 'none' }}>
+                          <label className="block text-sm font-medium mb-1">Day of Week</label>
                           <select 
                             name="schedule_day" 
                             defaultValue={formData.schedule_day || 'sunday'} 
@@ -2863,97 +2837,92 @@ export default function HouseSittingApp() {
                             <option value="friday">Friday</option>
                             <option value="saturday">Saturday</option>
                           </select>
-                          <input 
-                            name="schedule_days_per_week" 
-                            type="number" 
-                            min="1" 
-                            max="7" 
-                            defaultValue={formData.schedule_days_per_week || 1} 
-                            className="w-full px-3 py-2 border rounded-md mt-2" 
-                            placeholder="Number of days per week (1-7)"
-                            style={{ display: 'none' }}
-                          />
-                          <input 
-                            name="schedule_custom" 
-                            type="text" 
-                            defaultValue={formData.schedule_custom || ''} 
-                            className="w-full px-3 py-2 border rounded-md mt-2" 
-                            placeholder="e.g., Every 2 weeks, 1st and 15th, etc."
-                            style={{ display: 'none' }}
-                          />
                         </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Time Type</label>
-                          <select 
-                            name="schedule_time_type" 
-                            defaultValue={formData.schedule_time_type || 'specific'} 
-                            className="w-full px-3 py-2 border rounded-md"
-                            onChange={(e) => {
-                              const specificInput = document.querySelector('[name="schedule_time_specific"]') as HTMLInputElement;
-                              const generalSelect = document.querySelector('[name="schedule_time_general"]') as HTMLSelectElement;
-                              if (e.target.value === 'specific') {
-                                specificInput.style.display = 'block';
-                                generalSelect.style.display = 'none';
-                              } else {
-                                specificInput.style.display = 'none';
-                                generalSelect.style.display = 'block';
-                              }
-                            }}
-                          >
-                            <option value="specific">Specific Time (e.g., 8:00 PM)</option>
-                            <option value="general">General Time (e.g., Morning)</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Time</label>
-                          {/* Specific Time Input */}
-                          <input 
-                            name="schedule_time_specific" 
-                            type="time" 
-                            defaultValue={formData.schedule_time_type !== 'general' ? formData.schedule_time || '' : ''} 
-                            className="w-full px-3 py-2 border rounded-md" 
-                            style={{ display: formData.schedule_time_type === 'general' ? 'none' : 'block' }}
-                          />
-                          {/* General Time Select */}
-                          <select 
-                            name="schedule_time_general" 
-                            defaultValue={formData.schedule_time_type === 'general' ? formData.schedule_time || '' : ''} 
-                            className="w-full px-3 py-2 border rounded-md"
-                            style={{ display: formData.schedule_time_type === 'general' ? 'block' : 'none' }}
-                          >
-                            <option value="">Select time period</option>
-                            <option value="Morning">Morning</option>
-                            <option value="Afternoon">Afternoon</option>
-                            <option value="Evening">Evening</option>
-                            <option value="Night">Night</option>
-                          </select>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Expected Duration (Optional)</label>
-                        <select 
-                          name="schedule_duration" 
-                          defaultValue={formData.schedule_duration || ''} 
-                          className="w-full px-3 py-2 border rounded-md"
-                        >
-                          <option value="">No specific duration</option>
-                          <option value="30">30 minutes</option>
-                          <option value="60">1 hour</option>
-                          <option value="90">1.5 hours</option>
-                          <option value="120">2 hours</option>
-                          <option value="180">3 hours</option>
-                          <option value="240">4 hours</option>
-                          <option value="360">6 hours</option>
-                          <option value="480">8 hours (all day)</option>
-                        </select>
-                        <p className="text-xs text-gray-500 mt-1">Set expectations for how long this service typically takes</p>
-                      </div>
-                      
 
+                        {/* Time Selection */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Time Type</label>
+                            <select 
+                              name="schedule_time_type" 
+                              defaultValue={formData.schedule_time_type || 'specific'} 
+                              className="w-full px-3 py-2 border rounded-md"
+                              onChange={(e) => {
+                                const specificInput = document.querySelector('[name="schedule_time_specific"]') as HTMLInputElement;
+                                const generalSelect = document.querySelector('[name="schedule_time_general"]') as HTMLSelectElement;
+                                if (e.target.value === 'specific') {
+                                  if (specificInput) specificInput.style.display = 'block';
+                                  if (generalSelect) generalSelect.style.display = 'none';
+                                } else {
+                                  if (specificInput) specificInput.style.display = 'none';
+                                  if (generalSelect) generalSelect.style.display = 'block';
+                                }
+                              }}
+                            >
+                              <option value="specific">Specific Time</option>
+                              <option value="general">General Time</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Time</label>
+                            {/* Specific Time Input */}
+                            <input 
+                              name="schedule_time_specific" 
+                              type="time" 
+                              defaultValue={formData.schedule_time_type !== 'general' ? formData.schedule_time || '' : ''} 
+                              className="w-full px-3 py-2 border rounded-md" 
+                              style={{ display: formData.schedule_time_type === 'general' ? 'none' : 'block' }}
+                            />
+                            {/* General Time Select */}
+                            <select 
+                              name="schedule_time_general" 
+                              defaultValue={formData.schedule_time_type === 'general' ? formData.schedule_time || '' : ''} 
+                              className="w-full px-3 py-2 border rounded-md"
+                              style={{ display: formData.schedule_time_type === 'general' ? 'block' : 'none' }}
+                            >
+                              <option value="">Select time period</option>
+                              <option value="Morning">Morning</option>
+                              <option value="Afternoon">Afternoon</option>
+                              <option value="Evening">Evening</option>
+                              <option value="Night">Night</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Optional Fields */}
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Expected Duration (Optional)</label>
+                          <select 
+                            name="schedule_duration" 
+                            defaultValue={formData.schedule_duration || ''} 
+                            className="w-full px-3 py-2 border rounded-md"
+                          >
+                            <option value="">No specific duration</option>
+                            <option value="30">30 minutes</option>
+                            <option value="60">1 hour</option>
+                            <option value="90">1.5 hours</option>
+                            <option value="120">2 hours</option>
+                            <option value="180">3 hours</option>
+                            <option value="240">4 hours</option>
+                            <option value="360">6 hours</option>
+                            <option value="480">8 hours (all day)</option>
+                          </select>
+                          <p className="text-xs text-gray-500 mt-1">Set expectations for how long this service typically takes</p>
+                        </div>
+                      </div>
+
+                      {/* Reminder Section (hidden by default) */}
+                      <div id="reminder-section" style={{ display: formData.schedule_frequency && formData.schedule_frequency !== 'none' ? 'block' : 'none' }}>
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="checkbox" 
+                            name="remind_day_before" 
+                            defaultChecked={formData.remind_day_before || false}
+                            className="rounded"
+                          />
+                          <label className="text-sm font-medium">Remind the day before (e.g., for trash pickup)</label>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </>

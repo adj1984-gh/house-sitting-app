@@ -1,26 +1,32 @@
--- Migration: Enhance scheduling system with flexible frequency options
--- This removes the needs_scheduling checkbox and adds new frequency options
+-- Migration: Enhance Scheduling System for House Instructions
+-- This migration simplifies the scheduling system and adds support for specific dates
 
--- Remove the needs_scheduling column (no longer needed)
+-- Add schedule_date column for one-time events
 ALTER TABLE house_instructions 
-DROP COLUMN IF EXISTS needs_scheduling;
+ADD COLUMN IF NOT EXISTS schedule_date DATE;
 
--- Update the schedule_frequency constraint to include new options
+-- Remove unused complex scheduling fields
 ALTER TABLE house_instructions 
-DROP CONSTRAINT IF EXISTS house_instructions_schedule_frequency_check;
+DROP COLUMN IF EXISTS schedule_custom,
+DROP COLUMN IF EXISTS schedule_days_per_week;
 
-ALTER TABLE house_instructions 
-ADD CONSTRAINT house_instructions_schedule_frequency_check 
-CHECK (schedule_frequency IN ('one_time', 'daily', 'weekly', 'days_per_week', 'monthly', 'custom'));
+-- Update any existing 'one_time' records to use the new default 'none' if no actual schedule
+UPDATE house_instructions 
+SET schedule_frequency = 'none' 
+WHERE schedule_frequency = 'one_time' 
+  AND (schedule_day IS NULL OR schedule_day = '')
+  AND (schedule_time IS NULL OR schedule_time = '');
 
--- Update existing records to have proper frequency values
--- If they had needs_scheduling = true, set frequency to 'weekly' (most common)
--- If they had needs_scheduling = false or null, set frequency to 'one_time'
+-- Update any existing complex frequency types to simplified versions
 UPDATE house_instructions 
 SET schedule_frequency = 'weekly' 
-WHERE schedule_frequency IS NULL OR schedule_frequency = '';
+WHERE schedule_frequency IN ('days_per_week', 'monthly', 'custom');
 
--- For any existing records without a frequency, default to 'one_time'
+-- Clean up any empty schedule_day values for daily schedules
 UPDATE house_instructions 
-SET schedule_frequency = 'one_time' 
-WHERE schedule_frequency IS NULL;
+SET schedule_day = NULL 
+WHERE schedule_frequency = 'daily';
+
+-- Add comment to explain the simplified scheduling system
+COMMENT ON COLUMN house_instructions.schedule_frequency IS 'Simplified scheduling: none (info only), one_time (specific date), daily, weekly';
+COMMENT ON COLUMN house_instructions.schedule_date IS 'Specific date for one-time events (stored in YYYY-MM-DD format)';
