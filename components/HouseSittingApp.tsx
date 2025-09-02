@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode, X, Info, Moon } from 'lucide-react';
+import VideoUpload from './VideoUpload';
 import { getProperty, getAlerts, getDogs, getServicePeople, getAppointments, getHouseInstructions, getDailyTasks, getStays, hasActiveStay, getCurrentActiveStay, getContacts, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createServicePerson, updateServicePerson, deleteServicePerson, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, createContact, updateContact, deleteContact, generateMasterSchedule } from '../lib/database';
 import { Property, Alert, Dog as DogType, ServicePerson, Appointment, HouseInstruction, DailyTask, Stay, Contact, ScheduleItem } from '../lib/types';
 
@@ -66,7 +67,9 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
     remaining_doses: number, 
     dose_times: Array<{time: string, dose_amount: string}>,
     start_date: string,
-    calculated_end_date: string
+    calculated_end_date: string,
+    video_url: string,
+    video_thumbnail: string
   }>>(() => {
     if (Array.isArray(formData.medicine_schedule)) {
       return formData.medicine_schedule.map((item: any) => {
@@ -88,7 +91,9 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
             remaining_doses: item.remaining_doses || 30,
             dose_times: numberedDoseTimes,
             start_date: item.start_date || new Date().toISOString().split('T')[0],
-            calculated_end_date: item.calculated_end_date || ''
+            calculated_end_date: item.calculated_end_date || '',
+            video_url: item.video_url || '',
+            video_thumbnail: item.video_thumbnail || ''
           };
         } else {
           // Old format - convert to new format
@@ -99,7 +104,9 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
             remaining_doses: 30,
             dose_times: [{ time: item.time || '', dose_amount: 'Dose 1' }],
             start_date: new Date().toISOString().split('T')[0],
-            calculated_end_date: ''
+            calculated_end_date: '',
+            video_url: item.video_url || '',
+            video_thumbnail: item.video_thumbnail || ''
           };
         }
       });
@@ -145,24 +152,6 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
     });
   };
 
-  const addMedicine = useCallback(() => {
-    const newMedicine = {
-      medication: '',
-      notes: '',
-      frequency_per_day: 1,
-      remaining_doses: 30,
-      dose_times: [{ time: '', dose_amount: 'Dose 1' }],
-      start_date: new Date().toISOString().split('T')[0],
-      calculated_end_date: ''
-    };
-    newMedicine.calculated_end_date = calculateEndDate(newMedicine.remaining_doses, newMedicine.frequency_per_day, newMedicine.start_date);
-    setMedicineSchedule(prev => [...prev, newMedicine]);
-  }, [calculateEndDate]);
-
-  const removeMedicine = useCallback((index: number) => {
-    setMedicineSchedule(prev => prev.filter((_, i) => i !== index));
-  }, []);
-
   // Helper function to calculate end date based on remaining doses and frequency
   const calculateEndDate = useCallback((remainingDoses: number, frequencyPerDay: number, startDate: string): string => {
     if (remainingDoses <= 0 || frequencyPerDay <= 0) return '';
@@ -173,6 +162,26 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
     endDate.setDate(start.getDate() + daysNeeded - 1);
     
     return endDate.toISOString().split('T')[0];
+  }, []);
+
+  const addMedicine = useCallback(() => {
+    const newMedicine = {
+      medication: '',
+      notes: '',
+      frequency_per_day: 1,
+      remaining_doses: 30,
+      dose_times: [{ time: '', dose_amount: 'Dose 1' }],
+      start_date: new Date().toISOString().split('T')[0],
+      calculated_end_date: '',
+      video_url: '',
+      video_thumbnail: ''
+    };
+    newMedicine.calculated_end_date = calculateEndDate(newMedicine.remaining_doses, newMedicine.frequency_per_day, newMedicine.start_date);
+    setMedicineSchedule(prev => [...prev, newMedicine]);
+  }, [calculateEndDate]);
+
+  const removeMedicine = useCallback((index: number) => {
+    setMedicineSchedule(prev => prev.filter((_, i) => i !== index));
   }, []);
 
   const updateMedicine = useCallback((index: number, field: string, value: any) => {
@@ -496,6 +505,16 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Video Instructions */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Video Instructions (Optional)</label>
+                <VideoUpload
+                  value={medicine.video_url}
+                  onChange={(url) => updateMedicine(index, 'video_url', url)}
+                  placeholder="Add video instructions for this medication..."
+                />
               </div>
             </div>
           ))}
@@ -1865,6 +1884,15 @@ export default function HouseSittingApp() {
                       {item.notes && (
                         <p className="text-gray-600 text-sm ml-4 italic">{item.notes}</p>
                       )}
+                      {item.video_url && (
+                        <div className="ml-4 mt-2">
+                          <VideoUpload
+                            value={item.video_url}
+                            onChange={() => {}} // Read-only in view mode
+                            disabled={true}
+                          />
+                        </div>
+                      )}
                     </div>
                   ) : (
                     // Old format
@@ -1880,6 +1908,15 @@ export default function HouseSittingApp() {
                       </p>
                       {item.notes && (
                         <p className="text-gray-600 text-sm ml-0 italic">{item.notes}</p>
+                      )}
+                      {item.video_url && (
+                        <div className="ml-0 mt-2">
+                          <VideoUpload
+                            value={item.video_url}
+                            onChange={() => {}} // Read-only in view mode
+                            disabled={true}
+                          />
+                        </div>
                       )}
                     </div>
                   )}
