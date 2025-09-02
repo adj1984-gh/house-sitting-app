@@ -2173,23 +2173,6 @@ export default function HouseSittingApp() {
               )}
             </div>
 
-            {/* Special Instructions */}
-            {dog.special_instructions && Object.keys(dog.special_instructions).length > 0 && (
-              <div className="border rounded-lg p-4">
-                <h4 className="font-semibold flex items-center gap-2 mb-3">
-                  <Info className="w-4 h-4 text-yellow-600" />
-                  Special Instructions
-                </h4>
-                <div className="space-y-1 text-sm">
-                  {Object.entries(dog.special_instructions).map(([type, instruction]) => (
-                    <p key={type}>
-                      <span className="font-medium capitalize">{type.replace(/([A-Z])/g, ' $1').trim()}:</span> {instruction as string}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Vet Visits */}
             {dog.vet_visits && Array.isArray(dog.vet_visits) && dog.vet_visits.length > 0 && (
               <div className="border rounded-lg p-4">
@@ -2271,6 +2254,23 @@ export default function HouseSittingApp() {
                   {dog.sleeping_notes && (
                     <p className="text-gray-600 italic">{dog.sleeping_notes}</p>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Special Instructions */}
+            {dog.special_instructions && Object.keys(dog.special_instructions).length > 0 && (
+              <div className="border rounded-lg p-4">
+                <h4 className="font-semibold flex items-center gap-2 mb-3">
+                  <Info className="w-4 h-4 text-yellow-600" />
+                  Special Instructions
+                </h4>
+                <div className="space-y-1 text-sm">
+                  {Object.entries(dog.special_instructions).map(([type, instruction]) => (
+                    <p key={type}>
+                      <span className="font-medium capitalize">{type.replace(/([A-Z])/g, ' $1').trim()}:</span> {instruction as string}
+                    </p>
+                  ))}
                 </div>
               </div>
             )}
