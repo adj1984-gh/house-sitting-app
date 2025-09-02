@@ -1,6 +1,6 @@
 import { supabase, supabaseAdmin } from './supabase'
 import { Property, Alert, Dog, ServicePerson, Appointment, HouseInstruction, DailyTask, Stay, Contact, AccessLog, ScheduleItem } from './types'
-import { parseTime, calculateEndTime, formatDuration } from './utils'
+import { parseTime, calculateEndTime, formatDuration, formatTimeForDisplay } from './utils'
 
 // Property operations
 export const getProperty = async (id: string = '00000000-0000-0000-0000-000000000001'): Promise<Property | null> => {
