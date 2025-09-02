@@ -1921,11 +1921,16 @@ export default function HouseSittingApp() {
                         </div>
                         {item.video_url && doseIdx === 0 && (
                           <div className="flex-shrink-0">
-                            <YouTubeVideo
-                              value={item.video_url}
-                              onChange={() => {}} // Read-only in view mode
-                              disabled={true}
-                            />
+                            <button
+                              onClick={() => window.open(item.video_url, '_blank')}
+                              className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-xs font-medium"
+                              title="Watch video instructions"
+                            >
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                              </svg>
+                              Video
+                            </button>
                           </div>
                         )}
                       </div>
@@ -1941,11 +1946,16 @@ export default function HouseSittingApp() {
                       </div>
                       {item.video_url && (
                         <div className="flex-shrink-0">
-                          <YouTubeVideo
-                            value={item.video_url}
-                            onChange={() => {}} // Read-only in view mode
-                            disabled={true}
-                          />
+                          <button
+                            onClick={() => window.open(item.video_url, '_blank')}
+                            className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-xs font-medium"
+                            title="Watch video instructions"
+                          >
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                            Video
+                          </button>
                         </div>
                       )}
                     </div>
