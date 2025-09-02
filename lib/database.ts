@@ -416,6 +416,7 @@ export const createHouseInstruction = async (instruction: Omit<HouseInstruction,
     return null
   }
 
+  console.log('Creating house instruction with data:', instruction);
   const { data, error } = await supabase!
     .from('house_instructions')
     .insert(instruction)
@@ -424,9 +425,11 @@ export const createHouseInstruction = async (instruction: Omit<HouseInstruction,
   
   if (error) {
     console.error('Error creating house instruction:', error)
+    console.error('Error details:', error.message, error.code, error.details)
     return null
   }
   
+  console.log('Successfully created house instruction:', data);
   return data
 }
 
@@ -436,6 +439,7 @@ export const updateHouseInstruction = async (id: string, updates: Partial<HouseI
     return null
   }
 
+  console.log('Updating house instruction with id:', id, 'updates:', updates);
   const { data, error } = await supabase!
     .from('house_instructions')
     .update({ ...updates, updated_at: new Date().toISOString() })
@@ -445,9 +449,11 @@ export const updateHouseInstruction = async (id: string, updates: Partial<HouseI
   
   if (error) {
     console.error('Error updating house instruction:', error)
+    console.error('Error details:', error.message, error.code, error.details)
     return null
   }
   
+  console.log('Successfully updated house instruction:', data);
   return data
 }
 

@@ -838,9 +838,14 @@ export default function HouseSittingApp() {
           }
           break;
         case 'houseInstruction':
+          console.log('Creating house instruction with data:', { ...data, property_id: propertyId });
           result = await createHouseInstruction({ ...data, property_id: propertyId });
+          console.log('House instruction creation result:', result);
           if (result) {
             setDbData(prev => ({ ...prev, houseInstructions: [...prev.houseInstructions, result] }));
+            console.log('House instruction added to state');
+          } else {
+            console.error('Failed to create house instruction');
           }
           break;
         case 'dailyTask':
@@ -911,12 +916,17 @@ export default function HouseSittingApp() {
           }
           break;
         case 'houseInstruction':
+          console.log('Updating house instruction with id:', id, 'data:', data);
           result = await updateHouseInstruction(id, data);
+          console.log('House instruction update result:', result);
           if (result) {
             setDbData(prev => ({ 
               ...prev, 
               houseInstructions: prev.houseInstructions.map(hi => hi.id === id ? result : hi)
             }));
+            console.log('House instruction updated in state');
+          } else {
+            console.error('Failed to update house instruction');
           }
           break;
         case 'dailyTask':
