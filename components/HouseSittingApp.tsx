@@ -2544,6 +2544,21 @@ export default function HouseSittingApp() {
 
     return (
       <div className="space-y-6">
+        {isAdmin && (
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <button
+              onClick={() => {
+                setHasUnsavedChanges(false);
+                setShowAddForm({ type: 'houseInstruction' });
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              <Plus className="w-4 h-4" />
+              Add House Instruction
+            </button>
+          </div>
+        )}
+
         {Object.entries(groupedInstructions).map(([category, instructions]) => {
           const Icon = categoryIcons[category as keyof typeof categoryIcons] || Settings;
           const label = categoryLabels[category as keyof typeof categoryLabels] || category;
@@ -2557,86 +2572,96 @@ export default function HouseSittingApp() {
               
               <div className="space-y-4">
                 {instructions.map((instruction) => (
-                  <div key={instruction.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-800 mb-2">
-                          {instruction.subcategory ? 
-                            instruction.subcategory.split(/(?=[A-Z])/).map(word => 
-                              word.charAt(0).toUpperCase() + word.slice(1)
-                            ).join(' ') : 
-                            'Instructions'
-                          }
-                        </h4>
-                        
-                        <div className="text-sm text-gray-700 space-y-2">
-                          {typeof instruction.instructions === 'object' && instruction.instructions.text && (
-                            <p>{instruction.instructions.text}</p>
-                          )}
-                          {typeof instruction.instructions === 'object' && instruction.instructions.maintenance && (
-                            <div className="mt-2 p-2 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-                              <p className="text-yellow-800 font-medium">Maintenance:</p>
-                              <p className="text-yellow-700">{instruction.instructions.maintenance}</p>
-                            </div>
-                          )}
+                  <div key={instruction.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                          <Icon className="w-6 h-6 text-blue-600" />
                         </div>
-
-                        {/* Video Instructions */}
-                        {instruction.video_url && (
-                          <div className="mt-3">
-                            <YouTubeVideo
-                              value={instruction.video_url}
-                              onChange={() => {}} // Read-only in view mode
-                              disabled={true}
-                            />
-                          </div>
+                        <div>
+                          <h4 className="text-lg font-bold text-gray-800">
+                            {instruction.subcategory ? 
+                              instruction.subcategory.split(/(?=[A-Z])/).map(word => 
+                                word.charAt(0).toUpperCase() + word.slice(1)
+                              ).join(' ') : 
+                              'Instructions'
+                            }
+                          </h4>
+                          <p className="text-gray-600 text-sm">House Instruction</p>
+                        </div>
+                      </div>
+                      {isAdmin && (
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => {
+                              setHasUnsavedChanges(false);
+                              setEditingItem({ type: 'houseInstruction', id: instruction.id, data: instruction });
+                            }}
+                            className="text-blue-600 hover:text-blue-800"
+                            title="Edit instruction"
+                          >
+                            <Edit className="w-5 h-5" />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete('houseInstruction', instruction.id)}
+                            className="text-red-600 hover:text-red-800"
+                            title="Delete instruction"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="text-sm text-gray-700 space-y-2">
+                        {typeof instruction.instructions === 'object' && instruction.instructions.text && (
+                          <p>{instruction.instructions.text}</p>
                         )}
-
-                        {/* Scheduling Information */}
-                        {instruction.schedule_frequency && instruction.schedule_frequency !== 'none' && (
-                          <div className="mt-3 p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Calendar className="w-4 h-4 text-blue-600" />
-                              <span className="text-blue-800 font-medium">Scheduled Service</span>
-                            </div>
-                            <div className="text-blue-700 text-sm space-y-1">
-                              <p>
-                                {instruction.schedule_frequency === 'daily' && (
-                                  <>Daily{instruction.schedule_time && `, at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
-                                )}
-                                {instruction.schedule_frequency === 'weekly' && (
-                                  <>Weekly{instruction.schedule_day && `, on ${instruction.schedule_day.charAt(0).toUpperCase() + instruction.schedule_day.slice(1)}`}{instruction.schedule_time && `, at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
-                                )}
-                                {instruction.schedule_frequency === 'one_time' && (
-                                  <>One-time event{instruction.schedule_date && ` on ${new Date(instruction.schedule_date).toLocaleDateString()}`}{instruction.schedule_time && ` at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
-                                )}
-                              </p>
-                              {instruction.remind_day_before && (
-                                <p className="text-orange-700 font-medium">
-                                  🔔 <strong>Reminder:</strong> Will show up the day before
-                                </p>
-                              )}
-                            </div>
+                        {typeof instruction.instructions === 'object' && instruction.instructions.maintenance && (
+                          <div className="mt-2 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+                            <p className="text-yellow-800 font-medium">Maintenance:</p>
+                            <p className="text-yellow-700">{instruction.instructions.maintenance}</p>
                           </div>
                         )}
                       </div>
-                      
-                      {isAdmin && (
-                        <div className="flex gap-2 ml-4">
-                          <button
-                            onClick={() => setEditingItem({ type: 'houseInstruction', id: instruction.id, data: instruction })}
-                            className="p-2 text-blue-600 hover:bg-blue-100 rounded"
-                            title="Edit"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete('houseInstruction', instruction.id)}
-                            className="p-2 text-red-600 hover:bg-red-100 rounded"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+
+                      {/* Video Instructions */}
+                      {instruction.video_url && (
+                        <div className="mt-3">
+                          <YouTubeVideo
+                            value={instruction.video_url}
+                            onChange={() => {}} // Read-only in view mode
+                            disabled={true}
+                          />
+                        </div>
+                      )}
+
+                      {/* Scheduling Information */}
+                      {instruction.schedule_frequency && instruction.schedule_frequency !== 'none' && (
+                        <div className="mt-3 p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Calendar className="w-4 h-4 text-blue-600" />
+                            <span className="text-blue-800 font-medium">Scheduled Service</span>
+                          </div>
+                          <div className="text-blue-700 text-sm space-y-1">
+                            <p>
+                              {instruction.schedule_frequency === 'daily' && (
+                                <>Daily{instruction.schedule_time && `, at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
+                              )}
+                              {instruction.schedule_frequency === 'weekly' && (
+                                <>Weekly{instruction.schedule_day && `, on ${instruction.schedule_day.charAt(0).toUpperCase() + instruction.schedule_day.slice(1)}`}{instruction.schedule_time && `, at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
+                              )}
+                              {instruction.schedule_frequency === 'one_time' && (
+                                <>One-time event{instruction.schedule_date && ` on ${new Date(instruction.schedule_date).toLocaleDateString()}`}{instruction.schedule_time && ` at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
+                              )}
+                            </p>
+                            {instruction.remind_day_before && (
+                              <p className="text-orange-700 font-medium">
+                                🔔 <strong>Reminder:</strong> Will show up the day before
+                              </p>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -2646,16 +2671,6 @@ export default function HouseSittingApp() {
             </div>
           );
         })}
-        
-        {isAdmin && (
-          <button
-            onClick={() => setShowAddForm({type: 'houseInstruction'})}
-            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-500 hover:text-blue-600 flex items-center justify-center gap-2"
-          >
-            <Plus className="w-5 h-5" />
-            Add House Instruction
-          </button>
-        )}
       </div>
     );
   };
