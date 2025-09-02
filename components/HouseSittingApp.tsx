@@ -2483,8 +2483,22 @@ export default function HouseSittingApp() {
     
     // Memoize formData to prevent unnecessary re-renders
     const formData = useMemo(() => {
-      return isEditing ? editingItem.data : {};
-    }, [isEditing, editingItem?.data]);
+      if (!isEditing) return {};
+      
+      const data = editingItem.data;
+      
+      // For house instructions, we need to extract the nested instructions object
+      if (editingItem.type === 'houseInstruction' && data.instructions) {
+        return {
+          ...data,
+          // Extract text and maintenance from the instructions JSONB object
+          instructions: data.instructions.text || '',
+          maintenance: data.instructions.maintenance || ''
+        };
+      }
+      
+      return data;
+    }, [isEditing, editingItem?.data, editingItem?.type]);
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -2650,11 +2664,11 @@ export default function HouseSittingApp() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Instructions</label>
-                    <textarea name="instructions" defaultValue={formData.instructions?.text || ''} required className="w-full px-3 py-2 border rounded-md" rows={3} placeholder="Main instructions for this item..." />
+                    <textarea name="instructions" defaultValue={formData.instructions || ''} required className="w-full px-3 py-2 border rounded-md" rows={3} placeholder="Main instructions for this item..." />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Maintenance Notes (Optional)</label>
-                    <textarea name="maintenance" defaultValue={formData.instructions?.maintenance || ''} className="w-full px-3 py-2 border rounded-md" rows={2} placeholder="Maintenance instructions or notes..." />
+                    <textarea name="maintenance" defaultValue={formData.maintenance || ''} className="w-full px-3 py-2 border rounded-md" rows={2} placeholder="Maintenance instructions or notes..." />
                   </div>
                   
                   {/* Scheduling Section */}

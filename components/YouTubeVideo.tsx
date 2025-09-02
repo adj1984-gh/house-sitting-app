@@ -32,18 +32,31 @@ export const YouTubeVideo: React.FC<YouTubeVideoProps> = ({
   };
 
   const getVideoId = (url: string) => {
+    console.log('Extracting video ID from URL:', url);
+    
     // Handle YouTube Shorts
     if (url.includes('youtube.com/shorts/')) {
-      return url.split('youtube.com/shorts/')[1]?.split('?')[0]?.split('&')[0];
+      const videoId = url.split('youtube.com/shorts/')[1]?.split('?')[0]?.split('&')[0];
+      console.log('YouTube Shorts video ID:', videoId);
+      console.log('Full URL parts:', url.split('youtube.com/shorts/'));
+      return videoId;
     }
     // Handle regular YouTube videos
     else if (url.includes('youtu.be/')) {
-      return url.split('youtu.be/')[1]?.split('?')[0]?.split('&')[0];
+      const videoId = url.split('youtu.be/')[1]?.split('?')[0]?.split('&')[0];
+      console.log('youtu.be video ID:', videoId);
+      return videoId;
     } else if (url.includes('youtube.com/watch?v=')) {
-      return url.split('v=')[1]?.split('&')[0];
+      const videoId = url.split('v=')[1]?.split('&')[0];
+      console.log('youtube.com/watch video ID:', videoId);
+      return videoId;
     } else if (url.includes('youtube.com/embed/')) {
-      return url.split('embed/')[1]?.split('?')[0];
+      const videoId = url.split('embed/')[1]?.split('?')[0];
+      console.log('youtube.com/embed video ID:', videoId);
+      return videoId;
     }
+    
+    console.log('No video ID found for URL:', url);
     return null;
   };
 
@@ -57,6 +70,14 @@ export const YouTubeVideo: React.FC<YouTubeVideoProps> = ({
     console.log('No video ID found for URL:', url);
     return null;
   };
+
+  // Debug logging
+  console.log('YouTubeVideo component rendered with value:', value);
+  console.log('Is valid YouTube URL:', value ? isValidYouTubeUrl(value) : false);
+  if (value) {
+    console.log('Video ID:', getVideoId(value));
+    console.log('Thumbnail URL:', getVideoThumbnail(value));
+  }
 
   return (
     <div className={`space-y-2 ${className}`}>
@@ -81,7 +102,22 @@ export const YouTubeVideo: React.FC<YouTubeVideoProps> = ({
           
           <div className="space-y-2">
             <div className="relative">
-              {getVideoThumbnail(value) ? (
+              {isYouTubeShorts(value) ? (
+                // For YouTube Shorts, show an embedded iframe
+                <div className="relative w-full max-w-xs">
+                  <iframe
+                    width="315"
+                    height="560"
+                    src={`https://www.youtube.com/embed/${getVideoId(value)}`}
+                    title="YouTube Short"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="rounded border w-full h-64"
+                  ></iframe>
+                </div>
+              ) : getVideoThumbnail(value) ? (
+                // For regular YouTube videos, show thumbnail
                 <img 
                   src={getVideoThumbnail(value)!} 
                   alt="YouTube video thumbnail"
@@ -91,8 +127,27 @@ export const YouTubeVideo: React.FC<YouTubeVideoProps> = ({
                     // Fallback to a default YouTube thumbnail if the image fails to load
                     const target = e.target as HTMLImageElement;
                     const videoId = getVideoId(value);
+                    console.log('Thumbnail failed to load, trying fallback for video ID:', videoId);
                     if (videoId) {
-                      target.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                      // Try multiple fallback formats
+                      const fallbackUrls = [
+                        `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+                        `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
+                        `https://img.youtube.com/vi/${videoId}/default.jpg`
+                      ];
+                      
+                      let currentIndex = 0;
+                      const tryNextFallback = () => {
+                        if (currentIndex < fallbackUrls.length) {
+                          target.src = fallbackUrls[currentIndex];
+                          currentIndex++;
+                        } else {
+                          console.log('All thumbnail fallbacks failed');
+                        }
+                      };
+                      
+                      target.onerror = tryNextFallback;
+                      tryNextFallback();
                     }
                   }}
                 />
@@ -107,11 +162,13 @@ export const YouTubeVideo: React.FC<YouTubeVideoProps> = ({
                   </div>
                 </div>
               )}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="bg-red-600 text-white rounded-full p-2 hover:bg-red-700 transition-colors">
-                  <Play className="w-6 h-6" />
+              {!isYouTubeShorts(value) && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="bg-red-600 text-white rounded-full p-2 hover:bg-red-700 transition-colors">
+                    <Play className="w-6 h-6" />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
             <div className="space-y-1">
               <a 
