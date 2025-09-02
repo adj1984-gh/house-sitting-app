@@ -334,7 +334,7 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
       <div className="border-t pt-4">
         <h4 className="font-semibold text-gray-800 mb-3">Walk Schedule</h4>
         {walkSchedule.map((walk, index) => (
-          <div key={`walk-${index}-${walk.time}-${walk.duration}`} className="border rounded-lg p-3 mb-3 bg-gray-50">
+          <div key={`walk-${index}-${walk.time}-${walk.duration}-${walk.notes}`} className="border rounded-lg p-3 mb-3 bg-gray-50">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <label className="block text-sm font-medium mb-1">Time</label>
@@ -457,9 +457,6 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
       </div>
     </>
   );
-}, (prevProps, nextProps) => {
-  // Custom comparison function to prevent unnecessary re-renders
-  return JSON.stringify(prevProps.formData) === JSON.stringify(nextProps.formData);
 });
 
 export default function HouseSittingApp() {
