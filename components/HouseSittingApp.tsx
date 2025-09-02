@@ -858,7 +858,7 @@ export default function HouseSittingApp() {
     const grouped: { [date: string]: { [time: string]: ScheduleItem[] } } = {};
     
     schedule.forEach(item => {
-      const date = item.date;
+      const date = item.date || new Date().toISOString().split('T')[0];
       const time = item.time || 'No time specified';
       
       if (!grouped[date]) {
