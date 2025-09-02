@@ -64,12 +64,21 @@ export const CloudinaryUpload: React.FC<CloudinaryUploadProps> = ({
         uploadPreset: uploadPreset,
         sources: ['local', 'url', 'camera'],
         resourceType: 'video',
-        maxFileSize: 100000000, // 100MB
+        maxFileSize: 500000000, // 500MB - Cloudinary can handle much larger files
         folder: 'house-sitting-videos',
         cropping: false,
         showAdvancedOptions: false,
         multiple: false,
         defaultSource: 'local',
+        // Video optimization settings
+        eager: [
+          { format: 'mp4', quality: 'auto' },
+          { format: 'webm', quality: 'auto' }
+        ],
+        eager_async: true,
+        // Allow large file uploads with progress tracking
+        chunk_size: 6000000, // 6MB chunks for better upload reliability
+        upload_large: true,
         styles: {
           palette: {
             window: '#FFFFFF',
@@ -91,10 +100,17 @@ export const CloudinaryUpload: React.FC<CloudinaryUploadProps> = ({
       (error: any, result: any) => {
         if (!error && result && result.event === 'success') {
           console.log('Video uploaded successfully:', result.info);
+          console.log(`Video size: ${(result.info.bytes / 1024 / 1024).toFixed(2)}MB`);
           onChange(result.info.secure_url);
         } else if (error) {
           console.error('Upload error:', error);
-          alert('Upload failed. Please try again.');
+          if (error.status === 'error' && error.message) {
+            alert(`Upload failed: ${error.message}`);
+          } else if (error.status === 'abort') {
+            console.log('Upload cancelled by user');
+          } else {
+            alert('Upload failed. Please try again or contact support if the problem persists.');
+          }
         }
       }
     );
@@ -190,9 +206,11 @@ export const CloudinaryUpload: React.FC<CloudinaryUploadProps> = ({
           <p className="text-xs text-gray-500 text-center">
             📹 Upload videos directly from your device, camera, or URL
             <br />
-            ✅ No size limits, no crashes - handled by Cloudinary
+            ✅ Supports videos up to 500MB - no more size restrictions!
             <br />
-            🚀 Works perfectly on mobile and desktop
+            🚀 Automatic optimization and compression by Cloudinary
+            <br />
+            📱 Works perfectly on mobile and desktop
           </p>
         </div>
       )}
