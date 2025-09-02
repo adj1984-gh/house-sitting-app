@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode, X, Info, Moon } from 'lucide-react';
 import YouTubeVideo from './YouTubeVideo';
 import { getProperty, getAlerts, getDogs, getAppointments, getHouseInstructions, getDailyTasks, getStays, hasActiveStay, getCurrentActiveStay, getContacts, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, createContact, updateContact, deleteContact, generateMasterSchedule } from '../lib/database';
-import { normalizeTime, formatTimeForDisplay, getCurrentDateInPST } from '../lib/utils';
+import { normalizeTime, formatTimeForDisplay, getCurrentDateInPST, parseTime, getNextOccurrence } from '../lib/utils';
 
 // Helper function to format dates in PST/PDT timezone
 const formatDateInPST = (dateString: string): string => {
@@ -2274,88 +2274,108 @@ export default function HouseSittingApp() {
                 <Pill className="w-4 h-4 text-purple-600" />
                 Medicine Schedule
               </h4>
-              {((dog as any).medicine?.schedule || (dog as any).medicine_schedule || [])
-                .filter((item: any) => {
-                  // Filter out expired medications - check both old and new formats
-                  if (item.calculated_end_date) {
-                    // New smart format
-                    const endDate = new Date(item.calculated_end_date);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    return today <= endDate;
-                  } else if (item.end_date) {
-                    // Old format
-                    const endDate = new Date(item.end_date);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    
-                    if (item.end_time) {
-                      const endDateTime = new Date(item.end_date + 'T' + item.end_time);
-                      return new Date() <= endDateTime;
-                    } else {
+              {(() => {
+                // Get all active medications
+                const activeMedications = ((dog as any).medicine?.schedule || (dog as any).medicine_schedule || [])
+                  .filter((item: any) => {
+                    // Filter out expired medications - check both old and new formats
+                    if (item.calculated_end_date) {
+                      // New smart format
+                      const endDate = new Date(item.calculated_end_date);
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
                       return today <= endDate;
+                    } else if (item.end_date) {
+                      // Old format
+                      const endDate = new Date(item.end_date);
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      
+                      if (item.end_time) {
+                        const endDateTime = new Date(item.end_date + 'T' + item.end_time);
+                        return new Date() <= endDateTime;
+                      } else {
+                        return today <= endDate;
+                      }
                     }
+                    return true; // Show medications without end dates
+                  });
+
+                // Group medications by time
+                const timeGroups: { [key: string]: Array<{ medication: string, notes: string, video_url?: string }> } = {};
+                
+                activeMedications.forEach((item: any) => {
+                  if (item.dose_times) {
+                    // New smart format - process each dose time
+                    item.dose_times.forEach((dose: any) => {
+                      const time = dose.time;
+                      if (!timeGroups[time]) {
+                        timeGroups[time] = [];
+                      }
+                      timeGroups[time].push({
+                        medication: item.medication,
+                        notes: item.notes,
+                        video_url: item.video_url
+                      });
+                    });
+                  } else {
+                    // Old format
+                    const time = item.time;
+                    if (!timeGroups[time]) {
+                      timeGroups[time] = [];
+                    }
+                    timeGroups[time].push({
+                      medication: item.medication,
+                      notes: item.notes,
+                      video_url: item.video_url
+                    });
                   }
-                  return true; // Show medications without end dates
-                })
-                .map((item: any, idx: number) => (
-                <div key={`medicine-display-${idx}-${item.medication || item.time}-${item.medication}`} className="mb-3 p-3 bg-white rounded-lg border">
-                  {item.dose_times ? (
-                    // New smart format - show each dose time as separate clean entry
-                    item.dose_times.map((dose: any, doseIdx: number) => (
-                      <div key={doseIdx} className="flex items-start gap-3">
-                        <div className="flex-shrink-0">
-                          <span className="font-medium text-blue-600">{formatTimeForDisplay(dose.time)}</span>
-                        </div>
-                        <div className="flex-grow">
-                          <span className="font-medium text-gray-800">{item.medication}</span>
-                          {item.notes && (
-                            <span className="text-gray-600 ml-2">- {item.notes}</span>
-                          )}
-                        </div>
-                        {item.video_url && doseIdx === 0 && (
-                          <div className="flex-shrink-0">
-                            <button
-                              onClick={() => window.open(item.video_url, '_blank')}
-                              className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-xs font-medium"
-                              title="Watch video instructions"
-                            >
-                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z"/>
-                              </svg>
-                              Video
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    // Old format - clean single line display
+                });
+
+                // Sort times chronologically
+                const sortedTimes = Object.keys(timeGroups).sort((a, b) => {
+                  const timeA = parseTime(a);
+                  const timeB = parseTime(b);
+                  
+                  if (timeA === null && timeB === null) return 0;
+                  if (timeA === null) return 1;
+                  if (timeB === null) return -1;
+                  
+                  return timeA - timeB;
+                });
+
+                return sortedTimes.map((time, timeIdx) => (
+                  <div key={`time-group-${timeIdx}-${time}`} className="mb-3 p-3 bg-white rounded-lg border">
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0">
-                        <span className="font-medium text-blue-600">{formatTimeForDisplay(item.time)}</span>
+                        <span className="font-medium text-blue-600">{formatTimeForDisplay(time)}</span>
                       </div>
                       <div className="flex-grow">
-                        <span className="font-medium text-gray-800">{item.medication}</span>
+                        {timeGroups[time].map((med, medIdx) => (
+                          <div key={`med-${medIdx}`} className="flex items-start gap-2 mb-1 last:mb-0">
+                            <span className="font-medium text-gray-800">{med.medication}</span>
+                            {med.notes && (
+                              <span className="text-gray-600">- {med.notes}</span>
+                            )}
+                            {med.video_url && (
+                              <button
+                                onClick={() => window.open(med.video_url, '_blank')}
+                                className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-xs font-medium ml-2"
+                                title="Watch video instructions"
+                              >
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M8 5v14l11-7z"/>
+                                </svg>
+                                Video
+                              </button>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                      {item.video_url && (
-                        <div className="flex-shrink-0">
-                          <button
-                            onClick={() => window.open(item.video_url, '_blank')}
-                            className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-xs font-medium"
-                            title="Watch video instructions"
-                          >
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z"/>
-                            </svg>
-                            Video
-                          </button>
-                        </div>
-                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                  </div>
+                ));
+              })()}
             </div>
 
             {/* Potty */}
@@ -2665,30 +2685,53 @@ export default function HouseSittingApp() {
                     )}
 
                     {/* Scheduling Information */}
-                    {instruction.schedule_frequency && instruction.schedule_frequency !== 'none' && (
-                      <div className="mt-3 p-2 bg-blue-50 border-l-4 border-blue-400 rounded">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Calendar className="w-3 h-3 text-blue-600" />
-                          <span className="text-blue-800 font-medium text-sm">Scheduled Service</span>
-                        </div>
-                        <div className="text-blue-700 text-xs space-y-1">
-                          <p>
-                            {instruction.schedule_frequency === 'daily' && (
-                              <>Daily{instruction.schedule_time && `, at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
-                            )}
-                            {instruction.schedule_frequency === 'weekly' && (
-                              <>Weekly{instruction.schedule_day && `, on ${instruction.schedule_day.charAt(0).toUpperCase() + instruction.schedule_day.slice(1)}`}{instruction.schedule_time && `, at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
-                            )}
-                            {instruction.schedule_frequency === 'one_time' && (
-                              <>One-time event{instruction.schedule_date && ` on ${new Date(instruction.schedule_date).toLocaleDateString()}`}{instruction.schedule_time && ` at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
-                            )}
-                          </p>
-                          {instruction.remind_day_before && (
-                            <p className="text-orange-700 font-medium">
-                              🔔 <strong>Reminder:</strong> Will show up the day before
+                    {instruction.schedule_frequency && instruction.schedule_frequency !== 'none' && (() => {
+                      const nextOccurrence = getNextOccurrence(instruction);
+                      return (
+                        <div className="mt-3 p-2 bg-blue-50 border-l-4 border-blue-400 rounded">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Calendar className="w-3 h-3 text-blue-600" />
+                            <span className="text-blue-800 font-medium text-sm">Scheduled Service</span>
+                          </div>
+                          <div className="text-blue-700 text-xs space-y-1">
+                            <p>
+                              {instruction.schedule_frequency === 'daily' && (
+                                <>Daily{instruction.schedule_time && `, at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
+                              )}
+                              {instruction.schedule_frequency === 'weekly' && (
+                                <>Weekly{instruction.schedule_day && `, on ${instruction.schedule_day.charAt(0).toUpperCase() + instruction.schedule_day.slice(1)}`}{instruction.schedule_time && `, at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
+                              )}
+                              {instruction.schedule_frequency === 'one_time' && (
+                                <>One-time event{instruction.schedule_date && ` on ${new Date(instruction.schedule_date).toLocaleDateString()}`}{instruction.schedule_time && ` at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
+                              )}
                             </p>
-                          )}
-                          {(instruction.person_name || instruction.person_phone || instruction.schedule_notes) && (
+                            
+                            {/* Next Occurrence */}
+                            {nextOccurrence && (
+                              <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
+                                <p className="text-green-800 font-medium text-xs mb-1">📅 Next Occurrence:</p>
+                                <p className="text-green-700 text-xs">
+                                  {nextOccurrence.isToday && (
+                                    <span className="font-bold text-green-800">TODAY</span>
+                                  )}
+                                  {nextOccurrence.isTomorrow && !nextOccurrence.isToday && (
+                                    <span className="font-bold text-orange-700">TOMORROW</span>
+                                  )}
+                                  {!nextOccurrence.isToday && !nextOccurrence.isTomorrow && (
+                                    <span className="font-medium">{formatDateInPST(nextOccurrence.date)}</span>
+                                  )}
+                                  {` at ${formatTimeForDisplay(nextOccurrence.time)}`}
+                                  {instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {instruction.remind_day_before && (
+                              <p className="text-orange-700 font-medium">
+                                🔔 <strong>Reminder:</strong> Will show up the day before
+                              </p>
+                            )}
+                            {(instruction.person_name || instruction.person_phone || instruction.schedule_notes) && (
                             <div className="mt-2 pt-2 border-t border-blue-200">
                               {instruction.person_name || instruction.person_phone ? (
                                 <>
@@ -2717,7 +2760,8 @@ export default function HouseSittingApp() {
                           )}
                         </div>
                       </div>
-                    )}
+                      );
+                    })()}
 
                     {isAdmin && (
                       <div className="flex gap-2 mt-3">

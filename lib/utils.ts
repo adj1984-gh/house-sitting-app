@@ -217,3 +217,77 @@ export const getCurrentDateInPST = (): string => {
   const pstDate = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
   return pstDate.toISOString().split('T')[0];
 };
+
+// Helper function to calculate next occurrence date for scheduled services
+export const getNextOccurrence = (instruction: any): { date: string, time: string, isToday: boolean, isTomorrow: boolean } | null => {
+  if (!instruction.schedule_frequency || instruction.schedule_frequency === 'none') {
+    return null;
+  }
+
+  const today = new Date(getCurrentDateInPST() + 'T00:00:00-08:00'); // PST timezone
+  const todayStr = today.toISOString().split('T')[0];
+  
+  if (instruction.schedule_frequency === 'daily') {
+    const nextDate = todayStr;
+    const time = instruction.schedule_time || 'Morning';
+    return {
+      date: nextDate,
+      time: time,
+      isToday: true,
+      isTomorrow: false
+    };
+  }
+  
+  if (instruction.schedule_frequency === 'weekly' && instruction.schedule_day) {
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const targetDayIndex = dayNames.indexOf(instruction.schedule_day.toLowerCase());
+    
+    if (targetDayIndex === -1) return null;
+    
+    const currentDayIndex = today.getDay();
+    let daysUntilNext = targetDayIndex - currentDayIndex;
+    
+    // If it's the same day or past, get next week's occurrence
+    if (daysUntilNext <= 0) {
+      daysUntilNext += 7;
+    }
+    
+    const nextDate = new Date(today);
+    nextDate.setDate(today.getDate() + daysUntilNext);
+    const nextDateStr = nextDate.toISOString().split('T')[0];
+    
+    const time = instruction.schedule_time || 'Morning';
+    const isToday = daysUntilNext === 0;
+    const isTomorrow = daysUntilNext === 1;
+    
+    return {
+      date: nextDateStr,
+      time: time,
+      isToday: isToday,
+      isTomorrow: isTomorrow
+    };
+  }
+  
+  if (instruction.schedule_frequency === 'one_time' && instruction.schedule_date) {
+    const eventDate = new Date(instruction.schedule_date + 'T00:00:00-08:00'); // PST timezone
+    const eventDateStr = eventDate.toISOString().split('T')[0];
+    
+    // Check if this is a past event
+    if (eventDate < today) {
+      return null; // Don't show past one-time events
+    }
+    
+    const time = instruction.schedule_time || 'Morning';
+    const isToday = eventDateStr === todayStr;
+    const isTomorrow = eventDateStr === new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    return {
+      date: eventDateStr,
+      time: time,
+      isToday: isToday,
+      isTomorrow: isTomorrow
+    };
+  }
+  
+  return null;
+};
