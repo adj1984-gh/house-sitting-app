@@ -223,17 +223,17 @@ export const extractTimeFromReminderText = (text: string): string | null => {
       'ten': '10:00 PM',
       'eleven': '11:00 PM',
       'midnight': '12:00 AM',
-      'one': '1:00 AM',
-      'two': '2:00 AM',
-      'three': '3:00 AM',
-      'four': '4:00 AM',
-      'five': '5:00 AM',
-      'six': '6:00 AM',
-      'seven': '7:00 AM',
-      'eight': '8:00 AM',
-      'nine': '9:00 AM',
-      'ten': '10:00 AM',
-      'eleven': '11:00 AM'
+      'one am': '1:00 AM',
+      'two am': '2:00 AM',
+      'three am': '3:00 AM',
+      'four am': '4:00 AM',
+      'five am': '5:00 AM',
+      'six am': '6:00 AM',
+      'seven am': '7:00 AM',
+      'eight am': '8:00 AM',
+      'nine am': '9:00 AM',
+      'ten am': '10:00 AM',
+      'eleven am': '11:00 AM'
     };
     
     const startTime = timeMap[start];
