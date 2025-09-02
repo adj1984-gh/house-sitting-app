@@ -27,8 +27,17 @@ export const YouTubeVideo: React.FC<YouTubeVideoProps> = ({
     return url.includes('youtube.com') || url.includes('youtu.be');
   };
 
+  const isYouTubeShorts = (url: string) => {
+    return url.includes('youtube.com/shorts/');
+  };
+
   const getVideoId = (url: string) => {
-    if (url.includes('youtu.be/')) {
+    // Handle YouTube Shorts
+    if (url.includes('youtube.com/shorts/')) {
+      return url.split('youtube.com/shorts/')[1]?.split('?')[0]?.split('&')[0];
+    }
+    // Handle regular YouTube videos
+    else if (url.includes('youtu.be/')) {
       return url.split('youtu.be/')[1]?.split('?')[0]?.split('&')[0];
     } else if (url.includes('youtube.com/watch?v=')) {
       return url.split('v=')[1]?.split('&')[0];
@@ -56,7 +65,9 @@ export const YouTubeVideo: React.FC<YouTubeVideoProps> = ({
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <FileVideo className="w-4 h-4 text-red-600" />
-              <span className="text-sm font-medium text-gray-700">YouTube Video Instructions</span>
+              <span className="text-sm font-medium text-gray-700">
+                {isYouTubeShorts(value) ? 'YouTube Short Instructions' : 'YouTube Video Instructions'}
+              </span>
             </div>
             <button
               type="button"
@@ -127,7 +138,7 @@ export const YouTubeVideo: React.FC<YouTubeVideoProps> = ({
             </label>
             <input
               type="url"
-              placeholder="https://www.youtube.com/watch?v=..."
+              placeholder="https://www.youtube.com/watch?v=... or https://www.youtube.com/shorts/..."
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
               onChange={(e) => {
                 const url = e.target.value;
@@ -146,10 +157,11 @@ export const YouTubeVideo: React.FC<YouTubeVideoProps> = ({
               </summary>
               <div className="mt-2 pl-4 space-y-1">
                 <p>1. Go to <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="text-red-600 hover:underline">YouTube.com</a></p>
-                <p>2. Click "Create" → "Upload video"</p>
+                <p>2. Click "Create" → "Upload video" or "Create Short"</p>
                 <p>3. Upload your video (any size!)</p>
                 <p>4. Set privacy to "Unlisted" (only people with link can see)</p>
                 <p>5. Copy the video URL and paste it above</p>
+                <p className="text-blue-600">💡 Works with both regular videos and YouTube Shorts!</p>
               </div>
             </details>
           </div>
