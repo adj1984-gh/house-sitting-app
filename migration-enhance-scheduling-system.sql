@@ -27,6 +27,14 @@ UPDATE house_instructions
 SET schedule_day = NULL 
 WHERE schedule_frequency = 'daily';
 
+-- Update the constraint to allow the new simplified values
+ALTER TABLE house_instructions 
+DROP CONSTRAINT IF EXISTS house_instructions_schedule_frequency_check;
+
+ALTER TABLE house_instructions 
+ADD CONSTRAINT house_instructions_schedule_frequency_check 
+CHECK (schedule_frequency IN ('none', 'one_time', 'daily', 'weekly'));
+
 -- Add comment to explain the simplified scheduling system
 COMMENT ON COLUMN house_instructions.schedule_frequency IS 'Simplified scheduling: none (info only), one_time (specific date), daily, weekly';
 COMMENT ON COLUMN house_instructions.schedule_date IS 'Specific date for one-time events (stored in YYYY-MM-DD format)';

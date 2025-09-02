@@ -2160,8 +2160,19 @@ export default function HouseSittingApp() {
                           )}
                         </div>
 
+                        {/* Video Instructions */}
+                        {instruction.video_url && (
+                          <div className="mt-3">
+                            <YouTubeVideo
+                              value={instruction.video_url}
+                              onChange={() => {}} // Read-only in view mode
+                              disabled={true}
+                            />
+                          </div>
+                        )}
+
                         {/* Scheduling Information */}
-                        {instruction.schedule_frequency && instruction.schedule_frequency !== 'one_time' && (
+                        {instruction.schedule_frequency && instruction.schedule_frequency !== 'none' && instruction.schedule_frequency !== 'one_time' && (
                           <div className="mt-3 p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
                             <div className="flex items-center gap-2 mb-1">
                               <Calendar className="w-4 h-4 text-blue-600" />
@@ -2770,6 +2781,23 @@ export default function HouseSittingApp() {
                   <div>
                     <label className="block text-sm font-medium mb-1">Instructions</label>
                     <textarea name="instructions" defaultValue={formData.instructions || ''} required className="w-full px-3 py-2 border rounded-md" rows={4} placeholder="Instructions for this item..." />
+                  </div>
+                  
+                  {/* Video Instructions */}
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Video Instructions (Optional)</label>
+                    <YouTubeVideo
+                      value={formData.video_url || ''}
+                      onChange={(value) => {
+                        // Update the form data with the video URL
+                        const videoInput = document.querySelector('input[name="video_url"]') as HTMLInputElement;
+                        if (videoInput) {
+                          videoInput.value = value;
+                        }
+                      }}
+                      disabled={false}
+                    />
+                    <input type="hidden" name="video_url" defaultValue={formData.video_url || ''} />
                   </div>
                   
                   {/* Scheduling Section */}

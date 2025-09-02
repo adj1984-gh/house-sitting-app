@@ -82,6 +82,7 @@ export interface HouseInstruction {
   schedule_time_type?: 'specific' | 'general'
   schedule_duration?: number // Duration in minutes
   remind_day_before?: boolean
+  video_url?: string
   created_at: string
   updated_at: string
 }
