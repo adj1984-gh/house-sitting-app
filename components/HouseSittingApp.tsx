@@ -5,6 +5,18 @@ import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin
 import YouTubeVideo from './YouTubeVideo';
 import { getProperty, getAlerts, getDogs, getAppointments, getHouseInstructions, getDailyTasks, getStays, hasActiveStay, getCurrentActiveStay, getContacts, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, createContact, updateContact, deleteContact, generateMasterSchedule } from '../lib/database';
 import { normalizeTime, formatTimeForDisplay } from '../lib/utils';
+
+// Helper function to format dates in PST/PDT timezone
+const formatDateInPST = (dateString: string): string => {
+  // Create date in PST/PDT timezone by adding timezone offset
+  const date = new Date(dateString + 'T00:00:00');
+  return date.toLocaleDateString('en-US', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric'
+  });
+};
 import { Property, Alert, Dog as DogType, Appointment, HouseInstruction, DailyTask, Stay, Contact, ScheduleItem } from '../lib/types';
 
 // All data comes from Supabase database - no mock data
@@ -515,7 +527,8 @@ const DogEditForm = React.memo(({ formData, contacts }: { formData: any, contact
               {medicine.calculated_end_date && (
                 <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
                   <p className="text-sm text-blue-800">
-                    <span className="font-medium">Calculated End Date:</span> {new Date(medicine.calculated_end_date).toLocaleDateString('en-US', { 
+                    <span className="font-medium">Calculated End Date:</span> {new Date(medicine.calculated_end_date + 'T00:00:00').toLocaleDateString('en-US', { 
+                      timeZone: 'America/Los_Angeles',
                       weekday: 'long', 
                       year: 'numeric', 
                       month: 'long', 
@@ -1844,7 +1857,7 @@ export default function HouseSittingApp() {
                         <div>
                           <h3 className="font-semibold text-lg">{stay.sitter_name}</h3>
                           <p className="text-gray-600">
-                            {new Date(stay.start_date + 'T00:00:00').toLocaleDateString()}{stay.start_time && ` at ${formatTimeForDisplay(stay.start_time)}`} - {new Date(stay.end_date + 'T00:00:00').toLocaleDateString()}{stay.end_time && ` at ${formatTimeForDisplay(stay.end_time)}`}
+                            {formatDateInPST(stay.start_date)}{stay.start_time && ` at ${formatTimeForDisplay(stay.start_time)}`} - {formatDateInPST(stay.end_date)}{stay.end_time && ` at ${formatTimeForDisplay(stay.end_time)}`}
                           </p>
                           {stay.notes && (
                             <p className="text-sm text-gray-500 mt-1">{stay.notes}</p>
@@ -1976,7 +1989,8 @@ export default function HouseSittingApp() {
                       <div className="flex items-center gap-2 mb-4">
                         <Calendar className="w-5 h-5 text-blue-600" />
                         <h3 className="font-semibold text-lg text-gray-800">
-                          {new Date(date).toLocaleDateString('en-US', { 
+                          {new Date(date + 'T00:00:00').toLocaleDateString('en-US', { 
+                            timeZone: 'America/Los_Angeles',
                             weekday: 'long', 
                             year: 'numeric', 
                             month: 'long', 
@@ -2366,7 +2380,8 @@ export default function HouseSittingApp() {
                         <div className="flex-grow">
                           <p className="font-medium text-gray-800">{visit.visit_type || 'Vet Visit'}</p>
                           <p className="text-sm text-gray-600">
-                            {new Date(visit.date).toLocaleDateString('en-US', { 
+                            {new Date(visit.date + 'T00:00:00').toLocaleDateString('en-US', { 
+                              timeZone: 'America/Los_Angeles',
                               weekday: 'long', 
                               year: 'numeric', 
                               month: 'long', 

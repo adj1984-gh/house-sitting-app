@@ -950,7 +950,7 @@ export const generateMasterSchedule = (
               dog_id: dog.id,
               dog_name: dog.name,
               location: visit.vet_address,
-              notes: `Vet visit scheduled for ${new Date(visitDate).toLocaleDateString()}${visit.time ? ` at ${visit.time}` : ''}${visit.vet_phone ? ` (${visit.vet_phone})` : ''}`,
+              notes: `Vet visit scheduled for ${new Date(visitDate + 'T00:00:00').toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles' })}${visit.time ? ` at ${visit.time}` : ''}${visit.vet_phone ? ` (${visit.vet_phone})` : ''}`,
               recurring: false,
               source: 'dog'
             })
@@ -1010,7 +1010,7 @@ export const generateMasterSchedule = (
         }
       }
       // Fall back to legacy day-based scheduling
-      else if (service.service_day && service.service_day.includes(new Date(today).toLocaleDateString('en-US', { weekday: 'long' }))) {
+      else if (service.service_day && service.service_day.includes(new Date(today + 'T00:00:00').toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles', weekday: 'long' }))) {
         shouldInclude = true;
         serviceTime = service.service_time || 'TBD';
       }
