@@ -499,6 +499,7 @@ export default function HouseSittingApp() {
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const hasUnsavedChangesRef = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Stable handler for form changes to prevent unnecessary re-renders
   const handleFormChange = useCallback(() => {
@@ -2122,10 +2123,13 @@ export default function HouseSittingApp() {
       return isEditing ? editingItem.data : {};
     }, [isEditing, editingItem?.data]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
-      const formData = new FormData(e.target as HTMLFormElement);
-      const data: any = Object.fromEntries(formData.entries());
+      setIsSubmitting(true);
+      
+      try {
+        const formData = new FormData(e.target as HTMLFormElement);
+        const data: any = Object.fromEntries(formData.entries());
       
       console.log('Form submission - raw form data:', data);
       console.log('Form submission - form type:', formType);
@@ -2165,15 +2169,21 @@ export default function HouseSittingApp() {
       
       if (isEditing) {
         console.log('Form submission - calling handleUpdate');
-        handleUpdate(formType!, editingItem.id!, data);
+        await handleUpdate(formType!, editingItem.id!, data);
       } else {
         console.log('Form submission - calling handleCreate');
-        handleCreate(formType!, data);
+        await handleCreate(formType!, data);
       }
       
       // Reset unsaved changes flag after successful submission
       setHasUnsavedChanges(false);
       hasUnsavedChangesRef.current = false;
+    } catch (error) {
+      console.error('Form submission error:', error);
+      alert('Error saving data. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
     };
 
     const handleCancel = () => {
@@ -2379,10 +2389,34 @@ export default function HouseSittingApp() {
               )}
               
               <div className="flex gap-3 pt-4">
-                <button type="submit" className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
-                  {isEditing ? 'Update' : 'Create'}
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className={`flex-1 py-2 px-4 rounded-md transition-colors ${
+                    isSubmitting 
+                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      {isEditing ? 'Updating...' : 'Creating...'}
+                    </span>
+                  ) : (
+                    isEditing ? 'Update' : 'Create'
+                  )}
                 </button>
-                <button type="button" onClick={handleCancel} className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400">
+                <button 
+                  type="button" 
+                  onClick={handleCancel} 
+                  disabled={isSubmitting}
+                  className={`flex-1 py-2 px-4 rounded-md transition-colors ${
+                    isSubmitting 
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                      : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                  }`}
+                >
                   Cancel
                 </button>
               </div>
