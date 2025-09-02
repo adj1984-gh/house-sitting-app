@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode, X, Info, Moon } from 'lucide-react';
 import { getProperty, getAlerts, getDogs, getServicePeople, getAppointments, getHouseInstructions, getDailyTasks, getStays, hasActiveStay, getCurrentActiveStay, getContacts, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createServicePerson, updateServicePerson, deleteServicePerson, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, createContact, updateContact, deleteContact, generateMasterSchedule } from '../lib/database';
 import { Property, Alert, Dog as DogType, ServicePerson, Appointment, HouseInstruction, DailyTask, Stay, Contact, ScheduleItem } from '../lib/types';
@@ -46,8 +46,8 @@ const formatPhoneForTel = (phone: string): string => {
   return phone;
 };
 
-// Dog Edit Form Component
-const DogEditForm = ({ formData }: { formData: any }) => {
+// Dog Edit Form Component - moved outside main component to prevent re-creation on re-renders
+const DogEditForm = React.memo(({ formData }: { formData: any }) => {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>(formData.photo_url || '');
   const [feedingSchedule, setFeedingSchedule] = useState<Array<{time: string, amount: string}>>(
@@ -440,7 +440,7 @@ const DogEditForm = ({ formData }: { formData: any }) => {
       </div>
     </>
   );
-};
+});
 
 export default function HouseSittingApp() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -482,6 +482,11 @@ export default function HouseSittingApp() {
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const hasUnsavedChangesRef = useRef(false);
+
+  // Stable handler for form changes to prevent unnecessary re-renders
+  const handleFormChange = useCallback(() => {
+    hasUnsavedChangesRef.current = true;
+  }, []);
 
   // Environment variables for authentication
   const SITE_PASSWORD = process.env.NEXT_PUBLIC_SITE_ACCESS_PASSWORD;
@@ -2171,13 +2176,7 @@ export default function HouseSittingApp() {
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} onChange={() => {
-              // Use ref to track unsaved changes without causing re-render
-              hasUnsavedChangesRef.current = true;
-              if (!hasUnsavedChanges) {
-                setHasUnsavedChanges(true);
-              }
-            }} className="space-y-4">
+            <form onSubmit={handleSubmit} onChange={handleFormChange} className="space-y-4">
               {formType === 'dog' && (
                 <DogEditForm formData={formData} />
               )}
