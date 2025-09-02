@@ -107,44 +107,7 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
     return [];
   });
 
-  // Update medicine schedule when formData changes (for editing)
-  useEffect(() => {
-    if (isEditing && editingItem?.data?.medicine_schedule) {
-      const newMedicineSchedule = editingItem.data.medicine_schedule.map((item: any) => {
-        const isNewFormat = item.frequency_per_day !== undefined;
-        
-        if (isNewFormat) {
-          // New smart format - ensure dose_times have proper numbering
-          const doseTimes = item.dose_times || [{ time: '', dose_amount: 'Dose 1' }];
-          const numberedDoseTimes = doseTimes.map((dose: any, index: number) => ({
-            time: dose.time || '',
-            dose_amount: dose.dose_amount || `Dose ${index + 1}`
-          }));
-          
-          return {
-            medication: item.medication || '',
-            notes: item.notes || '',
-            frequency_per_day: item.frequency_per_day || 1,
-            remaining_doses: item.remaining_doses || 30,
-            dose_times: numberedDoseTimes,
-            start_date: item.start_date || new Date().toISOString().split('T')[0],
-            calculated_end_date: item.calculated_end_date || ''
-          };
-        } else {
-          return {
-            medication: item.medication || '',
-            notes: item.notes || '',
-            frequency_per_day: 1,
-            remaining_doses: 30,
-            dose_times: [{ time: item.time || '', dose_amount: 'Dose 1' }],
-            start_date: new Date().toISOString().split('T')[0],
-            calculated_end_date: ''
-          };
-        }
-      });
-      setMedicineSchedule(newMedicineSchedule);
-    }
-  }, [isEditing, editingItem?.data?.medicine_schedule]);
+
   const [specialInstructions, setSpecialInstructions] = useState<Array<{type: string, instruction: string}>>(
     formData.special_instructions && typeof formData.special_instructions === 'object' 
       ? Object.entries(formData.special_instructions).map(([type, instruction]) => ({ type, instruction: instruction as string }))
@@ -1266,6 +1229,61 @@ export default function HouseSittingApp() {
     );
   };
 
+  // Function to group schedule items by time
+  const groupScheduleByTime = (scheduleItems: ScheduleItem[]) => {
+    const grouped = scheduleItems.reduce((groups, item) => {
+      const time = item.time || 'No time specified';
+      if (!groups[time]) {
+        groups[time] = [];
+      }
+      groups[time].push(item);
+      return groups;
+    }, {} as Record<string, ScheduleItem[]>);
+
+    // Sort times chronologically
+    const sortedTimes = Object.keys(grouped).sort((a, b) => {
+      // Handle "No time specified" and "TBD" at the end
+      if (a === 'No time specified' || a === 'TBD') return 1;
+      if (b === 'No time specified' || b === 'TBD') return -1;
+      
+      // Try to parse times for comparison
+      const timeA = parseTime(a);
+      const timeB = parseTime(b);
+      
+      if (timeA && timeB) {
+        return timeA - timeB;
+      }
+      
+      // Fallback to string comparison
+      return a.localeCompare(b);
+    });
+
+    return sortedTimes.map(time => ({
+      time,
+      items: grouped[time]
+    }));
+  };
+
+  // Helper function to parse time strings for sorting
+  const parseTime = (timeStr: string): number | null => {
+    // Handle various time formats
+    const timeMatch = timeStr.match(/(\d{1,2}):?(\d{2})?\s*(AM|PM|am|pm)?/i);
+    if (!timeMatch) return null;
+    
+    let hours = parseInt(timeMatch[1]);
+    const minutes = parseInt(timeMatch[2] || '0');
+    const period = timeMatch[3]?.toUpperCase();
+    
+    // Convert to 24-hour format
+    if (period === 'PM' && hours !== 12) {
+      hours += 12;
+    } else if (period === 'AM' && hours === 12) {
+      hours = 0;
+    }
+    
+    return hours * 60 + minutes; // Convert to minutes for easy comparison
+  };
+
   // Overview Section
   const OverviewSection = () => {
     const currentData = {
@@ -1648,45 +1666,53 @@ export default function HouseSittingApp() {
             <Calendar className="w-6 h-6 text-green-600" />
             <h2 className="text-xl font-bold">Today's Schedule</h2>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {masterSchedule.length > 0 ? (
-              masterSchedule.map((item) => (
-                <div key={item.id} className="flex items-start gap-3 bg-white p-3 rounded-md">
-                  <div className={`w-2 h-2 rounded-full mt-2 ${
-                    item.type === 'feeding' ? 'bg-orange-500' :
-                    item.type === 'medicine' ? 'bg-red-500' :
-                    item.type === 'appointment' ? 'bg-blue-500' :
-                    item.type === 'service' ? 'bg-purple-500' :
-                    item.type === 'walk' ? 'bg-green-500' :
-                    'bg-gray-500'
-                  }`}></div>
-                <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium">{item.title}</p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">{item.time}</span>
-                        {isAdmin && (item.source === 'task' || item.source === 'appointment') && (
-                          <button
-                            onClick={() => handleScheduleItemDelete(item)}
-                            className="text-red-600 hover:text-red-800"
-                            title="Delete item"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
+              groupScheduleByTime(masterSchedule).map((timeGroup) => (
+                <div key={timeGroup.time} className="bg-white rounded-lg p-4 border-l-4 border-green-500">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Clock className="w-5 h-5 text-green-600" />
+                    <h3 className="font-semibold text-lg text-gray-800">{timeGroup.time}</h3>
+                    <span className="text-sm text-gray-500">({timeGroup.items.length} item{timeGroup.items.length !== 1 ? 's' : ''})</span>
+                  </div>
+                  <div className="space-y-2">
+                    {timeGroup.items.map((item) => (
+                      <div key={item.id} className="flex items-start gap-3 bg-gray-50 p-3 rounded-md">
+                        <div className={`w-2 h-2 rounded-full mt-2 ${
+                          item.type === 'feeding' ? 'bg-orange-500' :
+                          item.type === 'medicine' ? 'bg-red-500' :
+                          item.type === 'appointment' ? 'bg-blue-500' :
+                          item.type === 'service' ? 'bg-purple-500' :
+                          item.type === 'walk' ? 'bg-green-500' :
+                          'bg-gray-500'
+                        }`}></div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium">{item.title}</p>
+                            {isAdmin && (item.source === 'task' || item.source === 'appointment') && (
+                              <button
+                                onClick={() => handleScheduleItemDelete(item)}
+                                className="text-red-600 hover:text-red-800"
+                                title="Delete item"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                          {item.dog_name && (
+                            <p className="text-sm text-gray-600">For: {item.dog_name}</p>
+                          )}
+                          {item.notes && (
+                            <p className="text-sm text-gray-500">{item.notes}</p>
+                          )}
+                          {item.location && (
+                            <p className="text-sm text-gray-500">📍 {item.location}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-                    {item.dog_name && (
-                      <p className="text-sm text-gray-600">For: {item.dog_name}</p>
-                    )}
-                    {item.notes && (
-                      <p className="text-sm text-gray-500">{item.notes}</p>
-                    )}
-                    {item.location && (
-                      <p className="text-sm text-gray-500">📍 {item.location}</p>
-                    )}
-          </div>
-        </div>
               ))
             ) : (
               <p className="text-gray-600 text-center py-4">No scheduled items for today</p>

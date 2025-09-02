@@ -745,6 +745,31 @@ The application now has full database connectivity, data persistence, and a full
 - **Result**: All form inputs now maintain focus while typing, making the pet editing interface fully functional
 - **Best Practice**: Always use stable, non-changing keys for React mapped elements to prevent unnecessary re-renders and focus loss
 
+### ✅ Time-Based Schedule Grouping (December 2024)
+- **Enhancement**: Added intelligent grouping of schedule items by time on the main page's "Today's Schedule" section
+- **New Features**:
+  - **Time Grouping**: Events with the same time are grouped together with a clear time header
+  - **Chronological Sorting**: Times are sorted chronologically (7:00 AM, 2:00 PM, etc.) with "No time specified" and "TBD" at the end
+  - **Visual Hierarchy**: Each time group has a distinct container with time header and item count
+  - **Smart Time Parsing**: Handles various time formats (7:00 AM, 2:00 PM, 14:00, etc.) for proper sorting
+  - **Item Count Display**: Shows how many items are scheduled at each time (e.g., "3 items")
+- **User Experience Improvements**:
+  - **Clear Organization**: Makes it obvious when multiple tasks happen simultaneously
+  - **Easy Scanning**: Users can quickly see what needs to be done at each time
+  - **Reduced Cognitive Load**: Grouped items reduce visual clutter and improve comprehension
+- **Example Use Case**: If feeding, medicine, and a walk are all scheduled for 7:00 AM, they now appear grouped under a "7:00 AM (3 items)" header
+- **Files Changed**: 
+  - `components/HouseSittingApp.tsx` - Added groupScheduleByTime function and updated Today's Schedule display
+- **Result**: Much clearer schedule organization with obvious time-based grouping for simultaneous events
+
+### ✅ Build Error Fix (December 2024)
+- **Issue**: Deployment failed with TypeScript error "Cannot find name 'isEditing'" in DogEditForm component
+- **Root Cause**: DogEditForm component had a useEffect trying to access variables (isEditing, editingItem) that were not in its scope
+- **Solution**: Removed redundant useEffect since medicine schedule is already properly initialized in useState with formData
+- **Files Changed**: 
+  - `components/HouseSittingApp.tsx` - Removed problematic useEffect from DogEditForm component
+- **Result**: Build now compiles successfully and deployment works correctly
+
 ### ✅ Service People Scheduling Enhancement (December 2024)
 - **Issue**: Service people scheduling used open-ended text fields instead of proper date/time scheduling
 - **Enhancement**: Upgraded service people to use specific date and time range scheduling with stay-based filtering
@@ -780,3 +805,21 @@ The application now has full database connectivity, data persistence, and a full
   - `components/HouseSittingApp.tsx` - Updated form with frequency selection, dose tracking, and auto-calculation
   - `lib/database.ts` - Enhanced schedule generation with smart medicine support
 - **Result**: Intelligent medicine management with automatic course tracking and precise end date calculation
+
+### ✅ Smart Medicine Form Enhancements (December 2024)
+- **Enhancement**: Improved smart medicine form with automatic dose time generation and simplified user interface
+- **New Features**:
+  - **Automatic Dose Generation**: Selecting frequency (1-4 times per day) automatically creates the correct number of dose time slots
+  - **Automatic Dose Numbering**: Each dose is automatically labeled "Dose 1", "Dose 2", "Dose 3", etc.
+  - **Simplified Interface**: Removed manual add/remove dose buttons - everything is automatic
+  - **Dynamic Dose Management**: Adding/removing doses based on frequency changes preserves existing times
+  - **Clean Time Input**: Each dose has its own labeled time input field
+- **User Experience Improvements**:
+  - **Intuitive Workflow**: Select frequency → Set times → Done
+  - **No Manual Management**: No need to manually add/remove dose slots
+  - **Clear Labeling**: Each dose time is clearly identified
+  - **Preserved Data**: Existing times are maintained when changing frequency
+- **Example Use Case**: Barolo's 2x daily medication - select "2 times per day" → system creates "Dose 1" and "Dose 2" time slots automatically
+- **Files Changed**: 
+  - `components/HouseSittingApp.tsx` - Enhanced medicine form with automatic dose generation and improved UI
+- **Result**: Streamlined medicine scheduling with automatic dose management and intuitive user interface
