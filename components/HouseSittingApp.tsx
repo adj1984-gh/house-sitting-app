@@ -339,71 +339,150 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
       {/* Medicine Section */}
       <div className="border-t pt-4">
         <h4 className="font-semibold text-gray-800 mb-3">Medicine Information</h4>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {medicineSchedule.map((medicine, index) => (
-            <div key={`medicine-${index}`} className="border rounded-md p-3 space-y-2">
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <label className="block text-xs font-medium mb-1">Time</label>
-                  <input
-                    type="time"
-                    value={medicine.time}
-                    onChange={(e) => updateMedicine(index, 'time', e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md text-sm"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-xs font-medium mb-1">Medication</label>
+            <div key={`medicine-${index}`} className="border rounded-lg p-4 space-y-3 bg-gray-50">
+              {/* Medicine Header */}
+              <div className="flex justify-between items-start">
+                <h5 className="font-medium text-gray-800">Medicine #{index + 1}</h5>
+                <button
+                  type="button"
+                  onClick={() => removeMedicine(index)}
+                  className="text-red-600 hover:text-red-800"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Basic Medicine Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Medication</label>
                   <input
                     type="text"
                     value={medicine.medication}
                     onChange={(e) => updateMedicine(index, 'medication', e.target.value)}
                     placeholder="1 Benadryl (25mg)"
-                    className="w-full px-3 py-2 border rounded-md text-sm"
+                    className="w-full px-3 py-2 border rounded-md"
                   />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => removeMedicine(index)}
-                  className="px-3 py-2 text-red-600 hover:text-red-800"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Notes</label>
+                  <input
+                    type="text"
+                    value={medicine.notes}
+                    onChange={(e) => updateMedicine(index, 'notes', e.target.value)}
+                    placeholder="With food, etc."
+                    className="w-full px-3 py-2 border rounded-md"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium mb-1">Notes</label>
-                <input
-                  type="text"
-                  value={medicine.notes}
-                  onChange={(e) => updateMedicine(index, 'notes', e.target.value)}
-                  placeholder="With food, etc."
-                  className="w-full px-3 py-2 border rounded-md text-sm"
-                />
+
+              {/* Smart Scheduling */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Times Per Day</label>
+                  <select
+                    value={medicine.frequency_per_day}
+                    onChange={(e) => updateMedicine(index, 'frequency_per_day', parseInt(e.target.value))}
+                    className="w-full px-3 py-2 border rounded-md"
+                  >
+                    <option value={1}>1 time per day</option>
+                    <option value={2}>2 times per day</option>
+                    <option value={3}>3 times per day</option>
+                    <option value={4}>4 times per day</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Remaining Doses</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={medicine.remaining_doses}
+                    onChange={(e) => updateMedicine(index, 'remaining_doses', parseInt(e.target.value) || 0)}
+                    className="w-full px-3 py-2 border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Start Date</label>
+                  <input
+                    type="date"
+                    value={medicine.start_date}
+                    onChange={(e) => updateMedicine(index, 'start_date', e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md"
+                  />
+                </div>
               </div>
+
+              {/* Calculated End Date Display */}
+              {medicine.calculated_end_date && (
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                  <p className="text-sm text-blue-800">
+                    <span className="font-medium">Calculated End Date:</span> {new Date(medicine.calculated_end_date).toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                    <span className="text-blue-600 ml-2">
+                      ({Math.ceil(medicine.remaining_doses / medicine.frequency_per_day)} days)
+                    </span>
+                  </p>
+                </div>
+              )}
+
+              {/* Dose Times */}
               <div>
-                <label className="block text-xs font-medium mb-1">End Date (Optional)</label>
-                <input
-                  type="date"
-                  value={medicine.end_date}
-                  onChange={(e) => updateMedicine(index, 'end_date', e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1">End Time (Optional)</label>
-                <input
-                  type="time"
-                  value={medicine.end_time}
-                  onChange={(e) => updateMedicine(index, 'end_time', e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md text-sm"
-                />
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium">Dose Times</label>
+                  <button
+                    type="button"
+                    onClick={() => addDoseTime(index)}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    <Plus className="w-4 h-4 inline mr-1" />
+                    Add Time
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {medicine.dose_times.map((dose, doseIndex) => (
+                    <div key={`dose-${index}-${doseIndex}`} className="flex gap-2 items-center">
+                      <div className="flex-1">
+                        <input
+                          type="time"
+                          value={dose.time}
+                          onChange={(e) => updateDoseTime(index, doseIndex, 'time', e.target.value)}
+                          className="w-full px-3 py-2 border rounded-md text-sm"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={dose.dose_amount}
+                          onChange={(e) => updateDoseTime(index, doseIndex, 'dose_amount', e.target.value)}
+                          placeholder="1 pill"
+                          className="w-full px-3 py-2 border rounded-md text-sm"
+                        />
+                      </div>
+                      {medicine.dose_times.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeDoseTime(index, doseIndex)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           ))}
           <button
             type="button"
             onClick={addMedicine}
-            className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:text-blue-800 text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             <Plus className="w-4 h-4" />
             Add Medicine

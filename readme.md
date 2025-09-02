@@ -660,7 +660,7 @@ The application now has full database connectivity, data persistence, and a full
 - `app/api/stays/route.ts` - Server-side API routes for stay operations
 - `test-database.sql` - Database testing and verification scripts
 - `cleanup-test-data.sql` - Test data cleanup script
-- `migration-add-birthdate.sql` - Database migration to add birthdate column
+
 
 ### ✅ Photo Upload Fix (December 2024)
 - **Issue**: Photo upload failing with "Could not find the 'birthdate' column" error
@@ -762,3 +762,21 @@ The application now has full database connectivity, data persistence, and a full
   - `lib/database.ts` - Enhanced schedule generation with stay filtering
   - `components/HouseSittingApp.tsx` - Updated form and display logic
 - **Result**: Precise scheduling for service people with proper integration into daily schedule only during active stays
+
+### ✅ Smart Medicine Scheduling System (December 2024)
+- **Enhancement**: Upgraded medicine scheduling to intelligent frequency-based dosing with automatic end date calculation
+- **New Features**:
+  - **Frequency Selection**: Choose 1-4 times per day for medication dosing
+  - **Remaining Doses Tracking**: Enter how many pills/doses are left for accurate course management
+  - **Auto-Calculated End Dates**: System automatically calculates when medication will end based on frequency and remaining doses
+  - **Multiple Dose Times**: Add specific times and amounts for each daily dose
+  - **Smart Display**: Shows remaining doses and calculated end dates in medicine schedule
+  - **Course Management**: Perfect for temporary medications like 5-day antibiotic courses
+- **Example Use Case**: Barolo's 5-day medication - set "2 times per day", "10 remaining doses", system calculates end date automatically
+- **Backward Compatibility**: Existing medicine schedules continue to work during transition
+- **Database Changes**: Enhanced medicine_schedule JSONB structure with frequency, remaining_doses, dose_times, and calculated_end_date fields
+- **Files Changed**: 
+  - `migration-smart-medicine-scheduling.sql` - Database migration script for smart medicine scheduling
+  - `components/HouseSittingApp.tsx` - Updated form with frequency selection, dose tracking, and auto-calculation
+  - `lib/database.ts` - Enhanced schedule generation with smart medicine support
+- **Result**: Intelligent medicine management with automatic course tracking and precise end date calculation
