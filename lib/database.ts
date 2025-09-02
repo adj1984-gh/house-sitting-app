@@ -780,10 +780,26 @@ export const generateMasterSchedule = (
   dailyTasks: DailyTask[],
   stays: Stay[] = [],
   houseInstructions: HouseInstruction[] = [],
-  targetDate?: string
+  targetDate?: string,
+  isSitterView: boolean = false
 ): ScheduleItem[] => {
   const scheduleItems: ScheduleItem[] = []
   const today = targetDate || new Date().toISOString().split('T')[0]
+  
+  // In sitter view, only show items during active stay period
+  let activeStay: Stay | null = null;
+  if (isSitterView) {
+    activeStay = stays.find(stay => {
+      const startDate = stay.start_date.split('T')[0];
+      const endDate = stay.end_date.split('T')[0];
+      return stay.active && today >= startDate && today <= endDate;
+    }) || null;
+    
+    // If no active stay in sitter view, return empty schedule
+    if (!activeStay) {
+      return [];
+    }
+  }
   
   // Add feeding schedules from dogs
   dogs.forEach(dog => {

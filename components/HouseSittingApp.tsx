@@ -991,8 +991,8 @@ export default function HouseSittingApp() {
     
     if (scheduleViewMode === 'entire-stay' && currentActiveStay) {
       // Generate schedule for entire stay period
-      const startDate = new Date(currentActiveStay.start_date);
-      const endDate = new Date(currentActiveStay.end_date);
+      const startDate = new Date(currentActiveStay.start_date + 'T00:00:00');
+      const endDate = new Date(currentActiveStay.end_date + 'T00:00:00');
       const allSchedules: ScheduleItem[] = [];
       
       // Generate schedule for each day in the stay
@@ -1004,7 +1004,8 @@ export default function HouseSittingApp() {
           dbData.dailyTasks,
           dbData.stays,
           dbData.houseInstructions,
-          date.toISOString().split('T')[0]
+          date.toISOString().split('T')[0],
+          !isAdmin
         );
         allSchedules.push(...daySchedule);
       }
@@ -1019,12 +1020,13 @@ export default function HouseSittingApp() {
         dbData.dailyTasks,
         dbData.stays,
         dbData.houseInstructions,
-        selectedDate
+        selectedDate,
+        !isAdmin
       );
     }
     
     setMasterSchedule(schedule);
-  }, [dbData.dogs, dbData.appointments, dbData.dailyTasks, dbData.stays, dbData.houseInstructions, selectedDate, scheduleViewMode, currentActiveStay]);
+  }, [dbData.dogs, dbData.appointments, dbData.dailyTasks, dbData.stays, dbData.houseInstructions, selectedDate, scheduleViewMode, currentActiveStay, isAdmin]);
 
   // Admin CRUD operations
   const handleCreate = async (type: string, data: any) => {
@@ -1842,7 +1844,7 @@ export default function HouseSittingApp() {
                         <div>
                           <h3 className="font-semibold text-lg">{stay.sitter_name}</h3>
                           <p className="text-gray-600">
-                            {new Date(stay.start_date).toLocaleDateString()}{stay.start_time && ` at ${formatTimeForDisplay(stay.start_time)}`} - {new Date(stay.end_date).toLocaleDateString()}{stay.end_time && ` at ${formatTimeForDisplay(stay.end_time)}`}
+                            {new Date(stay.start_date + 'T00:00:00').toLocaleDateString()}{stay.start_time && ` at ${formatTimeForDisplay(stay.start_time)}`} - {new Date(stay.end_date + 'T00:00:00').toLocaleDateString()}{stay.end_time && ` at ${formatTimeForDisplay(stay.end_time)}`}
                           </p>
                           {stay.notes && (
                             <p className="text-sm text-gray-500 mt-1">{stay.notes}</p>
@@ -1854,7 +1856,7 @@ export default function HouseSittingApp() {
                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                   Current Stay
                                 </span>
-                              ) : new Date(stay.end_date) < new Date() ? (
+                              ) : new Date(stay.end_date + 'T00:00:00') < new Date() ? (
                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                   Past Stay
                                 </span>
