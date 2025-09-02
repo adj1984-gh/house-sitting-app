@@ -844,12 +844,33 @@ export default function HouseSittingApp() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [scheduleViewMode, setScheduleViewMode] = useState<'single' | 'entire-stay'>('single');
 
   // Function to handle tab switching with scroll to top
   const handleTabSwitch = (sectionId: string) => {
     setActiveSection(sectionId);
     // Scroll to top when switching tabs
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Function to group schedule by date and time for entire stay view
+  const groupScheduleByDateAndTime = (schedule: ScheduleItem[]) => {
+    const grouped: { [date: string]: { [time: string]: ScheduleItem[] } } = {};
+    
+    schedule.forEach(item => {
+      const date = item.date;
+      const time = item.time || 'No time specified';
+      
+      if (!grouped[date]) {
+        grouped[date] = {};
+      }
+      if (!grouped[date][time]) {
+        grouped[date][time] = [];
+      }
+      grouped[date][time].push(item);
+    });
+    
+    return grouped;
   };
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
@@ -964,19 +985,46 @@ export default function HouseSittingApp() {
     }
   };
 
-  // Generate master schedule whenever data changes or selected date changes
+  // Generate master schedule whenever data changes or selected date/view mode changes
   useEffect(() => {
-    const schedule = generateMasterSchedule(
-      dbData.dogs,
-      dbData.appointments,
-      [],
-      dbData.dailyTasks,
-      dbData.stays,
-      dbData.houseInstructions,
-      selectedDate
-    );
+    let schedule: ScheduleItem[] = [];
+    
+    if (scheduleViewMode === 'entire-stay' && currentActiveStay) {
+      // Generate schedule for entire stay period
+      const startDate = new Date(currentActiveStay.start_date);
+      const endDate = new Date(currentActiveStay.end_date);
+      const allSchedules: ScheduleItem[] = [];
+      
+      // Generate schedule for each day in the stay
+      for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+        const daySchedule = generateMasterSchedule(
+          dbData.dogs,
+          dbData.appointments,
+          [],
+          dbData.dailyTasks,
+          dbData.stays,
+          dbData.houseInstructions,
+          date.toISOString().split('T')[0]
+        );
+        allSchedules.push(...daySchedule);
+      }
+      
+      schedule = allSchedules;
+    } else {
+      // Generate schedule for single day
+      schedule = generateMasterSchedule(
+        dbData.dogs,
+        dbData.appointments,
+        [],
+        dbData.dailyTasks,
+        dbData.stays,
+        dbData.houseInstructions,
+        selectedDate
+      );
+    }
+    
     setMasterSchedule(schedule);
-  }, [dbData.dogs, dbData.appointments, dbData.dailyTasks, dbData.stays, dbData.houseInstructions, selectedDate]);
+  }, [dbData.dogs, dbData.appointments, dbData.dailyTasks, dbData.stays, dbData.houseInstructions, selectedDate, scheduleViewMode, currentActiveStay]);
 
   // Admin CRUD operations
   const handleCreate = async (type: string, data: any) => {
@@ -1873,83 +1921,203 @@ export default function HouseSittingApp() {
               <Calendar className="w-6 h-6 text-green-600" />
               <h2 className="text-xl font-bold">Schedule</h2>
             </div>
-            <div className="flex items-center gap-2">
-              <label htmlFor="date-selector" className="text-sm font-medium text-gray-700">
-                Date:
-              </label>
-              <input
-                id="date-selector"
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">View:</label>
+                <div className="flex bg-gray-100 rounded-md p-1">
+                  <button
+                    onClick={() => setScheduleViewMode('single')}
+                    className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                      scheduleViewMode === 'single'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Single Day
+                  </button>
+                  <button
+                    onClick={() => setScheduleViewMode('entire-stay')}
+                    className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                      scheduleViewMode === 'entire-stay'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Entire Stay
+                  </button>
+                </div>
+              </div>
+              {scheduleViewMode === 'single' && (
+                <div className="flex items-center gap-2">
+                  <label htmlFor="date-selector" className="text-sm font-medium text-gray-700">
+                    Date:
+                  </label>
+                  <input
+                    id="date-selector"
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+              )}
             </div>
           </div>
           <div className="space-y-4">
             {masterSchedule.length > 0 ? (
-              groupScheduleByTime(masterSchedule).map((timeGroup) => (
-                <div key={timeGroup.time} className="bg-white rounded-lg p-4 border-l-4 border-green-500">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Clock className="w-5 h-5 text-green-600" />
-                    <h3 className="font-semibold text-lg text-gray-800">{timeGroup.time}</h3>
-                    <span className="text-sm text-gray-500">({timeGroup.items.length} item{timeGroup.items.length !== 1 ? 's' : ''})</span>
-                  </div>
-                  <div className="space-y-2">
-                    {timeGroup.items.map((item) => (
-                      <div key={item.id} className="flex items-start gap-3 bg-gray-50 p-3 rounded-md">
-                        <div className={`w-2 h-2 rounded-full mt-2 ${
-                          item.type === 'feeding' ? 'bg-orange-500' :
-                          item.type === 'medicine' ? 'bg-red-500' :
-                          item.type === 'appointment' ? 'bg-blue-500' :
-                          item.type === 'service' ? 'bg-purple-500' :
-                          item.type === 'walk' ? 'bg-green-500' :
-                          'bg-gray-500'
-                        }`}></div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium">{item.title}</p>
-                              {item.video_url && (
+              scheduleViewMode === 'entire-stay' ? (
+                // Entire stay view - group by date, then by time
+                Object.entries(groupScheduleByDateAndTime(masterSchedule))
+                  .sort(([dateA], [dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime())
+                  .map(([date, timeGroups]) => (
+                    <div key={date} className="bg-white rounded-lg p-4 border-l-4 border-blue-500">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Calendar className="w-5 h-5 text-blue-600" />
+                        <h3 className="font-semibold text-lg text-gray-800">
+                          {new Date(date).toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                        </h3>
+                      </div>
+                      <div className="space-y-3">
+                        {Object.entries(timeGroups)
+                          .sort(([timeA], [timeB]) => {
+                            const timeAValue = timeA === 'No time specified' ? '23:59' : timeA;
+                            const timeBValue = timeB === 'No time specified' ? '23:59' : timeB;
+                            const minutesA = parseTime(timeAValue) ?? 1439;
+                            const minutesB = parseTime(timeBValue) ?? 1439;
+                            return minutesA - minutesB;
+                          })
+                          .map(([time, items]) => (
+                            <div key={`${date}-${time}`} className="bg-gray-50 rounded-lg p-3">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Clock className="w-4 h-4 text-gray-600" />
+                                <h4 className="font-medium text-gray-800">{time}</h4>
+                                <span className="text-sm text-gray-500">({items.length} item{items.length !== 1 ? 's' : ''})</span>
+                              </div>
+                              <div className="space-y-2">
+                                {items.map((item) => (
+                                  <div key={item.id} className="flex items-start gap-3 bg-white p-3 rounded-md">
+                                    <div className={`w-2 h-2 rounded-full mt-2 ${
+                                      item.type === 'feeding' ? 'bg-orange-500' :
+                                      item.type === 'medicine' ? 'bg-red-500' :
+                                      item.type === 'appointment' ? 'bg-blue-500' :
+                                      item.type === 'service' ? 'bg-purple-500' :
+                                      item.type === 'walk' ? 'bg-green-500' :
+                                      'bg-gray-500'
+                                    }`}></div>
+                                    <div className="flex-1">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                          <p className="font-medium">{item.title}</p>
+                                          {item.video_url && (
+                                            <button
+                                              onClick={() => window.open(item.video_url, '_blank')}
+                                              className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-xs font-medium"
+                                              title="Watch video instructions"
+                                            >
+                                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M8 5v14l11-7z"/>
+                                              </svg>
+                                              Video
+                                            </button>
+                                          )}
+                                        </div>
+                                        {isAdmin && (item.source === 'task' || item.source === 'appointment') && (
+                                          <button
+                                            onClick={() => handleScheduleItemDelete(item)}
+                                            className="text-red-600 hover:text-red-800"
+                                            title="Delete item"
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </button>
+                                        )}
+                                      </div>
+                                      {item.notes && (
+                                        <p className="text-sm text-gray-500">{item.notes}</p>
+                                      )}
+                                      {item.location && (
+                                        <p className="text-sm text-gray-500">📍 {item.location}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ))
+              ) : (
+                // Single day view - group by time only
+                groupScheduleByTime(masterSchedule).map((timeGroup) => (
+                  <div key={timeGroup.time} className="bg-white rounded-lg p-4 border-l-4 border-green-500">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Clock className="w-5 h-5 text-green-600" />
+                      <h3 className="font-semibold text-lg text-gray-800">{timeGroup.time}</h3>
+                      <span className="text-sm text-gray-500">({timeGroup.items.length} item{timeGroup.items.length !== 1 ? 's' : ''})</span>
+                    </div>
+                    <div className="space-y-2">
+                      {timeGroup.items.map((item) => (
+                        <div key={item.id} className="flex items-start gap-3 bg-gray-50 p-3 rounded-md">
+                          <div className={`w-2 h-2 rounded-full mt-2 ${
+                            item.type === 'feeding' ? 'bg-orange-500' :
+                            item.type === 'medicine' ? 'bg-red-500' :
+                            item.type === 'appointment' ? 'bg-blue-500' :
+                            item.type === 'service' ? 'bg-purple-500' :
+                            item.type === 'walk' ? 'bg-green-500' :
+                            'bg-gray-500'
+                          }`}></div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{item.title}</p>
+                                {item.video_url && (
+                                  <button
+                                    onClick={() => window.open(item.video_url, '_blank')}
+                                    className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-xs font-medium"
+                                    title="Watch video instructions"
+                                  >
+                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                      <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                    Video
+                                  </button>
+                                )}
+                              </div>
+                              {isAdmin && (item.source === 'task' || item.source === 'appointment') && (
                                 <button
-                                  onClick={() => window.open(item.video_url, '_blank')}
-                                  className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-xs font-medium"
-                                  title="Watch video instructions"
+                                  onClick={() => handleScheduleItemDelete(item)}
+                                  className="text-red-600 hover:text-red-800"
+                                  title="Delete item"
                                 >
-                                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M8 5v14l11-7z"/>
-                                  </svg>
-                                  Video
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               )}
                             </div>
-                            {isAdmin && (item.source === 'task' || item.source === 'appointment') && (
-                              <button
-                                onClick={() => handleScheduleItemDelete(item)}
-                                className="text-red-600 hover:text-red-800"
-                                title="Delete item"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                            {item.notes && (
+                              <p className="text-sm text-gray-500">{item.notes}</p>
+                            )}
+                            {item.location && (
+                              <p className="text-sm text-gray-500">📍 {item.location}</p>
                             )}
                           </div>
-                          {item.dog_name && (
-                            <p className="text-sm text-gray-600">For: {item.dog_name}</p>
-                          )}
-                          {item.notes && (
-                            <p className="text-sm text-gray-500">{item.notes}</p>
-                          )}
-                          {item.location && (
-                            <p className="text-sm text-gray-500">📍 {item.location}</p>
-                          )}
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))
+                ))
+              )
             ) : (
-              <p className="text-gray-600 text-center py-4">No scheduled items for today</p>
+              <p className="text-gray-600 text-center py-4">
+                {scheduleViewMode === 'entire-stay' 
+                  ? 'No scheduled items for the entire stay' 
+                  : 'No scheduled items for today'
+                }
+              </p>
             )}
           </div>
         </div>
