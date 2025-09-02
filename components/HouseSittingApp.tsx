@@ -196,7 +196,7 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
         <h4 className="font-semibold text-gray-800 mb-3">Feeding Information</h4>
         <div className="space-y-3">
           {feedingSchedule.map((feeding, index) => (
-            <div key={`feeding-${index}-${feeding.time}-${feeding.amount}-${feeding.notes}`} className="border border-gray-200 rounded-lg p-3 space-y-3">
+            <div key={`feeding-${index}`} className="border border-gray-200 rounded-lg p-3 space-y-3">
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="block text-xs font-medium mb-1">Time</label>
@@ -263,7 +263,7 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
         <h4 className="font-semibold text-gray-800 mb-3">Medicine Information</h4>
         <div className="space-y-3">
           {medicineSchedule.map((medicine, index) => (
-            <div key={`medicine-${index}-${medicine.time}-${medicine.medication}-${medicine.notes}`} className="border rounded-md p-3 space-y-2">
+            <div key={`medicine-${index}`} className="border rounded-md p-3 space-y-2">
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="block text-xs font-medium mb-1">Time</label>
@@ -334,7 +334,7 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
       <div className="border-t pt-4">
         <h4 className="font-semibold text-gray-800 mb-3">Walk Schedule</h4>
         {walkSchedule.map((walk, index) => (
-          <div key={`walk-${index}-${walk.time}-${walk.duration}-${walk.notes}`} className="border rounded-lg p-3 mb-3 bg-gray-50">
+          <div key={`walk-${index}`} className="border rounded-lg p-3 mb-3 bg-gray-50">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <label className="block text-sm font-medium mb-1">Time</label>
@@ -414,7 +414,7 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
         <h4 className="font-semibold text-gray-800 mb-3">Special Instructions</h4>
         <div className="space-y-3">
           {specialInstructions.map((instruction, index) => (
-            <div key={`instruction-${index}-${instruction.type}-${instruction.instruction}`} className="flex gap-2 items-end">
+            <div key={`instruction-${index}`} className="flex gap-2 items-end">
               <div className="flex-1">
                 <label className="block text-xs font-medium mb-1">Title</label>
                 <input
