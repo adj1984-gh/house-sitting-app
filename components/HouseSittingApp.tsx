@@ -1601,7 +1601,7 @@ export default function HouseSittingApp() {
     if (!hasActiveStayToday && !isAdmin) {
       return (
         <div className="space-y-6">
-          <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-8 text-center">
+          <div className="bg-white rounded-lg shadow-md p-8 text-center border border-yellow-200">
             <div className="flex items-center justify-center gap-3 mb-4">
               <AlertCircle className="w-8 h-8 text-yellow-600" />
               <h2 className="text-2xl font-bold text-yellow-800">No Active Stay</h2>
@@ -1615,7 +1615,7 @@ export default function HouseSittingApp() {
           </div>
           
           {/* Still show emergency contacts */}
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
             <div className="flex items-center gap-2 mb-4">
               <Phone className="w-6 h-6 text-blue-600" />
               <h2 className="text-xl font-bold">Emergency Contacts</h2>
@@ -1664,7 +1664,7 @@ export default function HouseSittingApp() {
     return (
       <div className="space-y-6">
         {/* Property Info */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
           <h2 className="text-xl font-bold mb-4">Property Information</h2>
           <div className="grid md:grid-cols-1 gap-4">
             <div>
@@ -1675,7 +1675,7 @@ export default function HouseSittingApp() {
         </div>
 
         {/* All Alerts */}
-        <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+        <div className="bg-white rounded-lg shadow-md p-6 border border-red-200">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-6 h-6 text-red-600" />
@@ -1741,7 +1741,7 @@ export default function HouseSittingApp() {
         </div>
 
         {/* All Contacts */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Phone className="w-6 h-6 text-blue-600" />
@@ -1819,7 +1819,7 @@ export default function HouseSittingApp() {
         </div>
 
         {/* Current Stay */}
-        <div className="bg-purple-50 rounded-lg p-6">
+        <div className="bg-white rounded-lg shadow-md p-6 border border-purple-200">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Users className="w-6 h-6 text-purple-600" />
@@ -1956,7 +1956,7 @@ export default function HouseSittingApp() {
         </div>
 
         {/* Schedule */}
-        <div className="bg-green-50 rounded-lg p-6">
+        <div className="bg-white rounded-lg shadow-md p-6 border border-green-200">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Calendar className="w-6 h-6 text-green-600" />
