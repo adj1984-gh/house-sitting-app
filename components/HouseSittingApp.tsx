@@ -1540,7 +1540,33 @@ export default function HouseSittingApp() {
 
   // Helper function to parse time strings for sorting
   const parseTime = (timeStr: string): number | null => {
-    // Handle various time formats
+    // Handle descriptive time periods first
+    const timePeriods: Record<string, number> = {
+      'morning': 8 * 60, // 8:00 AM
+      'early morning': 7 * 60, // 7:00 AM
+      'late morning': 10 * 60, // 10:00 AM
+      'mid morning': 9 * 60, // 9:00 AM
+      'afternoon': 14 * 60, // 2:00 PM
+      'early afternoon': 13 * 60, // 1:00 PM
+      'late afternoon': 16 * 60, // 4:00 PM
+      'mid afternoon': 15 * 60, // 3:00 PM
+      'evening': 18 * 60, // 6:00 PM
+      'early evening': 17 * 60, // 5:00 PM
+      'late evening': 20 * 60, // 8:00 PM
+      'night': 21 * 60, // 9:00 PM
+      'late night': 22 * 60, // 10:00 PM
+      'dawn': 6 * 60, // 6:00 AM
+      'dusk': 19 * 60, // 7:00 PM
+      'noon': 12 * 60, // 12:00 PM
+      'midnight': 0 // 12:00 AM
+    };
+    
+    const lowerTimeStr = timeStr.toLowerCase().trim();
+    if (timePeriods[lowerTimeStr]) {
+      return timePeriods[lowerTimeStr];
+    }
+    
+    // Handle various numeric time formats
     const timeMatch = timeStr.match(/(\d{1,2}):?(\d{2})?\s*(AM|PM|am|pm)?/i);
     if (!timeMatch) return null;
     
@@ -2654,20 +2680,30 @@ export default function HouseSittingApp() {
                               🔔 <strong>Reminder:</strong> Will show up the day before
                             </p>
                           )}
-                          {(instruction.person_name || instruction.person_phone) && (
+                          {(instruction.person_name || instruction.person_phone || instruction.schedule_notes) && (
                             <div className="mt-2 pt-2 border-t border-blue-200">
-                              <p className="text-blue-800 font-medium text-xs">Contact Person:</p>
-                              {instruction.person_name && (
-                                <p className="text-blue-700 text-xs">
-                                  <strong>{instruction.person_name}</strong>
-                                </p>
-                              )}
-                              {instruction.person_phone && (
-                                <p className="text-blue-700 text-xs">
-                                  <a href={`tel:${instruction.person_phone}`} className="hover:underline">
-                                    📞 {instruction.person_phone}
-                                  </a>
-                                </p>
+                              {instruction.person_name || instruction.person_phone ? (
+                                <>
+                                  <p className="text-blue-800 font-medium text-xs">Contact Person:</p>
+                                  {instruction.person_name && (
+                                    <p className="text-blue-700 text-xs">
+                                      <strong>{instruction.person_name}</strong>
+                                    </p>
+                                  )}
+                                  {instruction.person_phone && (
+                                    <p className="text-blue-700 text-xs">
+                                      <a href={`tel:${instruction.person_phone}`} className="hover:underline">
+                                        📞 {instruction.person_phone}
+                                      </a>
+                                    </p>
+                                  )}
+                                </>
+                              ) : null}
+                              {instruction.schedule_notes && (
+                                <div className="mt-2">
+                                  <p className="text-blue-800 font-medium text-xs">Service Notes:</p>
+                                  <p className="text-blue-700 text-xs">{instruction.schedule_notes}</p>
+                                </div>
                               )}
                             </div>
                           )}
@@ -2844,6 +2880,7 @@ export default function HouseSittingApp() {
           data.remind_day_before = false;
           data.person_name = null;
           data.person_phone = null;
+          data.schedule_notes = null;
         }
         
         // Handle duration - convert to number if provided, otherwise set to null
@@ -3035,15 +3072,21 @@ export default function HouseSittingApp() {
                             const datePickerDiv = document.getElementById('date-picker-section');
                             const weeklyDayDiv = document.getElementById('weekly-day-section');
                             const reminderDiv = document.getElementById('reminder-section');
+                            const personDiv = document.getElementById('person-section');
+                            const serviceNotesDiv = document.getElementById('service-notes-section');
                             
                             if (e.target.value === 'none') {
                               // Hide all scheduling options
                               if (scheduleDetailsDiv) scheduleDetailsDiv.style.display = 'none';
                               if (reminderDiv) reminderDiv.style.display = 'none';
+                              if (personDiv) personDiv.style.display = 'none';
+                              if (serviceNotesDiv) serviceNotesDiv.style.display = 'none';
                             } else {
                               // Show scheduling details
                               if (scheduleDetailsDiv) scheduleDetailsDiv.style.display = 'block';
                               if (reminderDiv) reminderDiv.style.display = 'block';
+                              if (personDiv) personDiv.style.display = 'block';
+                              if (serviceNotesDiv) serviceNotesDiv.style.display = 'block';
                               
                               // Show/hide date picker based on type
                               const needsDatePicker = ['one_time'].includes(e.target.value);
@@ -3207,6 +3250,21 @@ export default function HouseSittingApp() {
                             />
                             <p className="text-xs text-gray-500 mt-1">Contact number for the service person</p>
                           </div>
+                        </div>
+                      </div>
+
+                      {/* Scheduled Service Notes Section (hidden by default) */}
+                      <div id="service-notes-section" style={{ display: formData.schedule_frequency && formData.schedule_frequency !== 'none' ? 'block' : 'none' }}>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Scheduled Service Notes (Optional)</label>
+                          <textarea 
+                            name="schedule_notes" 
+                            defaultValue={formData.schedule_notes || ''} 
+                            className="w-full px-3 py-2 border rounded-md" 
+                            rows={3}
+                            placeholder="Additional notes about this scheduled service (e.g., special instructions, access requirements, etc.)"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Any additional information about this scheduled service</p>
                         </div>
                       </div>
                     </div>

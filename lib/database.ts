@@ -1156,17 +1156,25 @@ export const generateMasterSchedule = (
           }
         }
         
-        // Add person information to notes if available
+        // Add person information and schedule notes to notes if available
         let enhancedNotes = notes;
+        const additionalInfo = [];
+        
         if (instruction.person_name || instruction.person_phone) {
-          const personInfo = [];
           if (instruction.person_name) {
-            personInfo.push(`Contact: ${instruction.person_name}`);
+            additionalInfo.push(`Contact: ${instruction.person_name}`);
           }
           if (instruction.person_phone) {
-            personInfo.push(`Phone: ${instruction.person_phone}`);
+            additionalInfo.push(`Phone: ${instruction.person_phone}`);
           }
-          enhancedNotes = enhancedNotes ? `${enhancedNotes}\n${personInfo.join(', ')}` : personInfo.join(', ');
+        }
+        
+        if (instruction.schedule_notes) {
+          additionalInfo.push(`Notes: ${instruction.schedule_notes}`);
+        }
+        
+        if (additionalInfo.length > 0) {
+          enhancedNotes = enhancedNotes ? `${enhancedNotes}\n${additionalInfo.join(', ')}` : additionalInfo.join(', ');
         }
 
         scheduleItems.push({

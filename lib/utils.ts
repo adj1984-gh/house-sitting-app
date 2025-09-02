@@ -70,7 +70,33 @@ export const groupScheduleByTime = (scheduleItems: ScheduleItem[]) => {
 
 // Helper function to parse time strings for sorting
 export const parseTime = (timeStr: string): number | null => {
-  // Handle various time formats
+  // Handle descriptive time periods first
+  const timePeriods: Record<string, number> = {
+    'morning': 8 * 60, // 8:00 AM
+    'early morning': 7 * 60, // 7:00 AM
+    'late morning': 10 * 60, // 10:00 AM
+    'mid morning': 9 * 60, // 9:00 AM
+    'afternoon': 14 * 60, // 2:00 PM
+    'early afternoon': 13 * 60, // 1:00 PM
+    'late afternoon': 16 * 60, // 4:00 PM
+    'mid afternoon': 15 * 60, // 3:00 PM
+    'evening': 18 * 60, // 6:00 PM
+    'early evening': 17 * 60, // 5:00 PM
+    'late evening': 20 * 60, // 8:00 PM
+    'night': 21 * 60, // 9:00 PM
+    'late night': 22 * 60, // 10:00 PM
+    'dawn': 6 * 60, // 6:00 AM
+    'dusk': 19 * 60, // 7:00 PM
+    'noon': 12 * 60, // 12:00 PM
+    'midnight': 0 // 12:00 AM
+  };
+  
+  const lowerTimeStr = timeStr.toLowerCase().trim();
+  if (timePeriods[lowerTimeStr]) {
+    return timePeriods[lowerTimeStr];
+  }
+  
+  // Handle various numeric time formats
   const timeMatch = timeStr.match(/(\d{1,2}):?(\d{2})?\s*(AM|PM|am|pm)?/i);
   if (!timeMatch) return null;
   

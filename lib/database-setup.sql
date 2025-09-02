@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS house_instructions (
   remind_day_before BOOLEAN DEFAULT false,
   person_name TEXT, -- Person responsible for the service
   person_phone TEXT, -- Phone number of the person
+  schedule_notes TEXT, -- Additional notes for scheduled services
   video_url TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

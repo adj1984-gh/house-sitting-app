@@ -96,6 +96,7 @@ export interface HouseInstruction {
   remind_day_before?: boolean
   person_name?: string // Person responsible for the service
   person_phone?: string // Phone number of the person
+  schedule_notes?: string // Additional notes for scheduled services
   video_url?: string
   created_at: string
   updated_at: string
