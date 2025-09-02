@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode, X, Info, Moon, Package, Image } from 'lucide-react';
 import YouTubeVideo from './YouTubeVideo';
 import { getProperty, getAlerts, getDogs, getAppointments, getHouseInstructions, getDailyTasks, getStays, hasActiveStay, getCurrentActiveStay, getContacts, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, createContact, updateContact, deleteContact, generateMasterSchedule } from '../lib/database';
-import { normalizeTime, formatTimeForDisplay, getCurrentDateInPST, parseTime, getNextOccurrence } from '../lib/utils';
+import { normalizeTime, formatTimeForDisplay, formatTimeWithPreposition, extractTimeFromReminderText, getCurrentDateInPST, parseTime, getNextOccurrence } from '../lib/utils';
 
 // Helper function to format dates in PST/PDT timezone
 const formatDateInPST = (dateString: string): string => {
@@ -1571,7 +1571,13 @@ export default function HouseSittingApp() {
       // Check if this is a reminder (title starts with 🔔 Reminder:)
       let groupKey;
       if (item.title.startsWith('🔔 Reminder:')) {
-        groupKey = 'Reminders';
+        // Try to extract time from the reminder notes
+        const extractedTime = extractTimeFromReminderText(item.notes || '');
+        if (extractedTime) {
+          groupKey = extractedTime;
+        } else {
+          groupKey = 'Reminders';
+        }
       } else {
         groupKey = item.time || 'No time specified';
       }
@@ -1595,9 +1601,17 @@ export default function HouseSittingApp() {
         return order.indexOf(a) - order.indexOf(b);
       }
       
+      // For time ranges (like "1:00 PM - 2:00 PM"), use the start time for sorting
+      const getStartTime = (timeStr: string) => {
+        if (timeStr.includes(' - ')) {
+          return timeStr.split(' - ')[0];
+        }
+        return timeStr;
+      };
+      
       // Try to parse times for comparison
-      const timeA = parseTime(a);
-      const timeB = parseTime(b);
+      const timeA = parseTime(getStartTime(a));
+      const timeB = parseTime(getStartTime(b));
       
       if (timeA && timeB) {
         return timeA - timeB;
@@ -1958,7 +1972,7 @@ export default function HouseSittingApp() {
                         <div>
                           <h3 className="font-semibold text-lg">{stay.sitter_name}</h3>
                           <p className="text-gray-600">
-                            {formatDateInPST(stay.start_date)}{stay.start_time && ` at ${formatTimeForDisplay(stay.start_time)}`} - {formatDateInPST(stay.end_date)}{stay.end_time && ` at ${formatTimeForDisplay(stay.end_time)}`}
+                            {formatDateInPST(stay.start_date)}{stay.start_time && ` ${formatTimeWithPreposition(stay.start_time)}`} - {formatDateInPST(stay.end_date)}{stay.end_time && ` ${formatTimeWithPreposition(stay.end_time)}`}
                           </p>
                           {stay.notes && (
                             <p className="text-sm text-gray-500 mt-1">{stay.notes}</p>
@@ -2536,7 +2550,7 @@ export default function HouseSittingApp() {
                               month: 'long', 
                               day: 'numeric' 
                             })}
-                            {visit.time && ` at ${formatTimeForDisplay(visit.time)}`}
+                            {visit.time && ` ${formatTimeWithPreposition(visit.time)}`}
                           </p>
                           {visit.vet_name && (
                             <p className="text-sm text-gray-600 mt-1">
@@ -2845,10 +2859,10 @@ export default function HouseSittingApp() {
                           <div className="text-blue-700 text-xs space-y-1">
                             <p>
                               {instruction.schedule_frequency === 'daily' && (
-                                <>Daily{instruction.schedule_time && `, at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
+                                <>Daily{instruction.schedule_time && `, ${formatTimeWithPreposition(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
                               )}
                               {instruction.schedule_frequency === 'weekly' && (
-                                <>Weekly{instruction.schedule_day && `, on ${instruction.schedule_day.charAt(0).toUpperCase() + instruction.schedule_day.slice(1)}`}{instruction.schedule_time && ` at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
+                                <>Weekly{instruction.schedule_day && `, on ${instruction.schedule_day.charAt(0).toUpperCase() + instruction.schedule_day.slice(1)}`}{instruction.schedule_time && ` ${formatTimeWithPreposition(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
                               )}
                               {instruction.schedule_frequency === 'one_time' && (
                                 <>One-time event{(() => {
@@ -2879,7 +2893,7 @@ export default function HouseSittingApp() {
                                   }
                                   // If no date is found, show a warning
                                   return ' (⚠️ No date specified)';
-                                })()}{instruction.schedule_time && ` at ${formatTimeForDisplay(instruction.schedule_time).toLowerCase()}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
+                                })()}{instruction.schedule_time && ` ${formatTimeWithPreposition(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
                               )}
                             </p>
                             
@@ -2897,7 +2911,7 @@ export default function HouseSittingApp() {
                                   {!nextOccurrence.isToday && !nextOccurrence.isTomorrow && (
                                     <span className="font-medium">{formatDateInPST(nextOccurrence.date)}</span>
                                   )}
-                                  {` at ${formatTimeForDisplay(nextOccurrence.time)}`}
+                                  {` ${formatTimeWithPreposition(nextOccurrence.time)}`}
                                   {instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}
                                 </p>
                               </div>

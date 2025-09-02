@@ -386,4 +386,17 @@ Private project - not for public distribution
 - **Enhanced date calculations** - Medicine scheduling and all date-based features now use PST/PDT
 - **Files Modified**: `lib/utils.ts`, `lib/database.ts`, `components/HouseSittingApp.tsx`
 
+#### Grammar Fix for Time Display
+- **Improved time preposition usage** - Fixed grammatical issue where "at Morning" was displayed instead of "in the morning"
+- **Smart preposition selection** - Time periods (Morning, Afternoon, Evening) now use "in the" while specific times use "at"
+- **Consistent grammar** - All scheduled service displays now use proper English grammar
+- **Files Modified**: `lib/utils.ts`, `components/HouseSittingApp.tsx`
+
+#### Smart Reminder Time Grouping
+- **Intelligent time extraction** - Reminders now extract time information from their text content instead of grouping under "No time specified"
+- **Multiple time pattern recognition** - Supports time ranges "(1:00 PM - 2:00 PM)", single times "(2:00 PM)", and natural language "between noon and one"
+- **Chronological scheduling** - Reminders are now grouped by their actual event times and sorted chronologically
+- **Improved schedule organization** - Schedule sections now show meaningful time groupings instead of generic "Reminders" section
+- **Files Modified**: `lib/utils.ts`, `components/HouseSittingApp.tsx`
+
 *Last Updated: December 2024*

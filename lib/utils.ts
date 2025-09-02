@@ -169,6 +169,84 @@ export const formatTimeForDisplay = (timeStr: string): string => {
   return timeStr;
 };
 
+// Helper function to format time with correct preposition
+export const formatTimeWithPreposition = (timeStr: string): string => {
+  if (!timeStr || timeStr.trim() === '') return '';
+  
+  const formattedTime = formatTimeForDisplay(timeStr);
+  
+  // Use "in" for time periods, "at" for specific times
+  if (['Morning', 'Afternoon', 'Evening', 'Night'].includes(timeStr)) {
+    return `in the ${formattedTime.toLowerCase()}`;
+  }
+  
+  // For specific times, use "at"
+  return `at ${formattedTime}`;
+};
+
+// Helper function to extract time information from reminder text
+export const extractTimeFromReminderText = (text: string): string | null => {
+  if (!text) return null;
+  
+  // Look for time patterns in parentheses like "(1:00 PM - 2:00 PM)" or "(10:00 AM - 5:00 PM)"
+  const timeRangeMatch = text.match(/\((\d{1,2}:\d{2}\s*(?:AM|PM)?)\s*-\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?)\)/i);
+  if (timeRangeMatch) {
+    const startTime = timeRangeMatch[1];
+    const endTime = timeRangeMatch[2];
+    return `${startTime} - ${endTime}`;
+  }
+  
+  // Look for single time patterns like "(1:00 PM)" or "(10:00 AM)"
+  const singleTimeMatch = text.match(/\((\d{1,2}:\d{2}\s*(?:AM|PM)?)\)/i);
+  if (singleTimeMatch) {
+    return singleTimeMatch[1];
+  }
+  
+  // Look for time periods like "between noon and one"
+  const timePeriodMatch = text.match(/between\s+(\w+)\s+and\s+(\w+)/i);
+  if (timePeriodMatch) {
+    const start = timePeriodMatch[1].toLowerCase();
+    const end = timePeriodMatch[2].toLowerCase();
+    
+    // Convert common time period words to times
+    const timeMap: Record<string, string> = {
+      'noon': '12:00 PM',
+      'one': '1:00 PM',
+      'two': '2:00 PM',
+      'three': '3:00 PM',
+      'four': '4:00 PM',
+      'five': '5:00 PM',
+      'six': '6:00 PM',
+      'seven': '7:00 PM',
+      'eight': '8:00 PM',
+      'nine': '9:00 PM',
+      'ten': '10:00 PM',
+      'eleven': '11:00 PM',
+      'midnight': '12:00 AM',
+      'one': '1:00 AM',
+      'two': '2:00 AM',
+      'three': '3:00 AM',
+      'four': '4:00 AM',
+      'five': '5:00 AM',
+      'six': '6:00 AM',
+      'seven': '7:00 AM',
+      'eight': '8:00 AM',
+      'nine': '9:00 AM',
+      'ten': '10:00 AM',
+      'eleven': '11:00 AM'
+    };
+    
+    const startTime = timeMap[start];
+    const endTime = timeMap[end];
+    
+    if (startTime && endTime) {
+      return `${startTime} - ${endTime}`;
+    }
+  }
+  
+  return null;
+};
+
 // Helper function to calculate end time based on start time and duration
 export const calculateEndTime = (startTime: string, durationMinutes: number): string => {
   if (!startTime || !durationMinutes) return '';
