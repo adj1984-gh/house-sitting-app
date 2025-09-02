@@ -1017,27 +1017,30 @@ export const generateMasterSchedule = (
       
       // Check for reminder (day before the event)
       if (instruction.remind_day_before && !shouldShowToday) {
-        const tomorrowDate = new Date(todayDate);
-        tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-        const tomorrowDayOfWeek = tomorrowDate.getDay();
-        const tomorrowDayName = dayNames[tomorrowDayOfWeek];
-        
         if (instruction.schedule_frequency === 'daily') {
           // Daily events: show reminder every day (since event happens tomorrow too)
           shouldShowReminder = true;
-        } else if (instruction.schedule_frequency === 'weekly' && instruction.schedule_day === tomorrowDayName) {
-          // Weekly events: show reminder only if tomorrow is the scheduled day
-          shouldShowReminder = true;
+        } else if (instruction.schedule_frequency === 'weekly') {
+          // Weekly events: show reminder if tomorrow is the scheduled day
+          const tomorrowDate = new Date(todayDate);
+          tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+          const tomorrowDayOfWeek = tomorrowDate.getDay();
+          const tomorrowDayName = dayNames[tomorrowDayOfWeek];
+          shouldShowReminder = instruction.schedule_day === tomorrowDayName;
         } else if (instruction.schedule_frequency === 'one_time') {
           // One-time events: show reminder if tomorrow is the event date
           if (instruction.schedule_date) {
             const eventDate = new Date(instruction.schedule_date);
+            const tomorrowDate = new Date(todayDate);
+            tomorrowDate.setDate(tomorrowDate.getDate() + 1);
             const tomorrowStr = tomorrowDate.toISOString().split('T')[0];
             const eventDateStr = eventDate.toISOString().split('T')[0];
             shouldShowReminder = tomorrowStr === eventDateStr;
           } else if (instruction.schedule_day) {
             // Fallback for legacy one-time events
             const eventDate = new Date(instruction.schedule_day);
+            const tomorrowDate = new Date(todayDate);
+            tomorrowDate.setDate(tomorrowDate.getDate() + 1);
             const tomorrowStr = tomorrowDate.toISOString().split('T')[0];
             const eventDateStr = eventDate.toISOString().split('T')[0];
             shouldShowReminder = tomorrowStr === eventDateStr;
