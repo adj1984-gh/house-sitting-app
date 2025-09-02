@@ -846,7 +846,7 @@ export const generateMasterSchedule = (
                   date: today,
                   dog_id: dog.id,
                   dog_name: dog.name,
-                  notes: dose.dose_amount,
+                  notes: medicine.notes,
                   video_url: medicine.video_url,
                   recurring: true,
                   source: 'dog'

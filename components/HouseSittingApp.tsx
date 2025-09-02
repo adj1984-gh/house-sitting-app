@@ -1737,12 +1737,13 @@ export default function HouseSittingApp() {
                               {item.video_url && (
                                 <button
                                   onClick={() => window.open(item.video_url, '_blank')}
-                                  className="text-red-600 hover:text-red-800"
+                                  className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-xs font-medium"
                                   title="Watch video instructions"
                                 >
-                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M8 5v14l11-7z"/>
                                   </svg>
+                                  Video
                                 </button>
                               )}
                             </div>
@@ -2605,13 +2606,13 @@ export default function HouseSittingApp() {
         
         // Clear schedule_day for daily events (no specific day needed)
         if (data.schedule_frequency === 'daily') {
-          data.schedule_day = '';
+          data.schedule_day = null;
         }
         
         // Clear scheduling fields if no schedule selected
         if (data.schedule_frequency === 'none') {
-          data.schedule_day = '';
-          data.schedule_time = '';
+          data.schedule_day = null;
+          data.schedule_time = null;
           data.schedule_duration = null;
           data.remind_day_before = false;
         }
@@ -2626,9 +2627,9 @@ export default function HouseSittingApp() {
         // Handle time selection - combine time type and time value
         const timeType = data.schedule_time_type || 'specific';
         if (timeType === 'specific') {
-          data.schedule_time = normalizeTime(data.schedule_time_specific || '');
+          data.schedule_time = data.schedule_time_specific ? normalizeTime(data.schedule_time_specific) : null;
         } else {
-          data.schedule_time = data.schedule_time_general || '';
+          data.schedule_time = data.schedule_time_general || null;
         }
         
         // Store the time type for future editing
