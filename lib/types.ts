@@ -135,7 +135,7 @@ export interface AccessLog {
 // Master Schedule Item - consolidates all schedulable items
 export interface ScheduleItem {
   id: string
-  type: 'feeding' | 'medicine' | 'appointment' | 'service' | 'walk' | 'task'
+  type: 'feeding' | 'medicine' | 'appointment' | 'service' | 'walk' | 'task' | 'house'
   title: string
   time: string
   date?: string
@@ -144,7 +144,7 @@ export interface ScheduleItem {
   location?: string
   notes?: string
   recurring?: boolean
-  source: 'dog' | 'appointment' | 'service' | 'task'
+  source: 'dog' | 'appointment' | 'service' | 'task' | 'house'
 }
 
 // All data now comes from Supabase database - no local mock data interfaces needed
