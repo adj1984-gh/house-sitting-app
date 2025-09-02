@@ -2180,9 +2180,12 @@ export default function HouseSittingApp() {
                             </div>
                             <div className="text-blue-700 text-sm space-y-1">
                               <p>
-                                <strong>Frequency:</strong> {instruction.schedule_frequency} 
-                                {instruction.schedule_day && ` (${instruction.schedule_day})`}
-                                {instruction.schedule_time && ` at ${formatTimeForDisplay(instruction.schedule_time)}`}
+                                {instruction.schedule_frequency === 'daily' && (
+                                  <>Daily{instruction.schedule_time && `, at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
+                                )}
+                                {instruction.schedule_frequency === 'weekly' && (
+                                  <>Weekly{instruction.schedule_day && `, on ${instruction.schedule_day.charAt(0).toUpperCase() + instruction.schedule_day.slice(1)}`}{instruction.schedule_time && `, at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
+                                )}
                               </p>
                               {instruction.remind_day_before && (
                                 <p className="text-orange-700 font-medium">
@@ -2934,14 +2937,18 @@ export default function HouseSittingApp() {
                             className="w-full px-3 py-2 border rounded-md"
                           >
                             <option value="">No specific duration</option>
-                            <option value="30">30 minutes</option>
-                            <option value="60">1 hour</option>
-                            <option value="90">1.5 hours</option>
-                            <option value="120">2 hours</option>
-                            <option value="180">3 hours</option>
-                            <option value="240">4 hours</option>
-                            <option value="360">6 hours</option>
-                            <option value="480">8 hours (all day)</option>
+                            <option value="1">1 hour</option>
+                            <option value="2">2 hours</option>
+                            <option value="3">3 hours</option>
+                            <option value="4">4 hours</option>
+                            <option value="5">5 hours</option>
+                            <option value="6">6 hours</option>
+                            <option value="7">7 hours</option>
+                            <option value="8">8 hours</option>
+                            <option value="9">9 hours</option>
+                            <option value="10">10 hours</option>
+                            <option value="11">11 hours</option>
+                            <option value="12">12 hours</option>
                           </select>
                           <p className="text-xs text-gray-500 mt-1">Set expectations for how long this service typically takes</p>
                         </div>
