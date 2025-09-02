@@ -182,11 +182,12 @@ const DogEditForm = React.memo(({ formData, contacts }: { formData: any, contact
     if (remainingDoses <= 0 || frequencyPerDay <= 0) return '';
     
     const daysNeeded = Math.ceil(remainingDoses / frequencyPerDay);
-    const start = new Date(startDate);
+    const start = new Date(startDate + 'T00:00:00');
     const endDate = new Date(start);
     endDate.setDate(start.getDate() + daysNeeded - 1);
     
-    return endDate.toISOString().split('T')[0];
+    // Format the date in PST timezone to avoid timezone issues
+    return endDate.toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
   }, []);
 
   const addMedicine = useCallback(() => {
@@ -506,7 +507,7 @@ const DogEditForm = React.memo(({ formData, contacts }: { formData: any, contact
                   <label className="block text-sm font-medium mb-1">Remaining Doses</label>
                   <input
                     type="number"
-                    min="1"
+                    min="0"
                     value={medicine.remaining_doses}
                     onChange={(e) => updateMedicine(index, 'remaining_doses', parseInt(e.target.value) || 0)}
                     className="w-full px-3 py-2 border rounded-md"
@@ -524,7 +525,7 @@ const DogEditForm = React.memo(({ formData, contacts }: { formData: any, contact
               </div>
 
               {/* Calculated End Date Display */}
-              {medicine.calculated_end_date && (
+              {medicine.remaining_doses > 0 && medicine.calculated_end_date && (
                 <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
                   <p className="text-sm text-blue-800">
                     <span className="font-medium">Calculated End Date:</span> {new Date(medicine.calculated_end_date + 'T00:00:00').toLocaleDateString('en-US', { 
@@ -537,6 +538,13 @@ const DogEditForm = React.memo(({ formData, contacts }: { formData: any, contact
                     <span className="text-blue-600 ml-2">
                       ({Math.ceil(medicine.remaining_doses / medicine.frequency_per_day)} days)
                     </span>
+                  </p>
+                </div>
+              )}
+              {medicine.remaining_doses === 0 && (
+                <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                  <p className="text-sm text-green-800">
+                    <span className="font-medium">No Expiration:</span> This medication is given indefinitely (perpetual)
                   </p>
                 </div>
               )}
