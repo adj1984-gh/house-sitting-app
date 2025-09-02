@@ -2541,9 +2541,12 @@ export default function HouseSittingApp() {
       // Handle house instruction form data
       if (formType === 'houseInstruction') {
         // Structure the instructions object
+        const instructionsText = data.instructions || '';
+        const maintenanceText = data.maintenance || '';
+        
         data.instructions = {
-          text: data.instructions || '',
-          maintenance: data.maintenance || ''
+          text: instructionsText,
+          maintenance: maintenanceText
         };
         
         // Handle scheduling fields
@@ -2723,7 +2726,7 @@ export default function HouseSittingApp() {
                       
                       <div>
                         <label className="block text-sm font-medium mb-1">Time</label>
-                        <input name="schedule_time" defaultValue={formData.schedule_time || ''} className="w-full px-3 py-2 border rounded-md" placeholder="e.g., 8:00 PM, 10:00 AM" />
+                        <input name="schedule_time" type="text" defaultValue={formData.schedule_time || ''} className="w-full px-3 py-2 border rounded-md" placeholder="e.g., 8:00 PM, 10:00 AM" />
                       </div>
                       
                       <div>

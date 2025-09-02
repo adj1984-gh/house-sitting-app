@@ -1209,3 +1209,23 @@ The application now has full database connectivity, data persistence, and a full
 - **Files Changed**: 
   - `components/HouseSittingApp.tsx` - Fixed form data initialization and field mapping for house instructions
 - **Result**: House instructions editing now works correctly with proper data persistence
+
+### ✅ House Instructions Time Format & Form Data Fix (December 2024)
+- **Issue**: House instruction scheduling time input was using incorrect format and form data processing had variable overwriting issues
+- **Problems**:
+  - **Time Input Format**: Schedule time input was missing `type="text"` attribute, inconsistent with other forms
+  - **Form Data Processing**: Form submission was overwriting the `instructions` field before extracting its value
+- **Solution**:
+  - **Standardized Time Input**: Added `type="text"` to schedule_time input to match other forms (appointments, feeding times)
+  - **Fixed Form Data Processing**: Extract form field values before overwriting the instructions object
+- **Technical Details**:
+  - **Time Input Consistency**: All time inputs now use `type="text"` with placeholder examples (e.g., "8:00 PM, 10:00 AM")
+  - **Form Data Safety**: Extract `instructionsText` and `maintenanceText` variables before restructuring the data object
+  - **Proper JSONB Structure**: Form data now correctly creates `{text: "...", maintenance: "..."}` structure for database storage
+- **User Experience Improvements**:
+  - **Consistent Time Entry**: All time inputs across the app now use the same flexible format
+  - **Working Form Submission**: House instruction forms now save properly without data loss
+  - **Proper Data Persistence**: Changes are correctly saved to the database JSONB structure
+- **Files Changed**: 
+  - `components/HouseSittingApp.tsx` - Fixed time input format and form data processing for house instructions
+- **Result**: House instruction editing and scheduling now works correctly with consistent time format and proper data persistence
