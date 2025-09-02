@@ -772,6 +772,7 @@ export const generateMasterSchedule = (
   servicePeople: ServicePerson[],
   dailyTasks: DailyTask[],
   stays: Stay[] = [],
+  houseInstructions: HouseInstruction[] = [],
   targetDate?: string
 ): ScheduleItem[] => {
   const scheduleItems: ScheduleItem[] = []
@@ -970,6 +971,79 @@ export const generateMasterSchedule = (
         recurring: true,
         source: 'task'
       })
+    }
+  })
+  
+  // Add scheduled house instructions
+  houseInstructions.forEach(instruction => {
+    if (instruction.needs_scheduling && instruction.schedule_frequency && instruction.schedule_day) {
+      const todayDate = new Date(today);
+      const dayOfWeek = todayDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const currentDayName = dayNames[dayOfWeek];
+      
+      let shouldShowToday = false;
+      let shouldShowReminder = false;
+      
+      // Check if this instruction should appear today
+      if (instruction.schedule_frequency === 'daily') {
+        shouldShowToday = true;
+        shouldShowReminder = instruction.remind_day_before || false;
+      } else if (instruction.schedule_frequency === 'weekly' && instruction.schedule_day === currentDayName) {
+        shouldShowToday = true;
+        shouldShowReminder = instruction.remind_day_before || false;
+      } else if (instruction.schedule_frequency === 'monthly') {
+        const dayOfMonth = todayDate.getDate();
+        if (instruction.schedule_day === '1st' && dayOfMonth === 1) {
+          shouldShowToday = true;
+          shouldShowReminder = instruction.remind_day_before || false;
+        } else if (instruction.schedule_day === '15th' && dayOfMonth === 15) {
+          shouldShowToday = true;
+          shouldShowReminder = instruction.remind_day_before || false;
+        }
+      }
+      
+      // Check for reminder (day before)
+      if (instruction.remind_day_before && !shouldShowToday) {
+        const tomorrowDate = new Date(todayDate);
+        tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+        const tomorrowDayOfWeek = tomorrowDate.getDay();
+        const tomorrowDayName = dayNames[tomorrowDayOfWeek];
+        
+        if (instruction.schedule_frequency === 'daily') {
+          shouldShowReminder = true;
+        } else if (instruction.schedule_frequency === 'weekly' && instruction.schedule_day === tomorrowDayName) {
+          shouldShowReminder = true;
+        } else if (instruction.schedule_frequency === 'monthly') {
+          const tomorrowDayOfMonth = tomorrowDate.getDate();
+          if ((instruction.schedule_day === '1st' && tomorrowDayOfMonth === 1) ||
+              (instruction.schedule_day === '15th' && tomorrowDayOfMonth === 15)) {
+            shouldShowReminder = true;
+          }
+        }
+      }
+      
+      // Add to schedule if it should show today or as a reminder
+      if (shouldShowToday || shouldShowReminder) {
+        const subcategoryLabel = instruction.subcategory ? 
+          instruction.subcategory.split(/(?=[A-Z])/).map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+          ).join(' ') : 
+          'Service';
+        
+        scheduleItems.push({
+          id: `house-${instruction.id}${shouldShowReminder ? '-reminder' : ''}`,
+          type: 'house',
+          title: shouldShowReminder ? `🔔 Reminder: ${subcategoryLabel}` : subcategoryLabel,
+          time: instruction.schedule_time || 'TBD',
+          date: today,
+          notes: shouldShowReminder ? 
+            `Reminder: ${instruction.schedule_notes || instruction.instructions?.text || 'Service scheduled for tomorrow'}` :
+            (instruction.schedule_notes || instruction.instructions?.text || ''),
+          recurring: true,
+          source: 'house'
+        })
+      }
     }
   })
   

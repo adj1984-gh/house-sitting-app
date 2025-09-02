@@ -75,6 +75,12 @@ export interface HouseInstruction {
   category: string
   subcategory?: string
   instructions: any // JSONB
+  needs_scheduling?: boolean
+  schedule_frequency?: 'daily' | 'weekly' | 'monthly' | 'custom'
+  schedule_day?: string
+  schedule_time?: string
+  schedule_notes?: string
+  remind_day_before?: boolean
   created_at: string
   updated_at: string
 }

@@ -869,6 +869,51 @@ The application now has full database connectivity, data persistence, and a full
   - `components/HouseSittingApp.tsx` - Added handleTabSwitch function and updated navigation onClick handler
 - **Result**: Tab switching now provides consistent, expected behavior with automatic scroll-to-top functionality
 
+### ✅ House Instructions Restructure & Scheduling (December 2024)
+- **Enhancement**: Completely restructured house instructions with organized categories and scheduling capabilities
+- **New Features**:
+  - **Organized Categories**: Grouped instructions into Access & Security, Amenities & Services, Entertainment & Media, and Utilities & Systems
+  - **Scheduling System**: Added ability to schedule recurring services (trash pickup, hot tub maintenance, etc.)
+  - **Enhanced Form**: Comprehensive form with scheduling options, maintenance notes, and better organization
+  - **Visual Improvements**: Better layout with category headers, icons, and clear visual hierarchy
+  - **Service Integration**: Scheduled house services will appear in the main schedule
+- **Database Changes**: Added scheduling fields to house_instructions table (needs_scheduling, schedule_frequency, schedule_day, schedule_time, schedule_notes)
+- **User Experience Improvements**:
+  - **Clear Organization**: Instructions grouped by logical categories instead of mixed list
+  - **Scheduling Visibility**: Services that need regular maintenance show scheduling information
+  - **Better Editing**: Enhanced form with separate fields for instructions and maintenance notes
+  - **Service Management**: Easy to add recurring services like trash pickup or hot tub maintenance
+- **Files Changed**: 
+  - `components/HouseSittingApp.tsx` - Restructured HouseSection with categories and scheduling display
+  - `lib/types.ts` - Updated HouseInstruction interface with scheduling fields
+  - `migration-add-house-instructions-scheduling.sql` - Database migration for scheduling support
+- **Result**: Much better organized house instructions with scheduling capabilities for recurring services
+
+### ✅ House Service Reminders & Schedule Integration (December 2024)
+- **Enhancement**: Added "remind the day before" option and integrated scheduled house services into the main schedule
+- **New Features**:
+  - **Day-Before Reminders**: Checkbox option to show reminders the day before scheduled services
+  - **Schedule Integration**: Scheduled house services now appear in the main schedule alongside pet care and appointments
+  - **Smart Reminder Logic**: Automatically calculates when to show reminders based on service frequency
+  - **Visual Indicators**: Reminders show with 🔔 icon and "Reminder:" prefix in the schedule
+  - **Flexible Scheduling**: Supports daily, weekly, and monthly reminder patterns
+- **Example Use Cases**:
+  - **Trash Pickup**: Schedule weekly on Sunday, with reminder on Saturday to put bins out
+  - **Hot Tub Maintenance**: Schedule weekly on Sunday, with reminder on Saturday to check chemicals
+  - **Thermostat Check**: Schedule daily, with reminder the day before for preparation
+- **User Experience Improvements**:
+  - **Proactive Reminders**: Users see reminders before services are due
+  - **Unified Schedule**: All scheduled items (pets, house, appointments) in one place
+  - **Clear Visual Cues**: Reminders are clearly marked and easy to identify
+  - **Contextual Information**: Reminder notes explain what needs to be done
+- **Database Changes**: Added `remind_day_before` field to house_instructions table
+- **Files Changed**: 
+  - `components/HouseSittingApp.tsx` - Added reminder checkbox to form and display
+  - `lib/database.ts` - Enhanced generateMasterSchedule to include house services and reminders
+  - `lib/types.ts` - Updated HouseInstruction interface with remind_day_before field
+  - `migration-add-house-instructions-scheduling.sql` - Added remind_day_before column
+- **Result**: Complete scheduling system with proactive reminders for house services, fully integrated into the main schedule
+
 ### ✅ Video Compression & Storage Optimization (December 2024)
 - **Enhancement**: Added automatic video compression to reduce file sizes and save storage space
 - **New Features**:

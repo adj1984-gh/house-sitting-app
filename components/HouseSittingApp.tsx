@@ -803,10 +803,11 @@ export default function HouseSittingApp() {
       dbData.appointments,
       [],
       dbData.dailyTasks,
-      dbData.stays
+      dbData.stays,
+      dbData.houseInstructions
     );
     setMasterSchedule(schedule);
-  }, [dbData.dogs, dbData.appointments, dbData.dailyTasks, dbData.stays]);
+  }, [dbData.dogs, dbData.appointments, dbData.dailyTasks, dbData.stays, dbData.houseInstructions]);
 
   // Admin CRUD operations
   const handleCreate = async (type: string, data: any) => {
@@ -2066,33 +2067,134 @@ export default function HouseSittingApp() {
   };
 
   // House Instructions Section
-  const HouseSection = () => (
-    <div className="space-y-6">
-      {dbData.houseInstructions.map((instruction) => (
-        <div key={instruction.id} className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            {instruction.category === 'access' && <Key className="w-5 h-5 text-gray-600" />}
-            {instruction.category === 'entertainment' && <Tv className="w-5 h-5 text-gray-600" />}
-            {instruction.category === 'utilities' && <Settings className="w-5 h-5 text-gray-600" />}
-            {instruction.category === 'amenities' && <Heart className="w-5 h-5 text-gray-600" />}
-            {instruction.category.charAt(0).toUpperCase() + instruction.category.slice(1)}
-        </h3>
-        <div className="space-y-3">
-          <div>
-              <p className="font-medium">
-                {instruction.subcategory ? instruction.subcategory.charAt(0).toUpperCase() + instruction.subcategory.slice(1) : 'Instructions'}
-              </p>
-              <p className="text-sm text-gray-700">
-                {typeof instruction.instructions === 'object' && instruction.instructions.text 
-                  ? instruction.instructions.text 
-                  : JSON.stringify(instruction.instructions)}
-              </p>
-          </div>
-        </div>
+  const HouseSection = () => {
+    // Group instructions by category
+    const groupedInstructions = dbData.houseInstructions.reduce((groups, instruction) => {
+      const category = instruction.category;
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(instruction);
+      return groups;
+    }, {} as Record<string, typeof dbData.houseInstructions>);
+
+    const categoryIcons = {
+      access: Key,
+      amenities: Heart,
+      entertainment: Tv,
+      utilities: Settings
+    };
+
+    const categoryLabels = {
+      access: 'Access & Security',
+      amenities: 'Amenities & Services',
+      entertainment: 'Entertainment & Media',
+      utilities: 'Utilities & Systems'
+    };
+
+    return (
+      <div className="space-y-6">
+        {Object.entries(groupedInstructions).map(([category, instructions]) => {
+          const Icon = categoryIcons[category as keyof typeof categoryIcons] || Settings;
+          const label = categoryLabels[category as keyof typeof categoryLabels] || category;
+          
+          return (
+            <div key={category} className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
+                <Icon className="w-6 h-6 text-blue-600" />
+                {label}
+              </h3>
+              
+              <div className="space-y-4">
+                {instructions.map((instruction) => (
+                  <div key={instruction.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-800 mb-2">
+                          {instruction.subcategory ? 
+                            instruction.subcategory.split(/(?=[A-Z])/).map(word => 
+                              word.charAt(0).toUpperCase() + word.slice(1)
+                            ).join(' ') : 
+                            'Instructions'
+                          }
+                        </h4>
+                        
+                        <div className="text-sm text-gray-700 space-y-2">
+                          {typeof instruction.instructions === 'object' && instruction.instructions.text && (
+                            <p>{instruction.instructions.text}</p>
+                          )}
+                          {typeof instruction.instructions === 'object' && instruction.instructions.maintenance && (
+                            <div className="mt-2 p-2 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+                              <p className="text-yellow-800 font-medium">Maintenance:</p>
+                              <p className="text-yellow-700">{instruction.instructions.maintenance}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Scheduling Information */}
+                        {instruction.needs_scheduling && (
+                          <div className="mt-3 p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Calendar className="w-4 h-4 text-blue-600" />
+                              <span className="text-blue-800 font-medium">Scheduled Service</span>
+                            </div>
+                            <div className="text-blue-700 text-sm space-y-1">
+                              <p>
+                                <strong>Frequency:</strong> {instruction.schedule_frequency} 
+                                {instruction.schedule_day && ` (${instruction.schedule_day})`}
+                                {instruction.schedule_time && ` at ${instruction.schedule_time}`}
+                              </p>
+                              {instruction.remind_day_before && (
+                                <p className="text-orange-700 font-medium">
+                                  🔔 <strong>Reminder:</strong> Will show up the day before
+                                </p>
+                              )}
+                              {instruction.schedule_notes && (
+                                <p><strong>Notes:</strong> {instruction.schedule_notes}</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {isAdmin && (
+                        <div className="flex gap-2 ml-4">
+                          <button
+                            onClick={() => setEditingItem({ type: 'houseInstruction', id: instruction.id, data: instruction })}
+                            className="p-2 text-blue-600 hover:bg-blue-100 rounded"
+                            title="Edit"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete('houseInstruction', instruction.id)}
+                            className="p-2 text-red-600 hover:bg-red-100 rounded"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+        
+        {isAdmin && (
+          <button
+            onClick={() => setShowAddForm('houseInstruction')}
+            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-500 hover:text-blue-600 flex items-center justify-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Add House Instruction
+          </button>
+        )}
       </div>
-      ))}
-    </div>
-  );
+    );
+  };
 
 
 
@@ -2422,6 +2524,24 @@ export default function HouseSittingApp() {
         }
       }
       
+      // Handle house instruction form data
+      if (formType === 'houseInstruction') {
+        // Structure the instructions object
+        data.instructions = {
+          text: data.instructions || '',
+          maintenance: data.maintenance || ''
+        };
+        
+        // Handle scheduling fields
+        data.needs_scheduling = data.needs_scheduling === 'on';
+        data.remind_day_before = data.remind_day_before === 'on';
+        
+        // Remove the separate maintenance field since it's now in instructions
+        delete data.maintenance;
+        
+        console.log('Form submission - processed house instruction data:', data);
+      }
+      
       // Handle boolean fields
       if (formType === 'stay') {
         data.active = true; // Always active when created, determined by date range
@@ -2509,6 +2629,94 @@ export default function HouseSittingApp() {
                   <div>
                     <label className="block text-sm font-medium mb-1">Text</label>
                     <textarea name="text" defaultValue={formData.text || ''} required className="w-full px-3 py-2 border rounded-md" rows={3} />
+                  </div>
+                </>
+              )}
+              
+              {formType === 'houseInstruction' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Category</label>
+                    <select name="category" defaultValue={formData.category || 'access'} required className="w-full px-3 py-2 border rounded-md">
+                      <option value="access">Access & Security</option>
+                      <option value="amenities">Amenities & Services</option>
+                      <option value="entertainment">Entertainment & Media</option>
+                      <option value="utilities">Utilities & Systems</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Subcategory</label>
+                    <input name="subcategory" defaultValue={formData.subcategory || ''} className="w-full px-3 py-2 border rounded-md" placeholder="e.g., mudRoom, hotTub, tv, thermostat" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Instructions</label>
+                    <textarea name="instructions" defaultValue={formData.instructions?.text || ''} required className="w-full px-3 py-2 border rounded-md" rows={3} placeholder="Main instructions for this item..." />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Maintenance Notes (Optional)</label>
+                    <textarea name="maintenance" defaultValue={formData.instructions?.maintenance || ''} className="w-full px-3 py-2 border rounded-md" rows={2} placeholder="Maintenance instructions or notes..." />
+                  </div>
+                  
+                  {/* Scheduling Section */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold text-gray-800 mb-3">Scheduling (Optional)</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <input 
+                          type="checkbox" 
+                          name="needs_scheduling" 
+                          defaultChecked={formData.needs_scheduling || false}
+                          className="rounded"
+                        />
+                        <label className="text-sm font-medium">This service needs regular scheduling</label>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <input 
+                          type="checkbox" 
+                          name="remind_day_before" 
+                          defaultChecked={formData.remind_day_before || false}
+                          className="rounded"
+                        />
+                        <label className="text-sm font-medium">Remind the day before (e.g., for trash pickup)</label>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Frequency</label>
+                          <select name="schedule_frequency" defaultValue={formData.schedule_frequency || 'weekly'} className="w-full px-3 py-2 border rounded-md">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="custom">Custom</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Day</label>
+                          <select name="schedule_day" defaultValue={formData.schedule_day || 'sunday'} className="w-full px-3 py-2 border rounded-md">
+                            <option value="sunday">Sunday</option>
+                            <option value="monday">Monday</option>
+                            <option value="tuesday">Tuesday</option>
+                            <option value="wednesday">Wednesday</option>
+                            <option value="thursday">Thursday</option>
+                            <option value="friday">Friday</option>
+                            <option value="saturday">Saturday</option>
+                            <option value="1st">1st of month</option>
+                            <option value="15th">15th of month</option>
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Time</label>
+                        <input name="schedule_time" defaultValue={formData.schedule_time || ''} className="w-full px-3 py-2 border rounded-md" placeholder="e.g., 8:00 PM, 10:00 AM" />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Schedule Notes</label>
+                        <textarea name="schedule_notes" defaultValue={formData.schedule_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} placeholder="Additional notes about when/how to perform this service..." />
+                      </div>
+                    </div>
                   </div>
                 </>
               )}
