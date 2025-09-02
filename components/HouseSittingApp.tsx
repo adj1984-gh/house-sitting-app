@@ -2156,7 +2156,7 @@ export default function HouseSittingApp() {
                         </div>
 
                         {/* Scheduling Information */}
-                        {instruction.needs_scheduling && (
+                        {instruction.schedule_frequency && instruction.schedule_frequency !== 'one_time' && (
                           <div className="mt-3 p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
                             <div className="flex items-center gap-2 mb-1">
                               <Calendar className="w-4 h-4 text-blue-600" />
