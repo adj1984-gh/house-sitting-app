@@ -2637,6 +2637,23 @@ export default function HouseSittingApp() {
                               🔔 <strong>Reminder:</strong> Will show up the day before
                             </p>
                           )}
+                          {(instruction.person_name || instruction.person_phone) && (
+                            <div className="mt-2 pt-2 border-t border-blue-200">
+                              <p className="text-blue-800 font-medium text-xs">Contact Person:</p>
+                              {instruction.person_name && (
+                                <p className="text-blue-700 text-xs">
+                                  <strong>{instruction.person_name}</strong>
+                                </p>
+                              )}
+                              {instruction.person_phone && (
+                                <p className="text-blue-700 text-xs">
+                                  <a href={`tel:${instruction.person_phone}`} className="hover:underline">
+                                    📞 {instruction.person_phone}
+                                  </a>
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -2808,6 +2825,8 @@ export default function HouseSittingApp() {
           data.schedule_time = null;
           data.schedule_duration = null;
           data.remind_day_before = false;
+          data.person_name = null;
+          data.person_phone = null;
         }
         
         // Handle duration - convert to number if provided, otherwise set to null
@@ -3143,6 +3162,34 @@ export default function HouseSittingApp() {
                             className="rounded"
                           />
                           <label className="text-sm font-medium">Remind the day before (e.g., for trash pickup)</label>
+                        </div>
+                      </div>
+
+                      {/* Person Information Section (hidden by default) */}
+                      <div id="person-section" style={{ display: formData.schedule_frequency && formData.schedule_frequency !== 'none' ? 'block' : 'none' }}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Person Name (Optional)</label>
+                            <input 
+                              name="person_name" 
+                              type="text" 
+                              defaultValue={formData.person_name || ''} 
+                              className="w-full px-3 py-2 border rounded-md" 
+                              placeholder="e.g., John Smith, Cleaning Service"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Who is responsible for this service?</p>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Phone Number (Optional)</label>
+                            <input 
+                              name="person_phone" 
+                              type="tel" 
+                              defaultValue={formData.person_phone || ''} 
+                              className="w-full px-3 py-2 border rounded-md" 
+                              placeholder="e.g., (555) 123-4567"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Contact number for the service person</p>
+                          </div>
                         </div>
                       </div>
                     </div>

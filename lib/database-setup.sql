@@ -95,6 +95,9 @@ CREATE TABLE IF NOT EXISTS house_instructions (
   schedule_time_type TEXT CHECK (schedule_time_type IN ('specific', 'general')) DEFAULT 'specific',
   schedule_duration INTEGER,
   remind_day_before BOOLEAN DEFAULT false,
+  person_name TEXT, -- Person responsible for the service
+  person_phone TEXT, -- Phone number of the person
+  video_url TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

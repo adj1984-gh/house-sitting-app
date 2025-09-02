@@ -94,6 +94,8 @@ export interface HouseInstruction {
   schedule_time_type?: 'specific' | 'general'
   schedule_duration?: number // Duration in hours
   remind_day_before?: boolean
+  person_name?: string // Person responsible for the service
+  person_phone?: string // Phone number of the person
   video_url?: string
   created_at: string
   updated_at: string

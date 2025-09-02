@@ -1140,13 +1140,26 @@ export const generateMasterSchedule = (
           }
         }
         
+        // Add person information to notes if available
+        let enhancedNotes = notes;
+        if (instruction.person_name || instruction.person_phone) {
+          const personInfo = [];
+          if (instruction.person_name) {
+            personInfo.push(`Contact: ${instruction.person_name}`);
+          }
+          if (instruction.person_phone) {
+            personInfo.push(`Phone: ${instruction.person_phone}`);
+          }
+          enhancedNotes = enhancedNotes ? `${enhancedNotes}\n${personInfo.join(', ')}` : personInfo.join(', ');
+        }
+
         scheduleItems.push({
           id: `house-${instruction.id}${shouldShowReminder ? '-reminder' : ''}`,
           type: 'house',
           title: shouldShowReminder ? `🔔 Reminder: ${subcategoryLabel}` : subcategoryLabel,
           time: timeDisplay,
           date: today,
-          notes: notes,
+          notes: enhancedNotes,
           recurring: true,
           source: 'house'
         })
