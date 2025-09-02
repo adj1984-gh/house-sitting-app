@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode, X, Info, Moon } from 'lucide-react';
+import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode, X, Info, Moon, Package, Image } from 'lucide-react';
 import YouTubeVideo from './YouTubeVideo';
 import { getProperty, getAlerts, getDogs, getAppointments, getHouseInstructions, getDailyTasks, getStays, hasActiveStay, getCurrentActiveStay, getContacts, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, createContact, updateContact, deleteContact, generateMasterSchedule } from '../lib/database';
 import { normalizeTime, formatTimeForDisplay, getCurrentDateInPST, parseTime, getNextOccurrence } from '../lib/utils';
@@ -82,7 +82,8 @@ const DogEditForm = React.memo(({ formData, contacts }: { formData: any, contact
     start_date: string,
     calculated_end_date: string,
     video_url: string,
-    video_thumbnail: string
+    video_thumbnail: string,
+    image_url: string
   }>>(() => {
     if (Array.isArray(formData.medicine_schedule)) {
       return formData.medicine_schedule.map((item: any) => {
@@ -106,7 +107,8 @@ const DogEditForm = React.memo(({ formData, contacts }: { formData: any, contact
             start_date: item.start_date || new Date().toISOString().split('T')[0],
             calculated_end_date: item.calculated_end_date || '',
             video_url: item.video_url || '',
-            video_thumbnail: item.video_thumbnail || ''
+            video_thumbnail: item.video_thumbnail || '',
+            image_url: item.image_url || ''
           };
         } else {
           // Old format - convert to new format
@@ -119,7 +121,8 @@ const DogEditForm = React.memo(({ formData, contacts }: { formData: any, contact
             start_date: new Date().toISOString().split('T')[0],
             calculated_end_date: '',
             video_url: item.video_url || '',
-            video_thumbnail: item.video_thumbnail || ''
+            video_thumbnail: item.video_thumbnail || '',
+            image_url: item.image_url || ''
           };
         }
       });
@@ -200,7 +203,8 @@ const DogEditForm = React.memo(({ formData, contacts }: { formData: any, contact
       start_date: getCurrentDateInPST(),
       calculated_end_date: '',
       video_url: '',
-      video_thumbnail: ''
+      video_thumbnail: '',
+      image_url: ''
     };
     newMedicine.calculated_end_date = calculateEndDate(newMedicine.remaining_doses, newMedicine.frequency_per_day, newMedicine.start_date);
     setMedicineSchedule(prev => [...prev, newMedicine]);
@@ -578,6 +582,36 @@ const DogEditForm = React.memo(({ formData, contacts }: { formData: any, contact
                   placeholder="Add video instructions for this medication..."
                 />
               </div>
+
+              {/* Image Instructions */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Image Instructions (Optional)</label>
+                <div className="space-y-2">
+                  {medicine.image_url && (
+                    <div className="w-24 h-24 border rounded-md overflow-hidden">
+                      <img src={medicine.image_url} alt="Medicine preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                          const result = e.target?.result as string;
+                          updateMedicine(index, 'image_url', result);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border rounded-md"
+                    placeholder="Choose an image..."
+                  />
+                  <p className="text-xs text-gray-500">Upload an image showing the medication or instructions</p>
+                </div>
+              </div>
             </div>
           ))}
           <button
@@ -898,6 +932,39 @@ export default function HouseSittingApp() {
   const [hasActiveStayToday, setHasActiveStayToday] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [imageModal, setImageModal] = useState<{ isOpen: boolean; imageUrl: string; title: string }>({
+    isOpen: false,
+    imageUrl: '',
+    title: ''
+  });
+
+  // Image Modal Component
+  const ImageModal = () => {
+    if (!imageModal.isOpen) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div className="relative max-w-4xl max-h-full bg-white rounded-lg overflow-hidden">
+          <div className="flex justify-between items-center p-4 border-b">
+            <h3 className="text-lg font-semibold">{imageModal.title}</h3>
+            <button
+              onClick={() => setImageModal({ isOpen: false, imageUrl: '', title: '' })}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          <div className="p-4">
+            <img
+              src={imageModal.imageUrl}
+              alt={imageModal.title}
+              className="max-w-full max-h-96 object-contain mx-auto"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
   const [dbData, setDbData] = useState<{
     property: Property | null;
     alerts: Alert[];
@@ -2369,6 +2436,20 @@ export default function HouseSittingApp() {
                                 Video
                               </button>
                             )}
+                            {med.image_url && (
+                              <button
+                                onClick={() => setImageModal({
+                                  isOpen: true,
+                                  imageUrl: med.image_url!,
+                                  title: `${med.medication} - Medicine Instructions`
+                                })}
+                                className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-xs font-medium ml-2"
+                                title="View medicine image"
+                              >
+                                <Image className="w-3 h-3" />
+                                Image
+                              </button>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -2603,14 +2684,16 @@ export default function HouseSittingApp() {
       access: Key,
       amenities: Heart,
       entertainment: Tv,
-      utilities: Settings
+      utilities: Settings,
+      deliveries: Package
     };
 
     const categoryLabels = {
       access: 'Access & Security',
       amenities: 'Amenities & Services',
       entertainment: 'Entertainment & Media',
-      utilities: 'Utilities & Systems'
+      utilities: 'Utilities & Systems',
+      deliveries: 'Deliveries & Packages'
     };
 
     return (
@@ -2659,6 +2742,23 @@ export default function HouseSittingApp() {
                         ).join(' ') : 
                         'Instructions'
                       }
+                      {instruction.image_url && (
+                        <button
+                          onClick={() => setImageModal({
+                            isOpen: true,
+                            imageUrl: instruction.image_url!,
+                            title: instruction.subcategory ? 
+                              instruction.subcategory.split(/(?=[A-Z])/).map(word => 
+                                word.charAt(0).toUpperCase() + word.slice(1)
+                              ).join(' ') : 
+                              'Instructions'
+                          })}
+                          className="ml-auto text-gray-500 hover:text-gray-700"
+                          title="View image"
+                        >
+                          <Image className="w-4 h-4" />
+                        </button>
+                      )}
                     </h4>
                     
                     <div className="space-y-2">
@@ -2672,6 +2772,41 @@ export default function HouseSittingApp() {
                         </div>
                       )}
                     </div>
+
+                    {/* Delivery Information */}
+                    {instruction.category === 'deliveries' && (instruction.delivery_window || instruction.delivery_company || instruction.tracking_number) && (
+                      <div className="mt-3 p-2 bg-orange-50 border-l-4 border-orange-400 rounded">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Package className="w-3 h-3 text-orange-600" />
+                          <span className="text-orange-800 font-medium text-sm">Delivery Details</span>
+                        </div>
+                        <div className="text-orange-700 text-xs space-y-1">
+                          {instruction.delivery_company && (
+                            <p><strong>Company:</strong> {instruction.delivery_company}</p>
+                          )}
+                          {instruction.delivery_window && (
+                            <p><strong>Expected Window:</strong> {
+                              instruction.delivery_window === 'morning' ? 'Morning (8 AM - 12 PM)' :
+                              instruction.delivery_window === 'afternoon' ? 'Afternoon (12 PM - 5 PM)' :
+                              instruction.delivery_window === 'evening' ? 'Evening (5 PM - 8 PM)' :
+                              'Anytime'
+                            }</p>
+                          )}
+                          {instruction.tracking_number && (
+                            <p><strong>Tracking:</strong> 
+                              <a 
+                                href={`https://www.google.com/search?q=${instruction.delivery_company}+tracking+${instruction.tracking_number}`}
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="ml-1 text-orange-600 hover:text-orange-800 underline"
+                              >
+                                {instruction.tracking_number}
+                              </a>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Video Instructions */}
                     {instruction.video_url && (
@@ -3079,15 +3214,23 @@ export default function HouseSittingApp() {
                       <option value="amenities">Amenities & Services</option>
                       <option value="entertainment">Entertainment & Media</option>
                       <option value="utilities">Utilities & Systems</option>
+                      <option value="deliveries">Deliveries & Packages</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Subcategory</label>
-                    <input name="subcategory" defaultValue={formData.subcategory || ''} className="w-full px-3 py-2 border rounded-md" placeholder="e.g., mudRoom, hotTub, tv, thermostat" />
+                    <input name="subcategory" defaultValue={formData.subcategory || ''} className="w-full px-3 py-2 border rounded-md" placeholder="e.g., mudRoom, hotTub, tv, thermostat, amazon, ups, fedex" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Instructions</label>
-                    <textarea name="instructions" defaultValue={formData.instructions || ''} required className="w-full px-3 py-2 border rounded-md" rows={4} placeholder="Instructions for this item..." />
+                    <textarea 
+                      name="instructions" 
+                      defaultValue={formData.instructions || ''} 
+                      required 
+                      className="w-full px-3 py-2 border rounded-md" 
+                      rows={4} 
+                      placeholder={formData.category === 'deliveries' ? "e.g., Check front porch daily. Packages usually arrive between 2-5 PM. Bring inside immediately if raining. Notify owners when packages arrive." : "Instructions for this item..."}
+                    />
                   </div>
                   
                   {/* Video Instructions */}
@@ -3106,7 +3249,78 @@ export default function HouseSittingApp() {
                     />
                     <input type="hidden" name="video_url" defaultValue={formData.video_url || ''} />
                   </div>
+
+                  {/* Image Upload */}
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Image (Optional)</label>
+                    <div className="space-y-2">
+                      {formData.image_url && (
+                        <div className="w-24 h-24 border rounded-md overflow-hidden">
+                          <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                              const result = e.target?.result as string;
+                              const imageInput = document.querySelector('input[name="image_url"]') as HTMLInputElement;
+                              if (imageInput) {
+                                imageInput.value = result;
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="w-full px-3 py-2 border rounded-md"
+                        placeholder="Choose an image..."
+                      />
+                      <p className="text-xs text-gray-500">Upload an image to accompany these instructions (JPG, PNG, etc.)</p>
+                      <input type="hidden" name="image_url" defaultValue={formData.image_url || ''} />
+                    </div>
+                  </div>
                   
+                  {/* Delivery-Specific Information */}
+                  {formData.category === 'deliveries' && (
+                    <div className="border-t pt-4">
+                      <h4 className="font-semibold text-gray-800 mb-3">Delivery Information</h4>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Expected Delivery Window</label>
+                          <select name="delivery_window" defaultValue={formData.delivery_window || ''} className="w-full px-3 py-2 border rounded-md">
+                            <option value="">No specific window</option>
+                            <option value="morning">Morning (8 AM - 12 PM)</option>
+                            <option value="afternoon">Afternoon (12 PM - 5 PM)</option>
+                            <option value="evening">Evening (5 PM - 8 PM)</option>
+                            <option value="anytime">Anytime</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Delivery Company</label>
+                          <input 
+                            name="delivery_company" 
+                            defaultValue={formData.delivery_company || ''} 
+                            className="w-full px-3 py-2 border rounded-md" 
+                            placeholder="e.g., Amazon, UPS, FedEx, USPS"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Tracking Number (Optional)</label>
+                          <input 
+                            name="tracking_number" 
+                            defaultValue={formData.tracking_number || ''} 
+                            className="w-full px-3 py-2 border rounded-md" 
+                            placeholder="Enter tracking number if available"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Scheduling Section */}
                   <div className="border-t pt-4">
                     <h4 className="font-semibold text-gray-800 mb-3">Scheduling (Optional)</h4>
@@ -3588,6 +3802,7 @@ export default function HouseSittingApp() {
       </div>
       <AdminForm />
       <AdminLoginModal />
+      <ImageModal />
     </div>
   );
 }

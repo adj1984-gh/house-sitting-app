@@ -48,6 +48,7 @@ export interface Dog {
   sleeping_notes?: string
   special_instructions: any // JSONB
   vet_visits: VetVisit[] // JSONB array
+  medicine_image_url?: string // Image for medicine instructions
   created_at: string
   updated_at: string
 }
@@ -98,6 +99,12 @@ export interface HouseInstruction {
   person_phone?: string // Phone number of the person
   schedule_notes?: string // Additional notes for scheduled services
   video_url?: string
+  // Delivery-specific fields
+  delivery_window?: 'morning' | 'afternoon' | 'evening' | 'anytime'
+  delivery_company?: string
+  tracking_number?: string
+  // Image support
+  image_url?: string
   created_at: string
   updated_at: string
 }

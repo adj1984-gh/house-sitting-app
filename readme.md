@@ -353,6 +353,21 @@ Private project - not for public distribution
 
 ### Recent Updates (December 2024)
 
+#### Image Support System
+- **Universal image upload** - Added image support to house instructions and medicine sections
+- **Image preview modal** - Click image icons to view full-size images with close functionality
+- **Visual indicators** - Image icons appear on cards when images are present
+- **Base64 storage** - Images stored as base64 data URLs for easy management
+- **Automatic cleanup** - Images are automatically removed when entries are deleted
+- **Files Modified**: `components/HouseSittingApp.tsx`, `lib/types.ts`, `migration-add-image-support.sql`
+
+#### Delivery Management System
+- **New delivery category** - Added "Deliveries & Packages" category to house instructions
+- **Delivery-specific fields** - Company, delivery window, and tracking number support
+- **Smart tracking links** - Clickable tracking numbers that open Google search for easy tracking
+- **Delivery scheduling** - Daily check reminders and delivery window notifications
+- **Files Modified**: `components/HouseSittingApp.tsx`, `lib/types.ts`, `migration-add-delivery-support.sql`
+
 #### Enhanced Scheduling Display
 - **Next occurrence dates** - Scheduled services now show the specific next occurrence date and time
 - **Smart date indicators** - "TODAY" and "TOMORROW" labels for immediate upcoming events
