@@ -2517,7 +2517,9 @@ export default function HouseSittingApp() {
           // Handle time type - default to 'specific' if not set
           schedule_time_type: data.schedule_time_type || 'specific',
           // Handle custom scheduling - if schedule_day contains custom text, set frequency to custom
-          schedule_custom: data.schedule_frequency === 'custom' ? data.schedule_day : ''
+          schedule_custom: data.schedule_frequency === 'custom' ? data.schedule_day : '',
+          // Handle days per week - if schedule_day is a number, set frequency to days_per_week
+          schedule_days_per_week: data.schedule_frequency === 'days_per_week' ? data.schedule_day : ''
         };
       }
       
@@ -2591,12 +2593,16 @@ export default function HouseSittingApp() {
         };
         
         // Handle scheduling fields
-        data.needs_scheduling = data.needs_scheduling === 'on';
         data.remind_day_before = data.remind_day_before === 'on';
         
         // Handle custom scheduling - if custom is selected, use custom field instead of day
         if (data.schedule_frequency === 'custom') {
           data.schedule_day = data.schedule_custom || '';
+        }
+        
+        // Handle days per week - if days_per_week is selected, use that field
+        if (data.schedule_frequency === 'days_per_week') {
+          data.schedule_day = data.schedule_days_per_week || '1';
         }
         
         // Handle duration - convert to number if provided
@@ -2619,6 +2625,7 @@ export default function HouseSittingApp() {
         delete data.schedule_time_specific;
         delete data.schedule_time_general;
         delete data.schedule_custom;
+        delete data.schedule_days_per_week;
         
         console.log('Form submission - processed house instruction data:', data);
       }
@@ -2769,20 +2776,28 @@ export default function HouseSittingApp() {
                           <label className="block text-sm font-medium mb-1">Frequency</label>
                           <select 
                             name="schedule_frequency" 
-                            defaultValue={formData.schedule_frequency || 'weekly'} 
+                            defaultValue={formData.schedule_frequency || 'one_time'} 
                             className="w-full px-3 py-2 border rounded-md"
                             onChange={(e) => {
                               const dayField = document.querySelector('[name="schedule_day"]') as HTMLSelectElement;
                               const customField = document.querySelector('[name="schedule_custom"]') as HTMLInputElement;
+                              const daysPerWeekField = document.querySelector('[name="schedule_days_per_week"]') as HTMLInputElement;
                               const dayContainer = dayField?.parentElement;
                               const customContainer = customField?.parentElement;
+                              const daysPerWeekContainer = daysPerWeekField?.parentElement;
                               
-                              if (e.target.value === 'daily') {
+                              if (e.target.value === 'one_time') {
                                 if (dayContainer) dayContainer.style.display = 'none';
                                 if (customContainer) customContainer.style.display = 'none';
+                                if (daysPerWeekContainer) daysPerWeekContainer.style.display = 'none';
+                              } else if (e.target.value === 'daily') {
+                                if (dayContainer) dayContainer.style.display = 'none';
+                                if (customContainer) customContainer.style.display = 'none';
+                                if (daysPerWeekContainer) daysPerWeekContainer.style.display = 'none';
                               } else if (e.target.value === 'weekly') {
                                 if (dayContainer) dayContainer.style.display = 'block';
                                 if (customContainer) customContainer.style.display = 'none';
+                                if (daysPerWeekContainer) daysPerWeekContainer.style.display = 'none';
                                 // Update day options for weekly
                                 if (dayField) {
                                   dayField.innerHTML = `
@@ -2795,9 +2810,14 @@ export default function HouseSittingApp() {
                                     <option value="saturday">Saturday</option>
                                   `;
                                 }
+                              } else if (e.target.value === 'days_per_week') {
+                                if (dayContainer) dayContainer.style.display = 'none';
+                                if (customContainer) customContainer.style.display = 'none';
+                                if (daysPerWeekContainer) daysPerWeekContainer.style.display = 'block';
                               } else if (e.target.value === 'monthly') {
                                 if (dayContainer) dayContainer.style.display = 'block';
                                 if (customContainer) customContainer.style.display = 'none';
+                                if (daysPerWeekContainer) daysPerWeekContainer.style.display = 'none';
                                 // Update day options for monthly
                                 if (dayField) {
                                   dayField.innerHTML = `
@@ -2816,11 +2836,14 @@ export default function HouseSittingApp() {
                               } else if (e.target.value === 'custom') {
                                 if (dayContainer) dayContainer.style.display = 'none';
                                 if (customContainer) customContainer.style.display = 'block';
+                                if (daysPerWeekContainer) daysPerWeekContainer.style.display = 'none';
                               }
                             }}
                           >
+                            <option value="one_time">One Time</option>
                             <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
+                            <option value="weekly">Once per Week</option>
+                            <option value="days_per_week">Custom Days per Week</option>
                             <option value="monthly">Monthly</option>
                             <option value="custom">Custom (specific dates)</option>
                           </select>
@@ -2840,6 +2863,16 @@ export default function HouseSittingApp() {
                             <option value="friday">Friday</option>
                             <option value="saturday">Saturday</option>
                           </select>
+                          <input 
+                            name="schedule_days_per_week" 
+                            type="number" 
+                            min="1" 
+                            max="7" 
+                            defaultValue={formData.schedule_days_per_week || 1} 
+                            className="w-full px-3 py-2 border rounded-md mt-2" 
+                            placeholder="Number of days per week (1-7)"
+                            style={{ display: 'none' }}
+                          />
                           <input 
                             name="schedule_custom" 
                             type="text" 
