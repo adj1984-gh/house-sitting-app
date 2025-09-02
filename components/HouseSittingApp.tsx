@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode, X, Info, Moon } from 'lucide-react';
 import YouTubeVideo from './YouTubeVideo';
 import { getProperty, getAlerts, getDogs, getAppointments, getHouseInstructions, getDailyTasks, getStays, hasActiveStay, getCurrentActiveStay, getContacts, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, createContact, updateContact, deleteContact, generateMasterSchedule } from '../lib/database';
+import { normalizeTime, formatTimeForDisplay } from '../lib/utils';
 import { Property, Alert, Dog as DogType, Appointment, HouseInstruction, DailyTask, Stay, Contact, ScheduleItem } from '../lib/types';
 
 // All data comes from Supabase database - no mock data
@@ -335,10 +336,9 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
                 <div className="flex-1">
                   <label className="block text-xs font-medium mb-1">Time</label>
                   <input
-                    type="text"
+                    type="time"
                     value={feeding.time}
                     onChange={(e) => updateFeedingTime(index, 'time', e.target.value)}
-                    placeholder="e.g., 7:00 AM"
                     className="w-full px-3 py-2 border rounded-md text-sm"
                   />
                 </div>
@@ -497,10 +497,9 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
                       <div className="flex-1">
                         <label className="block text-xs font-medium mb-1">{dose.dose_amount}</label>
                         <input
-                          type="text"
+                          type="time"
                           value={dose.time}
                           onChange={(e) => updateDoseTime(index, doseIndex, 'time', e.target.value)}
-                          placeholder="e.g., 8:00 AM"
                           className="w-full px-3 py-2 border rounded-md text-sm"
                         />
                       </div>
@@ -1264,19 +1263,32 @@ export default function HouseSittingApp() {
   // Function to group schedule items by time
   const groupScheduleByTime = (scheduleItems: ScheduleItem[]) => {
     const grouped = scheduleItems.reduce((groups, item) => {
-      const time = item.time || 'No time specified';
-      if (!groups[time]) {
-        groups[time] = [];
+      // Check if this is a reminder (title starts with 🔔 Reminder:)
+      let groupKey;
+      if (item.title.startsWith('🔔 Reminder:')) {
+        groupKey = 'Reminders';
+      } else {
+        groupKey = item.time || 'No time specified';
       }
-      groups[time].push(item);
+      
+      if (!groups[groupKey]) {
+        groups[groupKey] = [];
+      }
+      groups[groupKey].push(item);
       return groups;
     }, {} as Record<string, ScheduleItem[]>);
 
     // Sort times chronologically
     const sortedTimes = Object.keys(grouped).sort((a, b) => {
-      // Handle "No time specified" and "TBD" at the end
-      if (a === 'No time specified' || a === 'TBD') return 1;
-      if (b === 'No time specified' || b === 'TBD') return -1;
+      // Handle "Reminders", "No time specified" and "TBD" at the end
+      const endItems = ['Reminders', 'No time specified', 'TBD'];
+      if (endItems.includes(a) && !endItems.includes(b)) return 1;
+      if (endItems.includes(b) && !endItems.includes(a)) return -1;
+      if (endItems.includes(a) && endItems.includes(b)) {
+        // Among end items, sort: other times, then Reminders, then No time specified, then TBD
+        const order = ['Reminders', 'No time specified', 'TBD'];
+        return order.indexOf(a) - order.indexOf(b);
+      }
       
       // Try to parse times for comparison
       const timeA = parseTime(a);
@@ -1291,7 +1303,7 @@ export default function HouseSittingApp() {
     });
 
     return sortedTimes.map(time => ({
-      time,
+      time: time === 'Reminders' ? 'Reminders' : formatTimeForDisplay(time),
       items: grouped[time]
     }));
   };
@@ -2530,9 +2542,28 @@ export default function HouseSittingApp() {
         try {
           if (data.feeding_schedule) {
             data.feeding_schedule = JSON.parse(data.feeding_schedule as string);
+            // Normalize times in feeding schedule
+            if (Array.isArray(data.feeding_schedule)) {
+              data.feeding_schedule = data.feeding_schedule.map((feeding: any) => ({
+                ...feeding,
+                time: normalizeTime(feeding.time || '')
+              }));
+            }
           }
           if (data.medicine_schedule) {
             data.medicine_schedule = JSON.parse(data.medicine_schedule as string);
+            // Normalize times in medicine schedule
+            if (Array.isArray(data.medicine_schedule)) {
+              data.medicine_schedule = data.medicine_schedule.map((medicine: any) => ({
+                ...medicine,
+                dose_times: Array.isArray(medicine.dose_times) 
+                  ? medicine.dose_times.map((dose: any) => ({
+                      ...dose,
+                      time: normalizeTime(dose.time || '')
+                    }))
+                  : medicine.dose_times
+              }));
+            }
           }
           if (data.walk_schedule) {
             data.walk_schedule = JSON.parse(data.walk_schedule as string);
@@ -2570,7 +2601,7 @@ export default function HouseSittingApp() {
         // Handle time selection - combine time type and time value
         const timeType = data.schedule_time_type || 'specific';
         if (timeType === 'specific') {
-          data.schedule_time = data.schedule_time_specific || '';
+          data.schedule_time = normalizeTime(data.schedule_time_specific || '');
         } else {
           data.schedule_time = data.schedule_time_general || '';
         }
@@ -2584,6 +2615,19 @@ export default function HouseSittingApp() {
         delete data.schedule_time_general;
         
         console.log('Form submission - processed house instruction data:', data);
+      }
+      
+      // Normalize time fields for appointments and daily tasks
+      if (formType === 'appointment' && data.time) {
+        data.time = normalizeTime(data.time);
+      }
+      
+      if (formType === 'dailyTask' && data.time) {
+        // Only normalize if it looks like a specific time, leave general descriptions as-is
+        const normalizedTime = normalizeTime(data.time);
+        if (normalizedTime !== data.time && /^\d{2}:\d{2}$/.test(normalizedTime)) {
+          data.time = normalizedTime;
+        }
       }
       
       // Handle boolean fields
@@ -2779,10 +2823,9 @@ export default function HouseSittingApp() {
                           {/* Specific Time Input */}
                           <input 
                             name="schedule_time_specific" 
-                            type="text" 
+                            type="time" 
                             defaultValue={formData.schedule_time_type !== 'general' ? formData.schedule_time || '' : ''} 
                             className="w-full px-3 py-2 border rounded-md" 
-                            placeholder="e.g., 8:00 PM, 10:00 AM"
                             style={{ display: formData.schedule_time_type === 'general' ? 'none' : 'block' }}
                           />
                           {/* General Time Select */}
@@ -2820,7 +2863,7 @@ export default function HouseSittingApp() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Time</label>
-                    <input name="time" type="text" defaultValue={formData.time || ''} placeholder="e.g., 2:00 PM" className="w-full px-3 py-2 border rounded-md" />
+                    <input name="time" type="time" defaultValue={formData.time || ''} className="w-full px-3 py-2 border rounded-md" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Type</label>

@@ -1233,12 +1233,12 @@ The application now has full database connectivity, data persistence, and a full
 ### ✅ Enhanced Time Selection System for House Instructions (December 2024)
 - **Enhancement**: Added comprehensive time selection system to house instructions matching the dog scheduling interface
 - **New Features**:
-  - **Dual Time Input System**: Choose between "Specific Time" (e.g., 8:00 PM) or "General Time" (e.g., Morning, Evening)
-  - **Dynamic UI**: Time input changes based on selection - text input for specific times, dropdown for general times
+  - **Dual Time Input System**: Choose between "Specific Time" (HTML5 time picker) or "General Time" (e.g., Morning, Evening)
+  - **Dynamic UI**: Time input changes based on selection - time picker for specific times, dropdown for general times
   - **Consistent with Dog Forms**: Matches the time selection patterns used in dog feeding, medicine, and walk scheduling
   - **Smart Form Handling**: Automatically combines time type and time value into single database field for compatibility
 - **Time Selection Options**:
-  - **Specific Times**: Text input for exact times like "8:00 PM", "10:00 AM", "2:30 PM"
+  - **Specific Times**: HTML5 time picker for exact times with proper 24-hour format support
   - **General Times**: Dropdown with "Morning", "Afternoon", "Evening", "Night" options
 - **Technical Implementation**:
   - **Database Schema**: Added `schedule_time_type` field to track whether time is 'specific' or 'general'
@@ -1246,7 +1246,7 @@ The application now has full database connectivity, data persistence, and a full
   - **Dynamic Display**: JavaScript-powered UI that shows/hides appropriate input based on time type selection
   - **Migration Support**: Database migration script to add new field with proper defaults
 - **User Experience Improvements**:
-  - **Flexible Time Entry**: Users can choose the most appropriate time format for their needs
+  - **Proper Time Pickers**: HTML5 time inputs provide native time selection with consistent browser UI
   - **Clear Interface**: Time type selection clearly explains the difference between specific and general times
   - **Consistent Behavior**: Matches the familiar time selection patterns from dog care forms
   - **Backward Compatible**: Existing house instructions continue to work without modification
@@ -1255,3 +1255,89 @@ The application now has full database connectivity, data persistence, and a full
   - `lib/types.ts` - Added schedule_time_type field to HouseInstruction interface
   - `migration-add-time-type-field.sql` - Database migration for new time type field
 - **Result**: House instructions now have flexible time selection matching dog scheduling features with both specific and general time options
+
+### ✅ Standardized Time Pickers Across All Forms (December 2024)
+- **Enhancement**: Converted all time inputs to use HTML5 time pickers for consistent user experience
+- **Updated Forms**:
+  - **Dog Feeding Schedule**: Changed from text inputs to `type="time"` for feeding times
+  - **Dog Medicine Schedule**: Changed from text inputs to `type="time"` for dose times
+  - **House Instructions**: Changed specific time inputs to `type="time"` time pickers
+  - **Appointments**: Changed from text inputs to `type="time"` for appointment times
+  - **Daily Tasks**: Kept as text input for flexibility (allows "Afternoon", "Before bed", etc.)
+- **User Experience Improvements**:
+  - **Native Time Pickers**: Users get consistent, browser-native time selection interface
+  - **24-Hour Format Support**: Proper handling of 24-hour time format in database
+  - **Mobile Friendly**: Time pickers work well on mobile devices with native input controls
+  - **Validation**: Built-in browser validation for time format
+- **Technical Benefits**:
+  - **Consistent Data Format**: All time inputs now use standardized HH:MM format
+  - **Better UX**: No more typing time formats manually - just select from picker
+  - **Cross-Browser**: HTML5 time inputs are well-supported across modern browsers
+- **Files Changed**: 
+  - `components/HouseSittingApp.tsx` - Updated all time inputs to use `type="time"`
+- **Result**: All time inputs across the application now use proper HTML5 time pickers for consistent, user-friendly time selection
+
+### ✅ Comprehensive Time Format Standardization (December 2024)
+- **Enhancement**: Implemented complete time format normalization for consistent schedule ordering and display
+- **Core Problem Solved**: Mixed time formats (12-hour, 24-hour, text descriptions) were causing schedule items to appear out of chronological order
+- **New Features**:
+  - **Time Normalization Functions**: Added `normalizeTime()` and `formatTimeForDisplay()` utilities
+  - **Automatic Form Processing**: All time inputs are automatically normalized to 24-hour format (HH:MM) before database storage
+  - **Smart Display Formatting**: Times are displayed in user-friendly 12-hour format (8:00 AM, 2:30 PM) while stored in 24-hour format
+  - **Flexible Handling**: General time descriptions like "Morning", "Before bed" are preserved as-is
+- **Technical Implementation**:
+  - **Database Storage**: All times stored in consistent 24-hour format (HH:MM) for proper sorting
+  - **Form Submission**: Time normalization applied to all form types (dogs, appointments, house instructions, daily tasks)
+  - **Schedule Sorting**: Enhanced sorting algorithm uses parsed time values for chronological ordering
+  - **Display Layer**: Times formatted for user readability while maintaining database consistency
+- **Data Migration**:
+  - **Database Migration**: Created `migration-normalize-time-formats.sql` to convert existing time data
+  - **Smart Conversion**: Automatically converts 12-hour format to 24-hour format while preserving general descriptions
+  - **JSONB Support**: Handles complex nested time data in dog feeding and medicine schedules
+- **User Experience Improvements**:
+  - **Proper Schedule Ordering**: Daily schedule now appears in correct chronological order (7:00 AM → 12:00 PM → 6:00 PM)
+  - **Consistent Display**: All times display in familiar 12-hour format regardless of how they were entered
+  - **Reliable Sorting**: Schedule items with times always appear before "No time specified" items
+- **Files Changed**: 
+  - `lib/utils.ts` - Added time normalization and formatting functions
+  - `components/HouseSittingApp.tsx` - Added time normalization to form submission and display formatting
+  - `lib/database.ts` - Enhanced schedule sorting with proper time parsing
+  - `migration-normalize-time-formats.sql` - Database migration for existing time data
+- **Result**: All times across the application now follow a consistent format ensuring proper chronological ordering in the daily schedule
+
+### ✅ Service Reminder Display Enhancement (December 2024)
+- **Enhancement**: Improved service reminder display to show reminders at the bottom of the schedule instead of specific time slots
+- **User Request**: When "set reminder" option is chosen on house instructions, show reminders at bottom of schedule, not at a specific time
+- **New Features**:
+  - **Dedicated Reminders Section**: Reminders now appear in their own "Reminders" section at the bottom of the daily schedule
+  - **No Time Assignment**: Service reminders no longer have specific times, making them appear as general day-before notifications
+  - **Clear Visual Grouping**: Reminders are grouped together with 🔔 icon for easy identification
+  - **Proper Sorting**: Schedule now displays: timed items (chronologically) → Reminders → No time specified items
+- **User Experience Improvements**:
+  - **Logical Organization**: Reminders appear as general notifications rather than timed tasks
+  - **Clear Separation**: Distinct "Reminders" section makes it obvious these are advance notifications
+  - **Better Workflow**: Users can see all day-before reminders grouped together at the bottom
+  - **Intuitive Display**: Matches expected behavior for reminder notifications
+- **Technical Implementation**:
+  - **Schedule Generation**: Reminders assigned empty time value instead of service time
+  - **Grouping Logic**: Special handling for reminder items in schedule grouping function
+  - **Sort Order**: Enhanced sorting to place Reminders section before "No time specified"
+- **Example Display**:
+  ```
+  7:00 AM (2 items)
+  ├─ Feed Bella
+  └─ Walk Bella
+  
+  2:00 PM (1 item)
+  ├─ Vet appointment
+  
+  Reminders (1 item)
+  ├─ 🔔 Reminder: Trash pickup tomorrow
+  
+  No time specified (1 item)
+  ├─ Check mail
+  ```
+- **Files Changed**: 
+  - `lib/database.ts` - Modified reminder generation to use empty time values
+  - `components/HouseSittingApp.tsx` - Enhanced schedule grouping to handle reminders separately
+- **Result**: Service reminders now appear in a dedicated section at the bottom of the schedule, providing clearer organization and better user experience

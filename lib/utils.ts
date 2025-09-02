@@ -86,3 +86,49 @@ export const parseTime = (timeStr: string): number | null => {
   
   return hours * 60 + minutes; // Convert to minutes for easy comparison
 };
+
+// Helper function to normalize time to 24-hour format (HH:MM)
+export const normalizeTime = (timeStr: string): string => {
+  if (!timeStr || timeStr.trim() === '') return '';
+  
+  // If it's already in HH:MM format (24-hour), return as-is
+  if (/^\d{2}:\d{2}$/.test(timeStr)) {
+    return timeStr;
+  }
+  
+  // Parse the time and convert to 24-hour format
+  const timeMinutes = parseTime(timeStr);
+  if (timeMinutes === null) return timeStr; // Return original if can't parse
+  
+  const hours = Math.floor(timeMinutes / 60);
+  const minutes = timeMinutes % 60;
+  
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+};
+
+// Helper function to format time for display (converts 24-hour to 12-hour for readability)
+export const formatTimeForDisplay = (timeStr: string): string => {
+  if (!timeStr || timeStr.trim() === '') return '';
+  
+  // Handle general times
+  if (['Morning', 'Afternoon', 'Evening', 'Night', 'TBD', 'No time specified'].includes(timeStr)) {
+    return timeStr;
+  }
+  
+  const normalizedTime = normalizeTime(timeStr);
+  if (!normalizedTime || normalizedTime === timeStr) return timeStr;
+  
+  const [hoursStr, minutesStr] = normalizedTime.split(':');
+  const hours = parseInt(hoursStr);
+  const minutes = parseInt(minutesStr);
+  
+  if (hours === 0) {
+    return `12:${minutesStr} AM`;
+  } else if (hours < 12) {
+    return `${hours}:${minutesStr} AM`;
+  } else if (hours === 12) {
+    return `12:${minutesStr} PM`;
+  } else {
+    return `${hours - 12}:${minutesStr} PM`;
+  }
+};

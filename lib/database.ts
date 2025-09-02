@@ -1,5 +1,6 @@
 import { supabase, supabaseAdmin } from './supabase'
 import { Property, Alert, Dog, ServicePerson, Appointment, HouseInstruction, DailyTask, Stay, Contact, AccessLog, ScheduleItem } from './types'
+import { parseTime } from './utils'
 
 // Property operations
 export const getProperty = async (id: string = '00000000-0000-0000-0000-000000000001'): Promise<Property | null> => {
@@ -1041,7 +1042,7 @@ export const generateMasterSchedule = (
           id: `house-${instruction.id}${shouldShowReminder ? '-reminder' : ''}`,
           type: 'house',
           title: shouldShowReminder ? `🔔 Reminder: ${subcategoryLabel}` : subcategoryLabel,
-          time: instruction.schedule_time || 'TBD',
+          time: shouldShowReminder ? '' : (instruction.schedule_time || 'TBD'), // Reminders have no specific time
           date: today,
           notes: shouldShowReminder ? 
             `Reminder: ${instruction.schedule_notes || instruction.instructions?.text || 'Service scheduled for tomorrow'}` :
@@ -1053,11 +1054,16 @@ export const generateMasterSchedule = (
     }
   })
   
-  // Sort by time
+  // Sort by time using normalized time format
   return scheduleItems.sort((a, b) => {
-    const timeA = a.time === 'TBD' ? '23:59' : a.time
-    const timeB = b.time === 'TBD' ? '23:59' : b.time
-    return timeA.localeCompare(timeB)
+    const timeA = a.time === 'TBD' || !a.time ? '23:59' : a.time
+    const timeB = b.time === 'TBD' || !b.time ? '23:59' : b.time
+    
+    // Use parseTime for proper chronological sorting
+    const minutesA = parseTime(timeA) ?? 1439; // 23:59 in minutes
+    const minutesB = parseTime(timeB) ?? 1439;
+    
+    return minutesA - minutesB;
   })
 }
 
