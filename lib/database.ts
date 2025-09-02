@@ -807,34 +807,39 @@ export const generateMasterSchedule = (
       return true; // Show all items in admin view
     }
     
-    // If no start/end times are set, show all items
+    // If no start/end times are set on the stay, show all items
     if (!activeStay.start_time && !activeStay.end_time) {
       return true;
+    }
+    
+    // Handle items without specific times (like "TBD")
+    if (!itemTime || itemTime === 'TBD' || itemTime === '') {
+      return true; // Show items without specific times
     }
     
     // Parse the item time
     const itemTimeMinutes = parseTime(itemTime);
     if (itemTimeMinutes === null) {
-      return true; // Show items without valid times
+      return true; // Show items that can't be parsed (fallback)
     }
     
-    // Check start time constraint
+    // Check start time constraint (only if start time is set)
     if (activeStay.start_time) {
       const startTimeMinutes = parseTime(activeStay.start_time);
       if (startTimeMinutes !== null && itemTimeMinutes < startTimeMinutes) {
-        return false;
+        return false; // Item is before stay start time
       }
     }
     
-    // Check end time constraint
+    // Check end time constraint (only if end time is set)
     if (activeStay.end_time) {
       const endTimeMinutes = parseTime(activeStay.end_time);
       if (endTimeMinutes !== null && itemTimeMinutes > endTimeMinutes) {
-        return false;
+        return false; // Item is after stay end time
       }
     }
     
-    return true;
+    return true; // Item falls within stay time constraints
   };
   
   // Add feeding schedules from dogs
