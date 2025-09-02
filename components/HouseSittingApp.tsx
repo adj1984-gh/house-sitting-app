@@ -2369,7 +2369,7 @@ export default function HouseSittingApp() {
                   });
 
                 // Group medications by time
-                const timeGroups: { [key: string]: Array<{ medication: string, notes: string, video_url?: string }> } = {};
+                const timeGroups: { [key: string]: Array<{ medication: string, notes: string, video_url?: string, image_url?: string }> } = {};
                 
                 activeMedications.forEach((item: any) => {
                   if (item.dose_times) {
@@ -2382,7 +2382,8 @@ export default function HouseSittingApp() {
                       timeGroups[time].push({
                         medication: item.medication,
                         notes: item.notes,
-                        video_url: item.video_url
+                        video_url: item.video_url,
+                        image_url: item.image_url
                       });
                     });
                   } else {
@@ -2394,7 +2395,8 @@ export default function HouseSittingApp() {
                     timeGroups[time].push({
                       medication: item.medication,
                       notes: item.notes,
-                      video_url: item.video_url
+                      video_url: item.video_url,
+                      image_url: item.image_url
                     });
                   }
                 });

@@ -29,6 +29,20 @@ export interface VetVisit {
   reminder_days_before?: number
 }
 
+// Medicine schedule item structure
+export interface MedicineScheduleItem {
+  medication: string
+  notes: string
+  frequency_per_day: number
+  remaining_doses: number
+  dose_times: Array<{time: string, dose_amount: string}>
+  start_date: string
+  calculated_end_date: string
+  video_url: string
+  video_thumbnail: string
+  image_url: string
+}
+
 export interface Dog {
   id: string
   property_id: string
@@ -40,7 +54,7 @@ export interface Dog {
   feeding_schedule: any // JSONB
   feeding_location?: string
   feeding_notes?: string
-  medicine_schedule: any // JSONB
+  medicine_schedule: MedicineScheduleItem[] // JSONB array
   potty_trained?: string
   potty_notes?: string
   walk_schedule: any // JSONB
