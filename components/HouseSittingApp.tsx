@@ -2173,9 +2173,6 @@ export default function HouseSittingApp() {
                                   🔔 <strong>Reminder:</strong> Will show up the day before
                                 </p>
                               )}
-                              {instruction.schedule_notes && (
-                                <p><strong>Notes:</strong> {instruction.schedule_notes}</p>
-                              )}
                             </div>
                           </div>
                         )}
