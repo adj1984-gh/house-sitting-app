@@ -59,8 +59,26 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
         }))
       : []
   );
-  const [medicineSchedule, setMedicineSchedule] = useState<Array<{time: string, medication: string, notes: string}>>(
-    Array.isArray(formData.medicine_schedule) ? formData.medicine_schedule : []
+  const [medicineSchedule, setMedicineSchedule] = useState<Array<{
+    medication: string, 
+    notes: string, 
+    frequency_per_day: number, 
+    remaining_doses: number, 
+    dose_times: Array<{time: string, dose_amount: string}>,
+    start_date: string,
+    calculated_end_date: string
+  }>>(
+    Array.isArray(formData.medicine_schedule) 
+      ? formData.medicine_schedule.map((item: any) => ({
+          medication: item.medication || '',
+          notes: item.notes || '',
+          frequency_per_day: item.frequency_per_day || 1,
+          remaining_doses: item.remaining_doses || 30,
+          dose_times: item.dose_times || [{ time: item.time || '', dose_amount: '1 dose' }],
+          start_date: item.start_date || new Date().toISOString().split('T')[0],
+          calculated_end_date: item.calculated_end_date || ''
+        }))
+      : []
   );
   const [specialInstructions, setSpecialInstructions] = useState<Array<{type: string, instruction: string}>>(
     formData.special_instructions && typeof formData.special_instructions === 'object' 
@@ -100,17 +118,77 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
   };
 
   const addMedicine = () => {
-    setMedicineSchedule([...medicineSchedule, { time: '', medication: '', notes: '' }]);
+    const newMedicine = {
+      medication: '',
+      notes: '',
+      frequency_per_day: 1,
+      remaining_doses: 30,
+      dose_times: [{ time: '', dose_amount: '1 dose' }],
+      start_date: new Date().toISOString().split('T')[0],
+      calculated_end_date: ''
+    };
+    newMedicine.calculated_end_date = calculateEndDate(newMedicine.remaining_doses, newMedicine.frequency_per_day, newMedicine.start_date);
+    setMedicineSchedule([...medicineSchedule, newMedicine]);
   };
 
   const removeMedicine = (index: number) => {
     setMedicineSchedule(medicineSchedule.filter((_, i) => i !== index));
   };
 
-  const updateMedicine = (index: number, field: 'time' | 'medication' | 'notes', value: string) => {
+  // Helper function to calculate end date based on remaining doses and frequency
+  const calculateEndDate = (remainingDoses: number, frequencyPerDay: number, startDate: string): string => {
+    if (remainingDoses <= 0 || frequencyPerDay <= 0) return '';
+    
+    const daysNeeded = Math.ceil(remainingDoses / frequencyPerDay);
+    const start = new Date(startDate);
+    const endDate = new Date(start);
+    endDate.setDate(start.getDate() + daysNeeded - 1);
+    
+    return endDate.toISOString().split('T')[0];
+  };
+
+  const updateMedicine = (index: number, field: string, value: any) => {
     setMedicineSchedule(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
+      
+      // Auto-calculate end date when frequency or remaining doses change
+      if (field === 'frequency_per_day' || field === 'remaining_doses' || field === 'start_date') {
+        const medicine = updated[index];
+        updated[index].calculated_end_date = calculateEndDate(
+          medicine.remaining_doses, 
+          medicine.frequency_per_day, 
+          medicine.start_date
+        );
+      }
+      
+      return updated;
+    });
+  };
+
+  const updateDoseTime = (medicineIndex: number, doseIndex: number, field: 'time' | 'dose_amount', value: string) => {
+    setMedicineSchedule(prev => {
+      const updated = [...prev];
+      updated[medicineIndex].dose_times[doseIndex] = {
+        ...updated[medicineIndex].dose_times[doseIndex],
+        [field]: value
+      };
+      return updated;
+    });
+  };
+
+  const addDoseTime = (medicineIndex: number) => {
+    setMedicineSchedule(prev => {
+      const updated = [...prev];
+      updated[medicineIndex].dose_times.push({ time: '', dose_amount: '1 dose' });
+      return updated;
+    });
+  };
+
+  const removeDoseTime = (medicineIndex: number, doseIndex: number) => {
+    setMedicineSchedule(prev => {
+      const updated = [...prev];
+      updated[medicineIndex].dose_times = updated[medicineIndex].dose_times.filter((_, i) => i !== doseIndex);
       return updated;
     });
   };
@@ -299,6 +377,24 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
                   value={medicine.notes}
                   onChange={(e) => updateMedicine(index, 'notes', e.target.value)}
                   placeholder="With food, etc."
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1">End Date (Optional)</label>
+                <input
+                  type="date"
+                  value={medicine.end_date}
+                  onChange={(e) => updateMedicine(index, 'end_date', e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1">End Time (Optional)</label>
+                <input
+                  type="time"
+                  value={medicine.end_time}
+                  onChange={(e) => updateMedicine(index, 'end_time', e.target.value)}
                   className="w-full px-3 py-2 border rounded-md text-sm"
                 />
               </div>
@@ -1564,13 +1660,66 @@ export default function HouseSittingApp() {
                 <Pill className="w-4 h-4 text-purple-600" />
                 Medicine Schedule
               </h4>
-              {((dog as any).medicine?.schedule || (dog as any).medicine_schedule || []).map((item: any, idx: number) => (
-                <div key={`medicine-display-${idx}-${item.time}-${item.medication}`} className="mb-2">
-                  <p className="mb-1">
-                    <span className="font-medium">{item.time}:</span> {item.medication}
-                  </p>
-                  {item.notes && (
-                    <p className="text-gray-600 text-sm ml-0 italic">{item.notes}</p>
+              {((dog as any).medicine?.schedule || (dog as any).medicine_schedule || [])
+                .filter((item: any) => {
+                  // Filter out expired medications - check both old and new formats
+                  if (item.calculated_end_date) {
+                    // New smart format
+                    const endDate = new Date(item.calculated_end_date);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    return today <= endDate;
+                  } else if (item.end_date) {
+                    // Old format
+                    const endDate = new Date(item.end_date);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    if (item.end_time) {
+                      const endDateTime = new Date(item.end_date + 'T' + item.end_time);
+                      return new Date() <= endDateTime;
+                    } else {
+                      return today <= endDate;
+                    }
+                  }
+                  return true; // Show medications without end dates
+                })
+                .map((item: any, idx: number) => (
+                <div key={`medicine-display-${idx}-${item.medication || item.time}-${item.medication}`} className="mb-2">
+                  {item.dose_times ? (
+                    // New smart format
+                    <div>
+                      <p className="mb-1 font-medium">{item.medication}</p>
+                      {item.dose_times.map((dose: any, doseIdx: number) => (
+                        <p key={doseIdx} className="text-sm ml-4">
+                          <span className="font-medium">{dose.time}:</span> {dose.dose_amount}
+                        </p>
+                      ))}
+                      {item.calculated_end_date && (
+                        <p className="text-sm text-gray-500 ml-4">
+                          (until {new Date(item.calculated_end_date).toLocaleDateString()} - {item.remaining_doses} doses remaining)
+                        </p>
+                      )}
+                      {item.notes && (
+                        <p className="text-gray-600 text-sm ml-4 italic">{item.notes}</p>
+                      )}
+                    </div>
+                  ) : (
+                    // Old format
+                    <div>
+                      <p className="mb-1">
+                        <span className="font-medium">{item.time}:</span> {item.medication}
+                        {item.end_date && (
+                          <span className="text-sm text-gray-500 ml-2">
+                            (until {new Date(item.end_date).toLocaleDateString()}
+                            {item.end_time && ` at ${item.end_time}`})
+                          </span>
+                        )}
+                      </p>
+                      {item.notes && (
+                        <p className="text-gray-600 text-sm ml-0 italic">{item.notes}</p>
+                      )}
+                    </div>
                   )}
                 </div>
               ))}

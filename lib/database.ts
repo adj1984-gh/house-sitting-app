@@ -801,18 +801,65 @@ export const generateMasterSchedule = (
   dogs.forEach(dog => {
     if (dog.medicine_schedule && Array.isArray(dog.medicine_schedule)) {
       dog.medicine_schedule.forEach((medicine: any, index: number) => {
-        scheduleItems.push({
-          id: `medicine-${dog.id}-${index}`,
-          type: 'medicine',
-          title: `Medicine for ${dog.name}`,
-          time: medicine.time,
-          date: today,
-          dog_id: dog.id,
-          dog_name: dog.name,
-          notes: medicine.medication,
-          recurring: true,
-          source: 'dog'
-        })
+        // Check if medication has expired - handle both old and new formats
+        let isExpired = false;
+        
+        if (medicine.calculated_end_date) {
+          // New smart format
+          const endDate = new Date(medicine.calculated_end_date);
+          const todayDate = new Date(today);
+          todayDate.setHours(0, 0, 0, 0);
+          isExpired = todayDate > endDate;
+        } else if (medicine.end_date) {
+          // Old format
+          const endDate = new Date(medicine.end_date);
+          const todayDate = new Date(today);
+          todayDate.setHours(0, 0, 0, 0);
+          
+          if (medicine.end_time) {
+            const endDateTime = new Date(medicine.end_date + 'T' + medicine.end_time);
+            isExpired = new Date() > endDateTime;
+          } else {
+            isExpired = todayDate > endDate;
+          }
+        }
+        
+        // Only add to schedule if not expired
+        if (!isExpired) {
+          if (medicine.dose_times && Array.isArray(medicine.dose_times)) {
+            // New smart format - add each dose time as separate schedule item
+            medicine.dose_times.forEach((dose: any, doseIndex: number) => {
+              if (dose.time) {
+                scheduleItems.push({
+                  id: `medicine-${dog.id}-${index}-${doseIndex}`,
+                  type: 'medicine',
+                  title: `Medicine for ${dog.name}`,
+                  time: dose.time,
+                  date: today,
+                  dog_id: dog.id,
+                  dog_name: dog.name,
+                  notes: `${medicine.medication} (${dose.dose_amount})`,
+                  recurring: true,
+                  source: 'dog'
+                })
+              }
+            })
+          } else {
+            // Old format
+            scheduleItems.push({
+              id: `medicine-${dog.id}-${index}`,
+              type: 'medicine',
+              title: `Medicine for ${dog.name}`,
+              time: medicine.time,
+              date: today,
+              dog_id: dog.id,
+              dog_name: dog.name,
+              notes: medicine.medication,
+              recurring: true,
+              source: 'dog'
+            })
+          }
+        }
       })
     }
   })

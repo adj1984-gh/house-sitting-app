@@ -1,4 +1,4 @@
-I ha# 🏠 House & Pet Sitting Management System
+# 🏠 House & Pet Sitting Management System
 
 A comprehensive web application for managing house and pet sitting instructions, built with React, Next.js, Supabase, and deployed on Vercel.
 
