@@ -2542,7 +2542,7 @@ export default function HouseSittingApp() {
       hasUnsavedChangesRef.current = false;
       
       // Force a data refresh to ensure UI is up to date
-      await loadData();
+      await loadDatabaseData();
       
       // Close the form after successful save
       setShowAddForm(null);
