@@ -44,8 +44,11 @@ export interface ServicePerson {
   id: string
   property_id: string
   name: string
-  service_day?: string
-  service_time?: string
+  service_day?: string // Legacy field, kept for backward compatibility
+  service_time?: string // Legacy field, kept for backward compatibility
+  service_date?: string // New field for specific date scheduling
+  service_start_time?: string // New field for start time
+  service_end_time?: string // New field for end time
   payment_amount?: string
   payment_status?: string
   notes?: string

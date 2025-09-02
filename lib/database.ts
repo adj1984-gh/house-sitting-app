@@ -771,6 +771,7 @@ export const generateMasterSchedule = (
   appointments: Appointment[],
   servicePeople: ServicePerson[],
   dailyTasks: DailyTask[],
+  stays: Stay[] = [],
   targetDate?: string
 ): ScheduleItem[] => {
   const scheduleItems: ScheduleItem[] = []
@@ -859,22 +860,55 @@ export const generateMasterSchedule = (
     }
   })
   
-  // Add service people
-  servicePeople.forEach(service => {
-    if (service.service_day && service.service_day.includes(new Date(today).toLocaleDateString('en-US', { weekday: 'long' }))) {
-      scheduleItems.push({
-        id: `service-${service.id}`,
-        type: 'service',
-        title: service.name,
-        time: service.service_time || 'TBD',
-        date: today,
-        location: 'Property',
-        notes: service.notes,
-        recurring: true,
-        source: 'service'
-      })
-    }
-  })
+  // Check if there's an active stay for the target date
+  const hasActiveStayForDate = stays.some(stay => {
+    const startDate = stay.start_date.split('T')[0];
+    const endDate = stay.end_date.split('T')[0];
+    return today >= startDate && today <= endDate;
+  });
+
+  // Add service people - only if there's an active stay and they fall on the target date
+  if (hasActiveStayForDate) {
+    servicePeople.forEach(service => {
+      let shouldInclude = false;
+      let serviceTime = 'TBD';
+      let serviceDate = today;
+      
+      // Check new date-based scheduling first
+      if (service.service_date) {
+        const serviceDateStr = service.service_date.split('T')[0];
+        if (serviceDateStr === today) {
+          shouldInclude = true;
+          serviceDate = serviceDateStr;
+          if (service.service_start_time) {
+            serviceTime = service.service_start_time;
+            if (service.service_end_time) {
+              serviceTime += ` - ${service.service_end_time}`;
+            }
+          }
+        }
+      }
+      // Fall back to legacy day-based scheduling
+      else if (service.service_day && service.service_day.includes(new Date(today).toLocaleDateString('en-US', { weekday: 'long' }))) {
+        shouldInclude = true;
+        serviceTime = service.service_time || 'TBD';
+      }
+      
+      if (shouldInclude) {
+        scheduleItems.push({
+          id: `service-${service.id}`,
+          type: 'service',
+          title: service.name,
+          time: serviceTime,
+          date: serviceDate,
+          location: 'Property',
+          notes: service.notes,
+          recurring: false, // Service people are now specific date events, not recurring
+          source: 'service'
+        })
+      }
+    })
+  }
   
   // Add timed daily tasks from database (untimed tasks will be handled separately)
   dailyTasks.forEach(task => {

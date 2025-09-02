@@ -586,10 +586,11 @@ export default function HouseSittingApp() {
       dbData.dogs,
       dbData.appointments,
       dbData.servicePeople,
-      dbData.dailyTasks
+      dbData.dailyTasks,
+      dbData.stays
     );
     setMasterSchedule(schedule);
-  }, [dbData.dogs, dbData.appointments, dbData.servicePeople, dbData.dailyTasks]);
+  }, [dbData.dogs, dbData.appointments, dbData.servicePeople, dbData.dailyTasks, dbData.stays]);
 
   // Admin CRUD operations
   const handleCreate = async (type: string, data: any) => {
@@ -1777,7 +1778,20 @@ export default function HouseSittingApp() {
                 <div>
                   <h4 className="font-bold text-lg">{service.name}</h4>
                   <p className="text-sm text-gray-600">
-                    <span className="font-medium">When:</span> {(service as any).service_day || (service as any).day} {((service as any).service_time || (service as any).time) && `at ${(service as any).service_time || (service as any).time}`}
+                    <span className="font-medium">When:</span> {
+                      (service as any).service_date 
+                        ? new Date((service as any).service_date).toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })
+                        : (service as any).service_day || (service as any).day
+                    } {
+                      (service as any).service_start_time 
+                        ? `from ${(service as any).service_start_time}${(service as any).service_end_time ? ` to ${(service as any).service_end_time}` : ''}`
+                        : ((service as any).service_time || (service as any).time) && `at ${(service as any).service_time || (service as any).time}`
+                    }
                   </p>
                   {((service as any).payment_status || (service as any).payment) !== 'Pre-paid' && (
                     <p className="text-sm font-bold text-orange-700 mt-2 flex items-center gap-1">
@@ -2251,12 +2265,31 @@ export default function HouseSittingApp() {
                     <input name="name" defaultValue={formData.name || ''} required className="w-full px-3 py-2 border rounded-md" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Service Day</label>
-                    <input name="service_day" defaultValue={formData.service_day || ''} className="w-full px-3 py-2 border rounded-md" />
+                    <label className="block text-sm font-medium mb-1">Service Date</label>
+                    <input 
+                      name="service_date" 
+                      type="date" 
+                      defaultValue={formData.service_date || ''} 
+                      className="w-full px-3 py-2 border rounded-md" 
+                    />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Service Time</label>
-                    <input name="service_time" defaultValue={formData.service_time || ''} className="w-full px-3 py-2 border rounded-md" />
+                    <label className="block text-sm font-medium mb-1">Start Time</label>
+                    <input 
+                      name="service_start_time" 
+                      type="time" 
+                      defaultValue={formData.service_start_time || ''} 
+                      className="w-full px-3 py-2 border rounded-md" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">End Time</label>
+                    <input 
+                      name="service_end_time" 
+                      type="time" 
+                      defaultValue={formData.service_end_time || ''} 
+                      className="w-full px-3 py-2 border rounded-md" 
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Payment Amount</label>

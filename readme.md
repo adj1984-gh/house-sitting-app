@@ -744,3 +744,21 @@ The application now has full database connectivity, data persistence, and a full
   - `components/HouseSittingApp.tsx` - Updated keys for feeding schedule, medicine schedule, walk schedule, and special instructions forms
 - **Result**: All form inputs now maintain focus while typing, making the pet editing interface fully functional
 - **Best Practice**: Always use stable, non-changing keys for React mapped elements to prevent unnecessary re-renders and focus loss
+
+### ✅ Service People Scheduling Enhancement (December 2024)
+- **Issue**: Service people scheduling used open-ended text fields instead of proper date/time scheduling
+- **Enhancement**: Upgraded service people to use specific date and time range scheduling with stay-based filtering
+- **New Features**:
+  - **Date picker** for specific service dates instead of text-based day names
+  - **Time range inputs** for start and end times instead of open-ended text
+  - **Stay-based filtering** - service people only appear in daily schedule when there's an active stay
+  - **Smart display** showing full date format and time ranges (e.g., "from 9:00 AM to 11:00 AM")
+  - **Backward compatibility** with existing text-based scheduling during transition
+- **Database Changes**: Added `service_date`, `service_start_time`, `service_end_time` columns with proper indexing
+- **Files Changed**: 
+  - `migration-update-service-people-schedule.sql` - Database migration script
+  - `lib/database-setup.sql` - Updated schema with new fields
+  - `lib/types.ts` - Updated TypeScript interface
+  - `lib/database.ts` - Enhanced schedule generation with stay filtering
+  - `components/HouseSittingApp.tsx` - Updated form and display logic
+- **Result**: Precise scheduling for service people with proper integration into daily schedule only during active stays

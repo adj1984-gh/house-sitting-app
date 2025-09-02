@@ -54,8 +54,11 @@ CREATE TABLE IF NOT EXISTS service_people (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  service_day TEXT,
-  service_time TEXT,
+  service_day TEXT, -- Legacy field, kept for backward compatibility
+  service_time TEXT, -- Legacy field, kept for backward compatibility
+  service_date DATE, -- New field for specific date scheduling
+  service_start_time TIME, -- New field for start time
+  service_end_time TIME, -- New field for end time
   payment_amount TEXT,
   payment_status TEXT,
   notes TEXT,
@@ -143,6 +146,7 @@ CREATE TABLE IF NOT EXISTS access_logs (
 CREATE INDEX IF NOT EXISTS idx_alerts_property_id ON alerts(property_id);
 CREATE INDEX IF NOT EXISTS idx_dogs_property_id ON dogs(property_id);
 CREATE INDEX IF NOT EXISTS idx_service_people_property_id ON service_people(property_id);
+CREATE INDEX IF NOT EXISTS idx_service_people_service_date ON service_people(service_date);
 CREATE INDEX IF NOT EXISTS idx_appointments_property_id ON appointments(property_id);
 CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(date);
 CREATE INDEX IF NOT EXISTS idx_house_instructions_property_id ON house_instructions(property_id);
