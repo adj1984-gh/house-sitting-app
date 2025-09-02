@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode, X, Info, Moon } from 'lucide-react';
 import YouTubeVideo from './YouTubeVideo';
 import { getProperty, getAlerts, getDogs, getAppointments, getHouseInstructions, getDailyTasks, getStays, hasActiveStay, getCurrentActiveStay, getContacts, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, createContact, updateContact, deleteContact, generateMasterSchedule } from '../lib/database';
-import { normalizeTime, formatTimeForDisplay } from '../lib/utils';
+import { normalizeTime, formatTimeForDisplay, getCurrentDateInPST } from '../lib/utils';
 
 // Helper function to format dates in PST/PDT timezone
 const formatDateInPST = (dateString: string): string => {
@@ -197,7 +197,7 @@ const DogEditForm = React.memo(({ formData, contacts }: { formData: any, contact
       frequency_per_day: 1,
       remaining_doses: 30,
       dose_times: [{ time: '', dose_amount: 'Dose 1' }],
-      start_date: new Date().toISOString().split('T')[0],
+      start_date: getCurrentDateInPST(),
       calculated_end_date: '',
       video_url: '',
       video_thumbnail: ''
@@ -1903,7 +1903,7 @@ export default function HouseSittingApp() {
                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                   Current Stay
                                 </span>
-                              ) : new Date(stay.end_date + 'T00:00:00') < new Date() ? (
+                              ) : new Date(stay.end_date + 'T00:00:00') < new Date(getCurrentDateInPST() + 'T00:00:00') ? (
                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                   Past Stay
                                 </span>

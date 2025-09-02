@@ -1,6 +1,6 @@
 import { supabase, supabaseAdmin } from './supabase'
 import { Property, Alert, Dog, ServicePerson, Appointment, HouseInstruction, DailyTask, Stay, Contact, AccessLog, ScheduleItem } from './types'
-import { parseTime, calculateEndTime, formatDuration, formatTimeForDisplay } from './utils'
+import { parseTime, calculateEndTime, formatDuration, formatTimeForDisplay, getCurrentDateInPST } from './utils'
 
 // Property operations
 export const getProperty = async (id: string = '00000000-0000-0000-0000-000000000001'): Promise<Property | null> => {
@@ -630,7 +630,7 @@ export const hasActiveStay = async (propertyId: string = '00000000-0000-0000-000
     return false
   }
 
-  const today = new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
+  const today = getCurrentDateInPST() // Get today's date in PST/PDT timezone
 
   const { data, error } = await supabase
     .from('stays')
@@ -677,7 +677,7 @@ export const getCurrentActiveStay = async (propertyId: string = '00000000-0000-0
     return null
   }
 
-  const today = new Date().toISOString().split('T')[0] // Get today's date in YYYY-MM-DD format
+  const today = getCurrentDateInPST() // Get today's date in PST/PDT timezone
 
   const { data, error } = await supabase
     .from('stays')
@@ -784,7 +784,7 @@ export const generateMasterSchedule = (
   isSitterView: boolean = false
 ): ScheduleItem[] => {
   const scheduleItems: ScheduleItem[] = []
-  const today = targetDate || new Date().toISOString().split('T')[0]
+  const today = targetDate || getCurrentDateInPST() // Use PST/PDT timezone
   
   // In sitter view, only show items during active stay period
   let activeStay: Stay | null = null;

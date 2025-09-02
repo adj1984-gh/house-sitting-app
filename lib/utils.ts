@@ -209,3 +209,11 @@ export const formatDuration = (durationHours: number): string => {
     return `${durationHours} hours`;
   }
 };
+
+// Helper function to get current date in PST/PDT timezone
+export const getCurrentDateInPST = (): string => {
+  const now = new Date();
+  // Convert to PST/PDT timezone and get just the date part
+  const pstDate = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
+  return pstDate.toISOString().split('T')[0];
+};

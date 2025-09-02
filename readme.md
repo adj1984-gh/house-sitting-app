@@ -349,4 +349,12 @@ Private project - not for public distribution
 
 **Production URL:** https://housesit.9441altodrive.com/
 
+## 🔧 Recent Updates
+
+### Timezone Handling Fix (December 2024)
+- **Fixed stay date display issues** - All date comparisons now use PST/PDT timezone consistently
+- **Updated active stay detection** - Current stay status now properly accounts for Pacific timezone
+- **Enhanced date calculations** - Medicine scheduling and all date-based features now use PST/PDT
+- **Files Modified**: `lib/utils.ts`, `lib/database.ts`, `components/HouseSittingApp.tsx`
+
 *Last Updated: December 2024*
