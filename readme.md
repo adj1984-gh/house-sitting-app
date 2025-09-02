@@ -586,7 +586,7 @@ Private project - not for public distribution
 ---
 
 *Last Updated: December 2024*
-*Version: 2.9.0 (QR Code Print Timing Fix & Video System Enhancements)*
+*Version: 3.0.0 (Simplified Scheduling System & Enhanced Time Display)*
 
 ## 🌐 Live Application
 
@@ -1304,6 +1304,43 @@ The application now has full database connectivity, data persistence, and a full
   - `lib/database.ts` - Enhanced schedule sorting with proper time parsing
   - `migration-normalize-time-formats.sql` - Database migration for existing time data
 - **Result**: All times across the application now follow a consistent format ensuring proper chronological ordering in the daily schedule
+
+### ✅ Simplified House Instructions Scheduling System (December 2024)
+- **Enhancement**: Completely redesigned the house instructions scheduling system to eliminate complexity and improve usability
+- **Core Problem Solved**: Previous scheduling system had too many confusing options (6 different frequency types) with complex conditional logic
+- **New Simplified Options**:
+  - **No schedule (information only)** - For items that don't need scheduling
+  - **One time (specific date)** - Shows date picker for specific events
+  - **Daily** - No additional fields needed
+  - **Weekly** - Shows day-of-week dropdown only
+- **Removed Complex Options**: Eliminated confusing "Custom Days per Week", "Monthly", and "Custom (specific dates)" options
+- **Smart Conditional UI**:
+  - **Date picker** only appears for "One time" events
+  - **Day of week** dropdown only appears for "Weekly" events
+  - **No fields** needed for "Daily" or "No schedule"
+  - **Reminder checkbox** only shows when scheduling is enabled
+- **Technical Implementation**:
+  - **Database Schema**: Updated to support `schedule_date` field and simplified frequency options (`'none' | 'one_time' | 'daily' | 'weekly'`)
+  - **Migration Script**: Created `migration-enhance-scheduling-system.sql` to handle existing data and remove unused fields
+  - **Form Processing**: Updated to handle the new simplified options with proper date handling
+  - **TypeScript Types**: Updated HouseInstruction interface with simplified options
+- **Reminder Logic Fixed**:
+  - **Proper Timing**: Reminders now show the day BEFORE the scheduled event (not on the same day)
+  - **Daily services**: Reminder shows every day (since event happens tomorrow)
+  - **Weekly services**: Reminder only shows the day before the scheduled day
+  - **One-time events**: Reminder shows only the day before the event date
+- **Time Display Fixed**:
+  - **Military Time → Friendly Time**: Enhanced `formatTimeForDisplay` to properly convert 24-hour format (14:30 → 2:30 PM)
+  - **Reminders Section**: Reminders properly grouped in dedicated section at bottom of schedule
+- **Files Changed**: 
+  - `components/HouseSittingApp.tsx` - Redesigned scheduling UI with cleaner interface
+  - `lib/types.ts` - Updated HouseInstruction interface with simplified options
+  - `lib/database.ts` - Fixed reminder logic and updated for simplified scheduling
+  - `lib/utils.ts` - Enhanced time formatting to handle military time conversion
+  - `lib/database-setup.sql` - Updated schema with new fields and constraints
+  - `migration-enhance-scheduling-system.sql` - Migration script for existing databases
+- **Cleanup**: Removed obsolete migration files that were superseded by the enhanced system
+- **Result**: Much cleaner and more intuitive scheduling system with proper reminder timing and friendly time display
 
 ### ✅ Service Reminder Display Enhancement (December 2024)
 - **Enhancement**: Improved service reminder display to show reminders at the bottom of the schedule instead of specific time slots
