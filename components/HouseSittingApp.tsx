@@ -335,9 +335,10 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
                 <div className="flex-1">
                   <label className="block text-xs font-medium mb-1">Time</label>
                   <input
-                    type="time"
+                    type="text"
                     value={feeding.time}
                     onChange={(e) => updateFeedingTime(index, 'time', e.target.value)}
+                    placeholder="e.g., 7:00 AM"
                     className="w-full px-3 py-2 border rounded-md text-sm"
                   />
                 </div>
@@ -496,9 +497,10 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
                       <div className="flex-1">
                         <label className="block text-xs font-medium mb-1">{dose.dose_amount}</label>
                         <input
-                          type="time"
+                          type="text"
                           value={dose.time}
                           onChange={(e) => updateDoseTime(index, doseIndex, 'time', e.target.value)}
+                          placeholder="e.g., 8:00 AM"
                           className="w-full px-3 py-2 border rounded-md text-sm"
                         />
                       </div>
@@ -2493,7 +2495,9 @@ export default function HouseSittingApp() {
           ...data,
           // Extract text and maintenance from the instructions JSONB object
           instructions: data.instructions.text || '',
-          maintenance: data.instructions.maintenance || ''
+          maintenance: data.instructions.maintenance || '',
+          // Handle time type - default to 'specific' if not set
+          schedule_time_type: data.schedule_time_type || 'specific'
         };
       }
       
@@ -2553,8 +2557,21 @@ export default function HouseSittingApp() {
         data.needs_scheduling = data.needs_scheduling === 'on';
         data.remind_day_before = data.remind_day_before === 'on';
         
-        // Remove the separate maintenance field since it's now in instructions
+        // Handle time selection - combine time type and time value
+        const timeType = data.schedule_time_type || 'specific';
+        if (timeType === 'specific') {
+          data.schedule_time = data.schedule_time_specific || '';
+        } else {
+          data.schedule_time = data.schedule_time_general || '';
+        }
+        
+        // Store the time type for future editing
+        data.schedule_time_type = timeType;
+        
+        // Remove the separate fields since they're now combined
         delete data.maintenance;
+        delete data.schedule_time_specific;
+        delete data.schedule_time_general;
         
         console.log('Form submission - processed house instruction data:', data);
       }
@@ -2724,9 +2741,54 @@ export default function HouseSittingApp() {
                         </div>
                       </div>
                       
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Time</label>
-                        <input name="schedule_time" type="text" defaultValue={formData.schedule_time || ''} className="w-full px-3 py-2 border rounded-md" placeholder="e.g., 8:00 PM, 10:00 AM" />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Time Type</label>
+                          <select 
+                            name="schedule_time_type" 
+                            defaultValue={formData.schedule_time_type || 'specific'} 
+                            className="w-full px-3 py-2 border rounded-md"
+                            onChange={(e) => {
+                              const specificInput = document.querySelector('[name="schedule_time_specific"]') as HTMLInputElement;
+                              const generalSelect = document.querySelector('[name="schedule_time_general"]') as HTMLSelectElement;
+                              if (e.target.value === 'specific') {
+                                specificInput.style.display = 'block';
+                                generalSelect.style.display = 'none';
+                              } else {
+                                specificInput.style.display = 'none';
+                                generalSelect.style.display = 'block';
+                              }
+                            }}
+                          >
+                            <option value="specific">Specific Time (e.g., 8:00 PM)</option>
+                            <option value="general">General Time (e.g., Morning)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Time</label>
+                          {/* Specific Time Input */}
+                          <input 
+                            name="schedule_time_specific" 
+                            type="text" 
+                            defaultValue={formData.schedule_time_type !== 'general' ? formData.schedule_time || '' : ''} 
+                            className="w-full px-3 py-2 border rounded-md" 
+                            placeholder="e.g., 8:00 PM, 10:00 AM"
+                            style={{ display: formData.schedule_time_type === 'general' ? 'none' : 'block' }}
+                          />
+                          {/* General Time Select */}
+                          <select 
+                            name="schedule_time_general" 
+                            defaultValue={formData.schedule_time_type === 'general' ? formData.schedule_time || '' : ''} 
+                            className="w-full px-3 py-2 border rounded-md"
+                            style={{ display: formData.schedule_time_type === 'general' ? 'block' : 'none' }}
+                          >
+                            <option value="">Select time period</option>
+                            <option value="Morning">Morning</option>
+                            <option value="Afternoon">Afternoon</option>
+                            <option value="Evening">Evening</option>
+                            <option value="Night">Night</option>
+                          </select>
+                        </div>
                       </div>
                       
                       <div>

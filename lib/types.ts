@@ -79,6 +79,7 @@ export interface HouseInstruction {
   schedule_frequency?: 'daily' | 'weekly' | 'monthly' | 'custom'
   schedule_day?: string
   schedule_time?: string
+  schedule_time_type?: 'specific' | 'general'
   schedule_notes?: string
   remind_day_before?: boolean
   created_at: string

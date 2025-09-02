@@ -1229,3 +1229,29 @@ The application now has full database connectivity, data persistence, and a full
 - **Files Changed**: 
   - `components/HouseSittingApp.tsx` - Fixed time input format and form data processing for house instructions
 - **Result**: House instruction editing and scheduling now works correctly with consistent time format and proper data persistence
+
+### ✅ Enhanced Time Selection System for House Instructions (December 2024)
+- **Enhancement**: Added comprehensive time selection system to house instructions matching the dog scheduling interface
+- **New Features**:
+  - **Dual Time Input System**: Choose between "Specific Time" (e.g., 8:00 PM) or "General Time" (e.g., Morning, Evening)
+  - **Dynamic UI**: Time input changes based on selection - text input for specific times, dropdown for general times
+  - **Consistent with Dog Forms**: Matches the time selection patterns used in dog feeding, medicine, and walk scheduling
+  - **Smart Form Handling**: Automatically combines time type and time value into single database field for compatibility
+- **Time Selection Options**:
+  - **Specific Times**: Text input for exact times like "8:00 PM", "10:00 AM", "2:30 PM"
+  - **General Times**: Dropdown with "Morning", "Afternoon", "Evening", "Night" options
+- **Technical Implementation**:
+  - **Database Schema**: Added `schedule_time_type` field to track whether time is 'specific' or 'general'
+  - **Form Processing**: Combines time type and time value into existing `schedule_time` field for backward compatibility
+  - **Dynamic Display**: JavaScript-powered UI that shows/hides appropriate input based on time type selection
+  - **Migration Support**: Database migration script to add new field with proper defaults
+- **User Experience Improvements**:
+  - **Flexible Time Entry**: Users can choose the most appropriate time format for their needs
+  - **Clear Interface**: Time type selection clearly explains the difference between specific and general times
+  - **Consistent Behavior**: Matches the familiar time selection patterns from dog care forms
+  - **Backward Compatible**: Existing house instructions continue to work without modification
+- **Files Changed**: 
+  - `components/HouseSittingApp.tsx` - Enhanced time selection UI and form processing
+  - `lib/types.ts` - Added schedule_time_type field to HouseInstruction interface
+  - `migration-add-time-type-field.sql` - Database migration for new time type field
+- **Result**: House instructions now have flexible time selection matching dog scheduling features with both specific and general time options
