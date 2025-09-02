@@ -1841,7 +1841,7 @@ export default function HouseSittingApp() {
               {((dog as any).feeding?.schedule || (dog as any).feeding_schedule || []).map((item: any, idx: number) => (
                 <div key={`feeding-display-${idx}-${item.time}-${item.amount}-${item.notes || ''}`} className="mb-2">
                   <p className="mb-1">
-                    <span className="font-medium">{item.time}:</span> {item.amount}
+                    <span className="font-medium">{formatTimeForDisplay(item.time)}:</span> {item.amount}
                   </p>
                   {item.notes && (
                     <p className="text-sm text-gray-600 ml-2">
@@ -1923,7 +1923,7 @@ export default function HouseSittingApp() {
                     // Old format
                     <div>
                       <p className="mb-1">
-                        <span className="font-medium">{item.time}:</span> {item.medication}
+                        <span className="font-medium">{formatTimeForDisplay(item.time)}:</span> {item.medication}
                         {item.end_date && (
                           <span className="text-sm text-gray-500 ml-2">
                             (until {new Date(item.end_date).toLocaleDateString()}
@@ -2166,7 +2166,7 @@ export default function HouseSittingApp() {
                               <p>
                                 <strong>Frequency:</strong> {instruction.schedule_frequency} 
                                 {instruction.schedule_day && ` (${instruction.schedule_day})`}
-                                {instruction.schedule_time && ` at ${instruction.schedule_time}`}
+                                {instruction.schedule_time && ` at ${formatTimeForDisplay(instruction.schedule_time)}`}
                               </p>
                               {instruction.remind_day_before && (
                                 <p className="text-orange-700 font-medium">
@@ -2289,7 +2289,7 @@ export default function HouseSittingApp() {
                       <p className="font-medium text-gray-900">{item.title}</p>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                          {item.time}
+                          {formatTimeForDisplay(item.time)}
                         </span>
                         {isAdmin && (item.source === 'task' || item.source === 'appointment') && (
                           <button

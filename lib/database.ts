@@ -1043,8 +1043,13 @@ export const generateMasterSchedule = (
         if (!shouldShowReminder && instruction.schedule_time && instruction.schedule_duration) {
           const endTime = calculateEndTime(instruction.schedule_time, instruction.schedule_duration);
           if (endTime) {
-            timeDisplay = `${instruction.schedule_time} - ${endTime}`;
+            const startTimeFormatted = formatTimeForDisplay(instruction.schedule_time);
+            const endTimeFormatted = formatTimeForDisplay(endTime);
+            timeDisplay = `${startTimeFormatted} - ${endTimeFormatted}`;
           }
+        } else if (!shouldShowReminder && instruction.schedule_time) {
+          // Format single time for display
+          timeDisplay = formatTimeForDisplay(instruction.schedule_time);
         }
         
         // Add duration info to notes if available
@@ -1055,6 +1060,16 @@ export const generateMasterSchedule = (
         if (!shouldShowReminder && instruction.schedule_duration) {
           const durationText = formatDuration(instruction.schedule_duration);
           notes = notes ? `${notes} (${durationText})` : `Expected duration: ${durationText}`;
+        }
+        
+        // For reminders, also add time range info if available
+        if (shouldShowReminder && instruction.schedule_time && instruction.schedule_duration) {
+          const endTime = calculateEndTime(instruction.schedule_time, instruction.schedule_duration);
+          if (endTime) {
+            const startTimeFormatted = formatTimeForDisplay(instruction.schedule_time);
+            const endTimeFormatted = formatTimeForDisplay(endTime);
+            notes = `Reminder: ${instruction.instructions?.text || 'Service scheduled for tomorrow'} (${startTimeFormatted} - ${endTimeFormatted})`;
+          }
         }
         
         scheduleItems.push({
