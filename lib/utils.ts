@@ -132,3 +132,49 @@ export const formatTimeForDisplay = (timeStr: string): string => {
     return `${hours - 12}:${minutesStr} PM`;
   }
 };
+
+// Helper function to calculate end time based on start time and duration
+export const calculateEndTime = (startTime: string, durationMinutes: number): string => {
+  if (!startTime || !durationMinutes) return '';
+  
+  // Handle general times - can't calculate specific end time
+  if (['Morning', 'Afternoon', 'Evening', 'Night', 'TBD', 'No time specified'].includes(startTime)) {
+    return '';
+  }
+  
+  const normalizedTime = normalizeTime(startTime);
+  if (!normalizedTime) return '';
+  
+  const [hoursStr, minutesStr] = normalizedTime.split(':');
+  const startHours = parseInt(hoursStr);
+  const startMinutes = parseInt(minutesStr);
+  
+  // Convert start time to total minutes
+  const startTotalMinutes = startHours * 60 + startMinutes;
+  
+  // Add duration
+  const endTotalMinutes = startTotalMinutes + durationMinutes;
+  
+  // Convert back to hours and minutes
+  const endHours = Math.floor(endTotalMinutes / 60) % 24; // Handle day overflow
+  const endMinutes = endTotalMinutes % 60;
+  
+  // Format as HH:MM
+  return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+};
+
+// Helper function to format duration for display
+export const formatDuration = (durationMinutes: number): string => {
+  if (!durationMinutes) return '';
+  
+  const hours = Math.floor(durationMinutes / 60);
+  const minutes = durationMinutes % 60;
+  
+  if (hours === 0) {
+    return `${minutes} min`;
+  } else if (minutes === 0) {
+    return `${hours} hr${hours !== 1 ? 's' : ''}`;
+  } else {
+    return `${hours} hr ${minutes} min`;
+  }
+};

@@ -80,7 +80,8 @@ export interface HouseInstruction {
   schedule_day?: string
   schedule_time?: string
   schedule_time_type?: 'specific' | 'general'
-  schedule_notes?: string
+  schedule_custom?: string
+  schedule_duration?: number // Duration in minutes
   remind_day_before?: boolean
   created_at: string
   updated_at: string

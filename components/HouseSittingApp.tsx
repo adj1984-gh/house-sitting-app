@@ -2515,11 +2515,12 @@ export default function HouseSittingApp() {
       if (editingItem.type === 'houseInstruction' && data.instructions) {
         return {
           ...data,
-          // Extract text and maintenance from the instructions JSONB object
+          // Extract text from the instructions JSONB object
           instructions: data.instructions.text || '',
-          maintenance: data.instructions.maintenance || '',
           // Handle time type - default to 'specific' if not set
-          schedule_time_type: data.schedule_time_type || 'specific'
+          schedule_time_type: data.schedule_time_type || 'specific',
+          // Handle custom scheduling - if schedule_day contains custom text, set frequency to custom
+          schedule_custom: data.schedule_frequency === 'custom' ? data.schedule_day : ''
         };
       }
       
@@ -2585,18 +2586,26 @@ export default function HouseSittingApp() {
       
       // Handle house instruction form data
       if (formType === 'houseInstruction') {
-        // Structure the instructions object
+        // Structure the instructions object - simplified to just text
         const instructionsText = data.instructions || '';
-        const maintenanceText = data.maintenance || '';
         
         data.instructions = {
-          text: instructionsText,
-          maintenance: maintenanceText
+          text: instructionsText
         };
         
         // Handle scheduling fields
         data.needs_scheduling = data.needs_scheduling === 'on';
         data.remind_day_before = data.remind_day_before === 'on';
+        
+        // Handle custom scheduling - if custom is selected, use custom field instead of day
+        if (data.schedule_frequency === 'custom') {
+          data.schedule_day = data.schedule_custom || '';
+        }
+        
+        // Handle duration - convert to number if provided
+        if (data.schedule_duration) {
+          data.schedule_duration = parseInt(data.schedule_duration);
+        }
         
         // Handle time selection - combine time type and time value
         const timeType = data.schedule_time_type || 'specific';
@@ -2610,9 +2619,9 @@ export default function HouseSittingApp() {
         data.schedule_time_type = timeType;
         
         // Remove the separate fields since they're now combined
-        delete data.maintenance;
         delete data.schedule_time_specific;
         delete data.schedule_time_general;
+        delete data.schedule_custom;
         
         console.log('Form submission - processed house instruction data:', data);
       }
@@ -2680,7 +2689,10 @@ export default function HouseSittingApp() {
           <div className="p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold">
-                {isEditing ? `Edit ${formType}` : `Add New ${formType}`}
+                {isEditing 
+                  ? (formType === 'houseInstruction' ? 'Edit House Instruction' : `Edit ${formType}`)
+                  : (formType === 'houseInstruction' ? 'Add New House Instruction' : `Add New ${formType}`)
+                }
               </h3>
               <button
                 onClick={handleCancel}
@@ -2738,11 +2750,7 @@ export default function HouseSittingApp() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Instructions</label>
-                    <textarea name="instructions" defaultValue={formData.instructions || ''} required className="w-full px-3 py-2 border rounded-md" rows={3} placeholder="Main instructions for this item..." />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Maintenance Notes (Optional)</label>
-                    <textarea name="maintenance" defaultValue={formData.maintenance || ''} className="w-full px-3 py-2 border rounded-md" rows={2} placeholder="Maintenance instructions or notes..." />
+                    <textarea name="instructions" defaultValue={formData.instructions || ''} required className="w-full px-3 py-2 border rounded-md" rows={4} placeholder="Instructions for this item..." />
                   </div>
                   
                   {/* Scheduling Section */}
@@ -2772,16 +2780,67 @@ export default function HouseSittingApp() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
                           <label className="block text-sm font-medium mb-1">Frequency</label>
-                          <select name="schedule_frequency" defaultValue={formData.schedule_frequency || 'weekly'} className="w-full px-3 py-2 border rounded-md">
+                          <select 
+                            name="schedule_frequency" 
+                            defaultValue={formData.schedule_frequency || 'weekly'} 
+                            className="w-full px-3 py-2 border rounded-md"
+                            onChange={(e) => {
+                              const dayField = document.querySelector('[name="schedule_day"]') as HTMLSelectElement;
+                              const customField = document.querySelector('[name="schedule_custom"]') as HTMLInputElement;
+                              const dayContainer = dayField?.parentElement;
+                              const customContainer = customField?.parentElement;
+                              
+                              if (e.target.value === 'daily') {
+                                dayContainer.style.display = 'none';
+                                customContainer.style.display = 'none';
+                              } else if (e.target.value === 'weekly') {
+                                dayContainer.style.display = 'block';
+                                customContainer.style.display = 'none';
+                                // Update day options for weekly
+                                dayField.innerHTML = `
+                                  <option value="sunday">Sunday</option>
+                                  <option value="monday">Monday</option>
+                                  <option value="tuesday">Tuesday</option>
+                                  <option value="wednesday">Wednesday</option>
+                                  <option value="thursday">Thursday</option>
+                                  <option value="friday">Friday</option>
+                                  <option value="saturday">Saturday</option>
+                                `;
+                              } else if (e.target.value === 'monthly') {
+                                dayContainer.style.display = 'block';
+                                customContainer.style.display = 'none';
+                                // Update day options for monthly
+                                dayField.innerHTML = `
+                                  <option value="1st">1st of month</option>
+                                  <option value="2nd">2nd of month</option>
+                                  <option value="3rd">3rd of month</option>
+                                  <option value="4th">4th of month</option>
+                                  <option value="5th">5th of month</option>
+                                  <option value="10th">10th of month</option>
+                                  <option value="15th">15th of month</option>
+                                  <option value="20th">20th of month</option>
+                                  <option value="25th">25th of month</option>
+                                  <option value="last">Last day of month</option>
+                                `;
+                              } else if (e.target.value === 'custom') {
+                                dayContainer.style.display = 'none';
+                                customContainer.style.display = 'block';
+                              }
+                            }}
+                          >
                             <option value="daily">Daily</option>
                             <option value="weekly">Weekly</option>
                             <option value="monthly">Monthly</option>
-                            <option value="custom">Custom</option>
+                            <option value="custom">Custom (specific dates)</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium mb-1">Day</label>
-                          <select name="schedule_day" defaultValue={formData.schedule_day || 'sunday'} className="w-full px-3 py-2 border rounded-md">
+                          <label className="block text-sm font-medium mb-1">Day/Date</label>
+                          <select 
+                            name="schedule_day" 
+                            defaultValue={formData.schedule_day || 'sunday'} 
+                            className="w-full px-3 py-2 border rounded-md"
+                          >
                             <option value="sunday">Sunday</option>
                             <option value="monday">Monday</option>
                             <option value="tuesday">Tuesday</option>
@@ -2789,9 +2848,15 @@ export default function HouseSittingApp() {
                             <option value="thursday">Thursday</option>
                             <option value="friday">Friday</option>
                             <option value="saturday">Saturday</option>
-                            <option value="1st">1st of month</option>
-                            <option value="15th">15th of month</option>
                           </select>
+                          <input 
+                            name="schedule_custom" 
+                            type="text" 
+                            defaultValue={formData.schedule_custom || ''} 
+                            className="w-full px-3 py-2 border rounded-md mt-2" 
+                            placeholder="e.g., Every 2 weeks, 1st and 15th, etc."
+                            style={{ display: 'none' }}
+                          />
                         </div>
                       </div>
                       
@@ -2845,9 +2910,26 @@ export default function HouseSittingApp() {
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-medium mb-1">Schedule Notes</label>
-                        <textarea name="schedule_notes" defaultValue={formData.schedule_notes || ''} className="w-full px-3 py-2 border rounded-md" rows={2} placeholder="Additional notes about when/how to perform this service..." />
+                        <label className="block text-sm font-medium mb-1">Expected Duration (Optional)</label>
+                        <select 
+                          name="schedule_duration" 
+                          defaultValue={formData.schedule_duration || ''} 
+                          className="w-full px-3 py-2 border rounded-md"
+                        >
+                          <option value="">No specific duration</option>
+                          <option value="30">30 minutes</option>
+                          <option value="60">1 hour</option>
+                          <option value="90">1.5 hours</option>
+                          <option value="120">2 hours</option>
+                          <option value="180">3 hours</option>
+                          <option value="240">4 hours</option>
+                          <option value="360">6 hours</option>
+                          <option value="480">8 hours (all day)</option>
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">Set expectations for how long this service typically takes</p>
                       </div>
+                      
+
                     </div>
                   </div>
                 </>

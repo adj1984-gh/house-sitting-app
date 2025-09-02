@@ -1,6 +1,6 @@
 import { supabase, supabaseAdmin } from './supabase'
 import { Property, Alert, Dog, ServicePerson, Appointment, HouseInstruction, DailyTask, Stay, Contact, AccessLog, ScheduleItem } from './types'
-import { parseTime } from './utils'
+import { parseTime, calculateEndTime, formatDuration } from './utils'
 
 // Property operations
 export const getProperty = async (id: string = '00000000-0000-0000-0000-000000000001'): Promise<Property | null> => {
@@ -1038,15 +1038,32 @@ export const generateMasterSchedule = (
           ).join(' ') : 
           'Service';
         
+        // Calculate time display with duration if available
+        let timeDisplay = shouldShowReminder ? '' : (instruction.schedule_time || 'TBD');
+        if (!shouldShowReminder && instruction.schedule_time && instruction.schedule_duration) {
+          const endTime = calculateEndTime(instruction.schedule_time, instruction.schedule_duration);
+          if (endTime) {
+            timeDisplay = `${instruction.schedule_time} - ${endTime}`;
+          }
+        }
+        
+        // Add duration info to notes if available
+        let notes = shouldShowReminder ? 
+          `Reminder: ${instruction.instructions?.text || 'Service scheduled for tomorrow'}` :
+          (instruction.instructions?.text || '');
+        
+        if (!shouldShowReminder && instruction.schedule_duration) {
+          const durationText = formatDuration(instruction.schedule_duration);
+          notes = notes ? `${notes} (${durationText})` : `Expected duration: ${durationText}`;
+        }
+        
         scheduleItems.push({
           id: `house-${instruction.id}${shouldShowReminder ? '-reminder' : ''}`,
           type: 'house',
           title: shouldShowReminder ? `🔔 Reminder: ${subcategoryLabel}` : subcategoryLabel,
-          time: shouldShowReminder ? '' : (instruction.schedule_time || 'TBD'), // Reminders have no specific time
+          time: timeDisplay,
           date: today,
-          notes: shouldShowReminder ? 
-            `Reminder: ${instruction.schedule_notes || instruction.instructions?.text || 'Service scheduled for tomorrow'}` :
-            (instruction.schedule_notes || instruction.instructions?.text || ''),
+          notes: notes,
           recurring: true,
           source: 'house'
         })

@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS house_instructions (
   schedule_day TEXT,
   schedule_time TEXT,
   schedule_time_type TEXT CHECK (schedule_time_type IN ('specific', 'general')) DEFAULT 'specific',
-  schedule_notes TEXT,
+  schedule_duration INTEGER,
   remind_day_before BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
