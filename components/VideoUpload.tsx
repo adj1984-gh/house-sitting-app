@@ -26,8 +26,6 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({
 
   const compressVideo = async (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
-      // For now, we'll use a simpler approach that reduces file size
-      // by converting to a more compressed format
       const video = document.createElement('video');
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -38,9 +36,10 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({
       }
 
       video.onloadedmetadata = () => {
-        // Set compression settings
-        const maxWidth = 720; // Max width for compression
-        const maxHeight = 480; // Max height for compression
+        // Very aggressive compression settings for maximum size reduction
+        const maxWidth = 320; // Very small for maximum compression
+        const maxHeight = 240; // Very small for maximum compression
+        const quality = 0.3; // Very low quality for maximum compression
         
         // Calculate new dimensions maintaining aspect ratio
         let { width, height } = video;
@@ -56,7 +55,7 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({
         // Draw video frame to canvas (this captures the first frame)
         ctx.drawImage(video, 0, 0, width, height);
         
-        // Convert to blob with compression
+        // Convert to blob with very aggressive compression
         canvas.toBlob(
           (blob) => {
             if (!blob) {
@@ -64,14 +63,17 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({
               return;
             }
             
+            // No size rejection - accept whatever we get after compression
+            console.log(`Compressed video size: ${(blob.size / 1024 / 1024).toFixed(2)}MB`);
+            
             // Convert blob to base64
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result as string);
             reader.onerror = () => reject(new Error('Failed to read compressed video'));
             reader.readAsDataURL(blob);
           },
-          'image/jpeg', // Use JPEG for better compression of video frames
-          0.7 // Quality setting
+          'image/jpeg', // Use JPEG for better compression
+          quality // Very aggressive quality setting
         );
       };
       
@@ -115,11 +117,7 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({
       return;
     }
 
-    // Validate file size (max 100MB before compression)
-    if (file.size > 100 * 1024 * 1024) {
-      alert('Video file must be smaller than 100MB');
-      return;
-    }
+    // No size limit - we'll compress everything aggressively
 
     setIsUploading(true);
     setUploadProgress(0);
@@ -136,22 +134,10 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({
       
       let processedVideo: string;
       
-      if (file.size > 20 * 1024 * 1024) { // Files larger than 20MB
-        // For very large files, we'll compress more aggressively
-        setUploadProgress(50);
-        processedVideo = await compressVideo(file);
-        console.log('Applied aggressive compression for large file');
-      } else if (file.size > 10 * 1024 * 1024) { // Files 10-20MB
-        // Moderate compression
-        setUploadProgress(40);
-        processedVideo = await reduceVideoSize(file);
-        console.log('Applied moderate compression');
-      } else {
-        // Small files, minimal processing
-        setUploadProgress(35);
-        processedVideo = await reduceVideoSize(file);
-        console.log('Minimal processing for small file');
-      }
+      // Always apply aggressive compression regardless of file size
+      setUploadProgress(50);
+      processedVideo = await compressVideo(file);
+      console.log(`Applied aggressive compression to ${(file.size / 1024 / 1024).toFixed(2)}MB file`);
       
       setUploadProgress(80);
       
@@ -166,7 +152,7 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({
     } catch (error) {
       console.error('Error compressing video:', error);
       
-      // Fallback to original file if compression fails
+      // Fallback to direct file reading without size limits
       try {
         const reader = new FileReader();
         reader.onprogress = (e) => {
@@ -176,6 +162,7 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({
         };
         reader.onload = (e) => {
           const result = e.target?.result as string;
+          console.log(`Fallback upload size: ${(result.length / 1024 / 1024).toFixed(2)}MB base64`);
           onChange(result);
           setIsUploading(false);
           setUploadProgress(0);
@@ -183,7 +170,7 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({
         reader.readAsDataURL(file);
       } catch (fallbackError) {
         console.error('Error uploading video:', fallbackError);
-        alert('Error uploading video. Please try again.');
+        alert('Error uploading video. Please try again or use a YouTube/Vimeo URL instead.');
         setIsUploading(false);
         setUploadProgress(0);
       }
@@ -345,7 +332,9 @@ export const VideoUpload: React.FC<VideoUploadProps> = ({
           <p className="text-xs text-gray-500">
             Upload a video file (MP4, MOV, AVI) or add a YouTube/Vimeo URL for medication instructions.
             <br />
-            <span className="text-blue-600">📹 Videos are automatically compressed to save storage space</span>
+            <span className="text-blue-600">📹 Videos are automatically downconverted to save storage space</span>
+            <br />
+            <span className="text-green-600">✅ No size limits - all videos will be compressed aggressively</span>
           </p>
         </div>
       )}

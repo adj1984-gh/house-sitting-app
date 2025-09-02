@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { AlertCircle, Phone, Dog, Pill, Home, Calendar, Droplets, Cookie, MapPin, Heart, Edit, Save, Plus, Trash2, Clock, CheckSquare, Wifi, Tv, Volume2, Thermometer, Bath, Key, Trash, Users, DollarSign, Settings, ChevronRight, Shield, Lock, QrCode, X, Info, Moon } from 'lucide-react';
 import VideoUpload from './VideoUpload';
-import { getProperty, getAlerts, getDogs, getServicePeople, getAppointments, getHouseInstructions, getDailyTasks, getStays, hasActiveStay, getCurrentActiveStay, getContacts, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createServicePerson, updateServicePerson, deleteServicePerson, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, createContact, updateContact, deleteContact, generateMasterSchedule } from '../lib/database';
-import { Property, Alert, Dog as DogType, ServicePerson, Appointment, HouseInstruction, DailyTask, Stay, Contact, ScheduleItem } from '../lib/types';
+import { getProperty, getAlerts, getDogs, getAppointments, getHouseInstructions, getDailyTasks, getStays, hasActiveStay, getCurrentActiveStay, getContacts, logAccess, createDog, updateDog, deleteDog, createAlert, updateAlert, deleteAlert, createAppointment, updateAppointment, deleteAppointment, createHouseInstruction, updateHouseInstruction, deleteHouseInstruction, createDailyTask, updateDailyTask, deleteDailyTask, createStay, updateStay, deleteStay, createContact, updateContact, deleteContact, generateMasterSchedule } from '../lib/database';
+import { Property, Alert, Dog as DogType, Appointment, HouseInstruction, DailyTask, Stay, Contact, ScheduleItem } from '../lib/types';
 
 // All data comes from Supabase database - no mock data
 
@@ -685,7 +685,6 @@ export default function HouseSittingApp() {
     property: Property | null;
     alerts: Alert[];
     dogs: DogType[];
-    servicePeople: ServicePerson[];
     appointments: Appointment[];
     houseInstructions: HouseInstruction[];
     dailyTasks: DailyTask[];
@@ -695,7 +694,6 @@ export default function HouseSittingApp() {
     property: null,
     alerts: [],
     dogs: [],
-    servicePeople: [],
     appointments: [],
     houseInstructions: [],
     dailyTasks: [],
@@ -746,11 +744,10 @@ export default function HouseSittingApp() {
   const loadDatabaseData = async () => {
     try {
       setIsLoading(true);
-      const [property, alerts, dogs, servicePeople, appointments, houseInstructions, dailyTasks, stays, contacts, activeStay, currentStay] = await Promise.all([
+      const [property, alerts, dogs, appointments, houseInstructions, dailyTasks, stays, contacts, activeStay, currentStay] = await Promise.all([
         getProperty(),
         getAlerts(),
         getDogs(),
-        getServicePeople(),
         getAppointments(),
         getHouseInstructions(),
         getDailyTasks(),
@@ -764,7 +761,6 @@ export default function HouseSittingApp() {
         property,
         alerts: alerts || [],
         dogs: dogs || [],
-        servicePeople: servicePeople || [],
         appointments: appointments || [],
         houseInstructions: houseInstructions || [],
         dailyTasks: dailyTasks || [],
@@ -782,7 +778,6 @@ export default function HouseSittingApp() {
         property: null,
         alerts: [],
         dogs: [],
-        servicePeople: [],
         appointments: [],
         houseInstructions: [],
         dailyTasks: [],
@@ -799,12 +794,12 @@ export default function HouseSittingApp() {
     const schedule = generateMasterSchedule(
       dbData.dogs,
       dbData.appointments,
-      dbData.servicePeople,
+      [],
       dbData.dailyTasks,
       dbData.stays
     );
     setMasterSchedule(schedule);
-  }, [dbData.dogs, dbData.appointments, dbData.servicePeople, dbData.dailyTasks, dbData.stays]);
+  }, [dbData.dogs, dbData.appointments, dbData.dailyTasks, dbData.stays]);
 
   // Admin CRUD operations
   const handleCreate = async (type: string, data: any) => {
@@ -825,12 +820,7 @@ export default function HouseSittingApp() {
             setDbData(prev => ({ ...prev, alerts: [...prev.alerts, result] }));
           }
           break;
-        case 'servicePerson':
-          result = await createServicePerson({ ...data, property_id: propertyId });
-          if (result) {
-            setDbData(prev => ({ ...prev, servicePeople: [...prev.servicePeople, result] }));
-          }
-          break;
+
         case 'appointment':
           result = await createAppointment({ ...data, property_id: propertyId });
           if (result) {
@@ -900,15 +890,7 @@ export default function HouseSittingApp() {
             }));
           }
           break;
-        case 'servicePerson':
-          result = await updateServicePerson(id, data);
-          if (result) {
-            setDbData(prev => ({ 
-              ...prev, 
-              servicePeople: prev.servicePeople.map(sp => sp.id === id ? result : sp)
-            }));
-          }
-          break;
+
         case 'appointment':
           result = await updateAppointment(id, data);
           if (result) {
@@ -982,12 +964,7 @@ export default function HouseSittingApp() {
             setDbData(prev => ({ ...prev, alerts: prev.alerts.filter(alert => alert.id !== id) }));
           }
           break;
-        case 'servicePerson':
-          success = await deleteServicePerson(id);
-          if (success) {
-            setDbData(prev => ({ ...prev, servicePeople: prev.servicePeople.filter(sp => sp.id !== id) }));
-          }
-          break;
+
         case 'appointment':
           success = await deleteAppointment(id);
           if (success) {
@@ -1183,7 +1160,6 @@ export default function HouseSittingApp() {
       { id: 'overview', label: 'Overview', icon: Home },
       { id: 'dogs', label: 'Pet Care', icon: Dog },
       { id: 'house', label: 'House Instructions', icon: Key },
-      { id: 'services', label: 'Service People', icon: Users },
       { id: 'schedule', label: 'Schedule', icon: Calendar }
     ] : [
       { id: 'overview', label: 'Overview', icon: Home }
@@ -2094,108 +2070,7 @@ export default function HouseSittingApp() {
     </div>
   );
 
-  // Service People Section
-  const ServicesSection = () => {
-    const currentServicePeople = dbData.servicePeople;
-    
-    return (
-      <div className="space-y-6">
-        {isAdmin && (
-          <div className="bg-white rounded-lg shadow-md p-4">
-            <button
-              onClick={() => {
-                setHasUnsavedChanges(false);
-                setShowAddForm({ type: 'servicePerson' });
-              }}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              <Plus className="w-4 h-4" />
-              Add Service Person
-            </button>
-          </div>
-        )}
-        
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-xl font-bold mb-4">Scheduled Service Visits</h3>
-        <div className="space-y-4">
-          {currentServicePeople.map(service => (
-            <div key={service.id} className={`border rounded-lg p-4 ${
-              ((service as any).payment_status || (service as any).payment) !== 'Pre-paid' ? 'border-orange-300 bg-orange-50' : 'border-gray-200'
-            }`}>
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="font-bold text-lg">{service.name}</h4>
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium">When:</span> {
-                      (service as any).service_date 
-                        ? new Date((service as any).service_date).toLocaleDateString('en-US', { 
-                            weekday: 'long', 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                          })
-                        : (service as any).service_day || (service as any).day
-                    } {
-                      (service as any).service_start_time 
-                        ? `from ${(service as any).service_start_time}${(service as any).service_end_time ? ` to ${(service as any).service_end_time}` : ''}`
-                        : ((service as any).service_time || (service as any).time) && `at ${(service as any).service_time || (service as any).time}`
-                    }
-                  </p>
-                  {((service as any).payment_status || (service as any).payment) !== 'Pre-paid' && (
-                    <p className="text-sm font-bold text-orange-700 mt-2 flex items-center gap-1">
-                      <DollarSign className="w-4 h-4" />
-                      Payment Required: {(service as any).payment_amount || (service as any).payment}
-                    </p>
-                  )}
-                  <p className="text-sm text-gray-700 mt-1">{service.notes}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {((service as any).needs_access || (service as any).needsAccess) && (
-                    <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">
-                      Needs Access
-                    </span>
-                  )}
-                  {isAdmin && (
-                    <div className="flex gap-1">
-                      <button 
-                        onClick={() => setEditingItem({ type: 'servicePerson', id: String(service.id), data: service })}
-                        className="text-blue-600 hover:text-blue-800"
-                        title="Edit service person"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete('servicePerson', String(service.id))}
-                        className="text-red-600 hover:text-red-800"
-                        title="Delete service person"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
-      <div className="bg-gray-50 rounded-lg p-6">
-        <h4 className="font-bold mb-3">Service Contact Information</h4>
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="font-medium">Hot Tub Maintenance</span>
-            <span className="text-gray-600">Contact info on file</span>
-            </div>
-          <div className="flex justify-between text-sm">
-            <span className="font-medium">Antonio (Gardener)</span>
-            <span className="text-gray-600">Contact owners</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    );
-  };
 
   // Schedule Section
   const ScheduleSection = () => {
@@ -2614,59 +2489,7 @@ export default function HouseSittingApp() {
                 </>
               )}
               
-              {formType === 'servicePerson' && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Name</label>
-                    <input name="name" defaultValue={formData.name || ''} required className="w-full px-3 py-2 border rounded-md" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Service Date</label>
-                    <input 
-                      name="service_date" 
-                      type="date" 
-                      defaultValue={formData.service_date || ''} 
-                      className="w-full px-3 py-2 border rounded-md" 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Start Time</label>
-                    <input 
-                      name="service_start_time" 
-                      type="time" 
-                      defaultValue={formData.service_start_time || ''} 
-                      className="w-full px-3 py-2 border rounded-md" 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">End Time</label>
-                    <input 
-                      name="service_end_time" 
-                      type="time" 
-                      defaultValue={formData.service_end_time || ''} 
-                      className="w-full px-3 py-2 border rounded-md" 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Payment Amount</label>
-                    <input name="payment_amount" defaultValue={formData.payment_amount || ''} className="w-full px-3 py-2 border rounded-md" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Payment Status</label>
-                    <input name="payment_status" defaultValue={formData.payment_status || ''} className="w-full px-3 py-2 border rounded-md" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Notes</label>
-                    <textarea name="notes" defaultValue={formData.notes || ''} className="w-full px-3 py-2 border rounded-md" rows={3} />
-                  </div>
-                  <div>
-                    <label className="flex items-center gap-2">
-                      <input name="needs_access" type="checkbox" defaultChecked={formData.needs_access || false} className="rounded" />
-                      <span className="text-sm font-medium">Needs Access</span>
-                    </label>
-                  </div>
-                </>
-              )}
+
               
               {formType === 'appointment' && (
                 <>
@@ -2885,7 +2708,6 @@ export default function HouseSittingApp() {
       case 'overview': return <OverviewSection />;
       case 'dogs': return <DogsSection />;
       case 'house': return <HouseSection />;
-      case 'services': return <ServicesSection />;
       case 'schedule': return <ScheduleSection />;
       default: return <OverviewSection />;
     }
