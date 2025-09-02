@@ -1910,8 +1910,8 @@ export default function HouseSittingApp() {
                         </div>
                         <div className="flex-grow">
                           <span className="font-medium text-gray-800">{item.medication}</span>
-                          {dose.dose_amount && (
-                            <span className="text-gray-600 ml-2">- {dose.dose_amount}</span>
+                          {item.notes && (
+                            <span className="text-gray-600 ml-2">- {item.notes}</span>
                           )}
                         </div>
                         {item.video_url && doseIdx === 0 && (
