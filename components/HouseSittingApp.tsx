@@ -2565,106 +2565,103 @@ export default function HouseSittingApp() {
           
           return (
             <div key={category} className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
-                <Icon className="w-6 h-6 text-blue-600" />
-                {label}
-              </h3>
-              
-              <div className="space-y-4">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                    <Icon className="w-8 h-8 text-gray-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold">{label}</h3>
+                    <p className="text-gray-600">House Category</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
                 {instructions.map((instruction) => (
-                  <div key={instruction.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                          <Icon className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <div>
-                          <h4 className="text-lg font-bold text-gray-800">
-                            {instruction.subcategory ? 
-                              instruction.subcategory.split(/(?=[A-Z])/).map(word => 
-                                word.charAt(0).toUpperCase() + word.slice(1)
-                              ).join(' ') : 
-                              'Instructions'
-                            }
-                          </h4>
-                          <p className="text-gray-600 text-sm">House Instruction</p>
-                        </div>
-                      </div>
-                      {isAdmin && (
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={() => {
-                              setHasUnsavedChanges(false);
-                              setEditingItem({ type: 'houseInstruction', id: instruction.id, data: instruction });
-                            }}
-                            className="text-blue-600 hover:text-blue-800"
-                            title="Edit instruction"
-                          >
-                            <Edit className="w-5 h-5" />
-                          </button>
-                          <button 
-                            onClick={() => handleDelete('houseInstruction', instruction.id)}
-                            className="text-red-600 hover:text-red-800"
-                            title="Delete instruction"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                  <div key={instruction.id} className="border rounded-lg p-4">
+                    <h4 className="font-semibold flex items-center gap-2 mb-3">
+                      <Icon className="w-4 h-4 text-blue-600" />
+                      {instruction.subcategory ? 
+                        instruction.subcategory.split(/(?=[A-Z])/).map(word => 
+                          word.charAt(0).toUpperCase() + word.slice(1)
+                        ).join(' ') : 
+                        'Instructions'
+                      }
+                    </h4>
                     
-                    <div className="space-y-3">
-                      <div className="text-sm text-gray-700 space-y-2">
-                        {typeof instruction.instructions === 'object' && instruction.instructions.text && (
-                          <p>{instruction.instructions.text}</p>
-                        )}
-                        {typeof instruction.instructions === 'object' && instruction.instructions.maintenance && (
-                          <div className="mt-2 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-                            <p className="text-yellow-800 font-medium">Maintenance:</p>
-                            <p className="text-yellow-700">{instruction.instructions.maintenance}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Video Instructions */}
-                      {instruction.video_url && (
-                        <div className="mt-3">
-                          <YouTubeVideo
-                            value={instruction.video_url}
-                            onChange={() => {}} // Read-only in view mode
-                            disabled={true}
-                          />
-                        </div>
+                    <div className="space-y-2">
+                      {typeof instruction.instructions === 'object' && instruction.instructions.text && (
+                        <p className="text-sm">{instruction.instructions.text}</p>
                       )}
-
-                      {/* Scheduling Information */}
-                      {instruction.schedule_frequency && instruction.schedule_frequency !== 'none' && (
-                        <div className="mt-3 p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Calendar className="w-4 h-4 text-blue-600" />
-                            <span className="text-blue-800 font-medium">Scheduled Service</span>
-                          </div>
-                          <div className="text-blue-700 text-sm space-y-1">
-                            <p>
-                              {instruction.schedule_frequency === 'daily' && (
-                                <>Daily{instruction.schedule_time && `, at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
-                              )}
-                              {instruction.schedule_frequency === 'weekly' && (
-                                <>Weekly{instruction.schedule_day && `, on ${instruction.schedule_day.charAt(0).toUpperCase() + instruction.schedule_day.slice(1)}`}{instruction.schedule_time && `, at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
-                              )}
-                              {instruction.schedule_frequency === 'one_time' && (
-                                <>One-time event{instruction.schedule_date && ` on ${new Date(instruction.schedule_date).toLocaleDateString()}`}{instruction.schedule_time && ` at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
-                              )}
-                            </p>
-                            {instruction.remind_day_before && (
-                              <p className="text-orange-700 font-medium">
-                                🔔 <strong>Reminder:</strong> Will show up the day before
-                              </p>
-                            )}
-                          </div>
+                      {typeof instruction.instructions === 'object' && instruction.instructions.maintenance && (
+                        <div className="mt-2 p-2 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+                          <p className="text-yellow-800 font-medium text-sm">Maintenance:</p>
+                          <p className="text-yellow-700 text-sm">{instruction.instructions.maintenance}</p>
                         </div>
                       )}
                     </div>
+
+                    {/* Video Instructions */}
+                    {instruction.video_url && (
+                      <div className="mt-3">
+                        <YouTubeVideo
+                          value={instruction.video_url}
+                          onChange={() => {}} // Read-only in view mode
+                          disabled={true}
+                        />
+                      </div>
+                    )}
+
+                    {/* Scheduling Information */}
+                    {instruction.schedule_frequency && instruction.schedule_frequency !== 'none' && (
+                      <div className="mt-3 p-2 bg-blue-50 border-l-4 border-blue-400 rounded">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Calendar className="w-3 h-3 text-blue-600" />
+                          <span className="text-blue-800 font-medium text-sm">Scheduled Service</span>
+                        </div>
+                        <div className="text-blue-700 text-xs space-y-1">
+                          <p>
+                            {instruction.schedule_frequency === 'daily' && (
+                              <>Daily{instruction.schedule_time && `, at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
+                            )}
+                            {instruction.schedule_frequency === 'weekly' && (
+                              <>Weekly{instruction.schedule_day && `, on ${instruction.schedule_day.charAt(0).toUpperCase() + instruction.schedule_day.slice(1)}`}{instruction.schedule_time && `, at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
+                            )}
+                            {instruction.schedule_frequency === 'one_time' && (
+                              <>One-time event{instruction.schedule_date && ` on ${new Date(instruction.schedule_date).toLocaleDateString()}`}{instruction.schedule_time && ` at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
+                            )}
+                          </p>
+                          {instruction.remind_day_before && (
+                            <p className="text-orange-700 font-medium">
+                              🔔 <strong>Reminder:</strong> Will show up the day before
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {isAdmin && (
+                      <div className="flex gap-2 mt-3">
+                        <button 
+                          onClick={() => {
+                            setHasUnsavedChanges(false);
+                            setEditingItem({ type: 'houseInstruction', id: instruction.id, data: instruction });
+                          }}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="Edit instruction"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete('houseInstruction', instruction.id)}
+                          className="text-red-600 hover:text-red-800"
+                          title="Delete instruction"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
