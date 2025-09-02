@@ -19,7 +19,7 @@ A comprehensive web application for managing house and pet sitting instructions,
 
 ### ✅ Completed (Live Production App)
 - **Password-protected access** with QR code auto-login support
-- **4 main sections**: Overview, Pet Care, House Instructions, Schedule (Services section removed)
+- **3 main sections**: Overview, Pet Care, House Instructions (Schedule functionality moved to Overview)
 - **Admin mode** for editing with full database integration
 - **Responsive design** for mobile/tablet/desktop
 - **Visual hierarchy** with color-coded alerts and important information
@@ -88,10 +88,10 @@ A comprehensive web application for managing house and pet sitting instructions,
   - **Consistent schedule generation** - only dogs with actual walk schedules appear in schedule
   - **Admin interface** for adding, editing, and removing walk times
   - **Clear visibility** of which dogs have scheduled walks vs. optional walks
-- **Restructured page organization**:
-  - **Overview page** shows "Today's Schedule" and "Current Stay"
-  - **Schedule page** shows full "Master Schedule" and task management
-  - **Removed confusing duplicate** schedule sections
+- **Streamlined page organization**:
+  - **Overview page** shows schedule with date selector for multi-day viewing and "Current Stay"
+  - **Removed separate Schedule tab** - all schedule functionality integrated into Overview
+  - **Simplified navigation** with 3 main sections instead of 4
 - **Admin mode toggle** with comprehensive editing interface
 - **Modal forms** for adding and editing items with organized sections
 - **Real-time data updates** with optimistic UI updates
@@ -122,8 +122,9 @@ A comprehensive web application for managing house and pet sitting instructions,
 - **Appointment tracking** with detailed instructions
 - **Daily tasks management** with full CRUD operations (timed and untimed)
 - **Master schedule system** consolidating all schedulable items with time-based grouping
+- **Multi-day schedule viewing** with date selector in Overview section
 - **Stay management** with sitter context and date ranges
-- **Unified schedule structure** with proper page organization
+- **Unified schedule structure** integrated into Overview section
 - **Video upload system** for medicine and care instructions with aggressive compression
 - **Welcome PDF generation** with QR code auto-login for sitters
 
@@ -1341,6 +1342,27 @@ The application now has full database connectivity, data persistence, and a full
   - `migration-enhance-scheduling-system.sql` - Migration script for existing databases
 - **Cleanup**: Removed obsolete migration files that were superseded by the enhanced system
 - **Result**: Much cleaner and more intuitive scheduling system with proper reminder timing and friendly time display
+
+### ✅ Schedule Tab Removal & Multi-Day Viewing (December 2024)
+- **Enhancement**: Removed separate Schedule tab and integrated all schedule functionality into Overview section
+- **New Features**:
+  - **Date Selector**: Added date picker in Overview section for viewing schedules on different days
+  - **Multi-Day Support**: Users can now view schedules for any date, not just today
+  - **Simplified Navigation**: Reduced from 4 tabs to 3 tabs (Overview, Pet Care, House Instructions)
+  - **Integrated Schedule**: All schedule functionality now accessible from Overview section
+- **User Experience Improvements**:
+  - **Streamlined Interface**: Fewer tabs make navigation simpler and more intuitive
+  - **Flexible Viewing**: Sitters and admins can check schedules for past, present, or future dates
+  - **Consolidated Access**: All essential information (property info, alerts, schedule, stays) in one place
+  - **Better Organization**: Schedule is now part of the main overview instead of separate section
+- **Technical Implementation**:
+  - **Date State Management**: Added selectedDate state to track current viewing date
+  - **Dynamic Schedule Generation**: Schedule updates automatically when date changes
+  - **Component Cleanup**: Removed entire ScheduleSection component and related code
+  - **Navigation Update**: Updated navigation array to exclude schedule tab
+- **Files Changed**: 
+  - `components/HouseSittingApp.tsx` - Removed Schedule tab, added date selector, integrated schedule into Overview
+- **Result**: Cleaner, more intuitive interface with multi-day schedule viewing capability
 
 ### ✅ Service Reminder Display Enhancement (December 2024)
 - **Enhancement**: Improved service reminder display to show reminders at the bottom of the schedule instead of specific time slots

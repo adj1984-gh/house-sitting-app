@@ -677,6 +677,7 @@ const DogEditForm = React.memo(({ formData }: { formData: any }) => {
 export default function HouseSittingApp() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Function to handle tab switching with scroll to top
   const handleTabSwitch = (sectionId: string) => {
@@ -797,7 +798,7 @@ export default function HouseSittingApp() {
     }
   };
 
-  // Generate master schedule whenever data changes
+  // Generate master schedule whenever data changes or selected date changes
   useEffect(() => {
     const schedule = generateMasterSchedule(
       dbData.dogs,
@@ -805,10 +806,11 @@ export default function HouseSittingApp() {
       [],
       dbData.dailyTasks,
       dbData.stays,
-      dbData.houseInstructions
+      dbData.houseInstructions,
+      selectedDate
     );
     setMasterSchedule(schedule);
-  }, [dbData.dogs, dbData.appointments, dbData.dailyTasks, dbData.stays, dbData.houseInstructions]);
+  }, [dbData.dogs, dbData.appointments, dbData.dailyTasks, dbData.stays, dbData.houseInstructions, selectedDate]);
 
   // Admin CRUD operations
   const handleCreate = async (type: string, data: any) => {
@@ -1185,8 +1187,7 @@ export default function HouseSittingApp() {
     const sections = (hasActiveStayToday || isAdmin) ? [
       { id: 'overview', label: 'Overview', icon: Home },
       { id: 'dogs', label: 'Pet Care', icon: Dog },
-      { id: 'house', label: 'House Instructions', icon: Key },
-      { id: 'schedule', label: 'Schedule', icon: Calendar }
+      { id: 'house', label: 'House Instructions', icon: Key }
     ] : [
       { id: 'overview', label: 'Overview', icon: Home }
     ];
@@ -1699,11 +1700,25 @@ export default function HouseSittingApp() {
           })()}
         </div>
 
-        {/* Today's Schedule */}
+        {/* Schedule */}
         <div className="bg-green-50 rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar className="w-6 h-6 text-green-600" />
-            <h2 className="text-xl font-bold">Today's Schedule</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-6 h-6 text-green-600" />
+              <h2 className="text-xl font-bold">Schedule</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <label htmlFor="date-selector" className="text-sm font-medium text-gray-700">
+                Date:
+              </label>
+              <input
+                id="date-selector"
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
           </div>
           <div className="space-y-4">
             {masterSchedule.length > 0 ? (
@@ -2243,280 +2258,13 @@ export default function HouseSittingApp() {
 
 
 
-  // Schedule Section
-  const ScheduleSection = () => {
-    const today = new Date();
-    const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const currentAppointments = dbData.appointments;
-    
-    const currentDay = weekDays[today.getDay()];
-    
-    return (
-      <div className="space-y-6">
-        {isAdmin && (
-          <div className="bg-white rounded-lg shadow-md p-4">
-            <div className="flex gap-3">
-            <button
-              onClick={() => {
-                setHasUnsavedChanges(false);
-                setShowAddForm({ type: 'appointment' });
-              }}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              <Plus className="w-4 h-4" />
-              Add Appointment
-            </button>
-              <button
-                onClick={() => {
-                  setHasUnsavedChanges(false);
-                  setShowAddForm({ type: 'dailyTask' });
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-              >
-                <Plus className="w-4 h-4" />
-                Add Daily Task
-              </button>
-              <button
-                onClick={() => {
-                  setHasUnsavedChanges(false);
-                  setShowAddForm({ type: 'stay' });
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-              >
-                <Plus className="w-4 h-4" />
-                Add Stay
-              </button>
-            </div>
-          </div>
-        )}
-        
-        {/* Today's Master Schedule */}
-        <div className="bg-green-50 rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar className="w-6 h-6 text-green-600" />
-            <h2 className="text-xl font-bold">Master Schedule</h2>
-          </div>
-          <div className="space-y-3">
-            {masterSchedule.length > 0 ? (
-              masterSchedule.map((item) => (
-                <div key={item.id} className="flex items-start gap-3 bg-white p-4 rounded-md shadow-sm">
-                  <div className={`w-3 h-3 rounded-full mt-1 ${
-                    item.type === 'feeding' ? 'bg-orange-500' :
-                    item.type === 'medicine' ? 'bg-red-500' :
-                    item.type === 'appointment' ? 'bg-blue-500' :
-                    item.type === 'service' ? 'bg-purple-500' :
-                    item.type === 'walk' ? 'bg-green-500' :
-                    'bg-gray-500'
-                  }`}></div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium text-gray-900">{item.title}</p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                          {formatTimeForDisplay(item.time)}
-                        </span>
-                        {isAdmin && (item.source === 'task' || item.source === 'appointment') && (
-                          <button
-                            onClick={() => handleScheduleItemDelete(item)}
-                            className="text-red-600 hover:text-red-800"
-                            title="Delete item"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    {item.dog_name && (
-                      <p className="text-sm text-gray-600 mt-1">🐕 For: {item.dog_name}</p>
-                    )}
-                    {item.notes && (
-                      <p className="text-sm text-gray-500 mt-1">{item.notes}</p>
-                    )}
-                    {item.location && (
-                      <p className="text-sm text-gray-500 mt-1">📍 {item.location}</p>
-                    )}
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        item.type === 'feeding' ? 'bg-orange-100 text-orange-700' :
-                        item.type === 'medicine' ? 'bg-red-100 text-red-700' :
-                        item.type === 'appointment' ? 'bg-blue-100 text-blue-700' :
-                        item.type === 'service' ? 'bg-purple-100 text-purple-700' :
-                        item.type === 'walk' ? 'bg-green-100 text-green-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {item.type}
-                      </span>
-                      {item.recurring && (
-                        <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">
-                          recurring
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-600 text-center py-8">No scheduled items for today</p>
-            )}
-          </div>
-        </div>
-
-        {/* Daily Tasks (Untimed) */}
-        <div className="bg-gray-50 rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <CheckSquare className="w-6 h-6 text-gray-600" />
-            <h2 className="text-xl font-bold">Daily Tasks</h2>
-          </div>
-          <div className="space-y-3">
-            {dbData.dailyTasks.filter(task => !task.time).length > 0 ? (
-              dbData.dailyTasks
-                .filter(task => !task.time)
-                .map(task => (
-                  <div key={task.id} className="flex items-center justify-between bg-white p-3 rounded-md border">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <span className="font-medium">{task.title}</span>
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          task.category === 'pets' ? 'bg-orange-100 text-orange-700' :
-                          task.category === 'house' ? 'bg-blue-100 text-blue-700' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {task.category}
-                        </span>
-                      </div>
-                      {task.notes && (
-                        <p className="text-sm text-gray-500 mt-1">{task.notes}</p>
-                      )}
-                    </div>
-                    {isAdmin && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setEditingItem({ type: 'dailyTask', id: task.id, data: task })}
-                          className="text-blue-600 hover:text-blue-800"
-                          title="Edit task"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete('dailyTask', task.id)}
-                          className="text-red-600 hover:text-red-800"
-                          title="Delete task"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))
-            ) : (
-              <p className="text-gray-600 text-center py-4">No daily tasks yet</p>
-            )}
-          </div>
-        </div>
-
-        {/* Timed Daily Tasks Management */}
-        {isAdmin && dbData.dailyTasks.filter(task => task.time).length > 0 && (
-          <div className="bg-gray-50 rounded-lg p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Clock className="w-6 h-6 text-gray-600" />
-              <h2 className="text-xl font-bold">Timed Daily Tasks</h2>
-            </div>
-            <div className="space-y-3">
-              {dbData.dailyTasks.filter(task => task.time).map(task => (
-                <div key={task.id} className="flex items-center justify-between bg-white p-3 rounded-md border">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                        {task.time}
-                      </span>
-                      <span className="font-medium">{task.title}</span>
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        task.category === 'pets' ? 'bg-orange-100 text-orange-700' :
-                        task.category === 'house' ? 'bg-blue-100 text-blue-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {task.category}
-                      </span>
-                    </div>
-                    {task.notes && (
-                      <p className="text-sm text-gray-500 mt-1">{task.notes}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setEditingItem({ type: 'dailyTask', id: task.id, data: task })}
-                      className="text-blue-600 hover:text-blue-800"
-                      title="Edit task"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete('dailyTask', task.id)}
-                      className="text-red-600 hover:text-red-800"
-                      title="Delete task"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
 
 
-        {/* All Appointments */}
-        {dbData.appointments.length > 0 && (
-          <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Calendar className="w-6 h-6 text-yellow-700" />
-              <h2 className="text-xl font-bold text-yellow-800">All Appointments</h2>
-            </div>
-            <div className="space-y-3">
-              {dbData.appointments.map(apt => (
-                <div key={apt.id} className="bg-white rounded p-4 shadow-sm">
-                <div className="flex justify-between items-start">
-                  <div>
-                      <p className="font-bold text-gray-900">{apt.date} at {apt.time}</p>
-                      <p className="font-medium text-gray-700">{apt.type}</p>
-                      {apt.for_dog_id && (
-                        <p className="text-sm text-gray-600">🐕 For: {dbData.dogs.find(d => d.id === apt.for_dog_id)?.name || 'Unknown Dog'}</p>
-                      )}
-                    <p className="text-sm text-gray-600 mt-1">{apt.notes}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded">
-                      {apt.location}
-                    </span>
-                    {isAdmin && (
-                      <div className="flex gap-1">
-                        <button 
-                          onClick={() => setEditingItem({ type: 'appointment', id: String(apt.id), data: apt })}
-                          className="text-blue-600 hover:text-blue-800"
-                          title="Edit appointment"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete('appointment', String(apt.id))}
-                          className="text-red-600 hover:text-red-800"
-                          title="Delete appointment"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
+
+
+
+
 
   // Admin Forms
   const AdminForm = () => {
@@ -3195,7 +2943,7 @@ export default function HouseSittingApp() {
       case 'overview': return <OverviewSection />;
       case 'dogs': return <DogsSection />;
       case 'house': return <HouseSection />;
-      case 'schedule': return <ScheduleSection />;
+
       default: return <OverviewSection />;
     }
   };
