@@ -415,7 +415,7 @@ const DogEditForm = React.memo(({ formData, contacts }: { formData: any, contact
           <button
             type="button"
             onClick={addFeedingTime}
-            className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:text-blue-800 text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             <Plus className="w-4 h-4" />
             Add Feeding Time
@@ -642,7 +642,7 @@ const DogEditForm = React.memo(({ formData, contacts }: { formData: any, contact
           <button
             type="button"
             onClick={addWalkTime}
-            className="bg-green-100 text-green-700 py-2 px-4 rounded-md hover:bg-green-200 flex items-center gap-2"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             <Plus className="w-4 h-4" />
             Add Walk Time
@@ -769,7 +769,7 @@ const DogEditForm = React.memo(({ formData, contacts }: { formData: any, contact
         <button
           type="button"
           onClick={addVetVisit}
-          className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:text-blue-800 text-sm mt-3"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 mt-3"
         >
           <Plus className="w-4 h-4" />
           Add Vet Visit
@@ -828,7 +828,7 @@ const DogEditForm = React.memo(({ formData, contacts }: { formData: any, contact
           <button
             type="button"
             onClick={addSpecialInstruction}
-            className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:text-blue-800 text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             <Plus className="w-4 h-4" />
             Add Special Instruction
