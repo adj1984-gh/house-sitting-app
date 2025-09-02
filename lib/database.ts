@@ -986,10 +986,12 @@ export const generateMasterSchedule = (
   // Add scheduled house instructions
   houseInstructions.forEach(instruction => {
     if (instruction.schedule_frequency && instruction.schedule_frequency !== 'none') {
-      const todayDate = new Date(today);
+      // Force PST/PDT timezone for all date calculations
+      const todayDate = new Date(today + 'T00:00:00-08:00'); // PST offset
       const dayOfWeek = todayDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
       const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
       const currentDayName = dayNames[dayOfWeek];
+      
       
       let shouldShowToday = false;
       let shouldShowReminder = false;
@@ -1002,13 +1004,13 @@ export const generateMasterSchedule = (
       } else if (instruction.schedule_frequency === 'one_time') {
         // For one-time events, check if the date matches today
         if (instruction.schedule_date) {
-          const eventDate = new Date(instruction.schedule_date);
+          const eventDate = new Date(instruction.schedule_date + 'T00:00:00-08:00'); // PST offset
           const todayStr = todayDate.toISOString().split('T')[0];
           const eventDateStr = eventDate.toISOString().split('T')[0];
           shouldShowToday = todayStr === eventDateStr;
         } else if (instruction.schedule_day) {
           // Fallback for legacy one-time events stored in schedule_day
-          const eventDate = new Date(instruction.schedule_day);
+          const eventDate = new Date(instruction.schedule_day + 'T00:00:00-08:00'); // PST offset
           const todayStr = todayDate.toISOString().split('T')[0];
           const eventDateStr = eventDate.toISOString().split('T')[0];
           shouldShowToday = todayStr === eventDateStr;
@@ -1030,7 +1032,7 @@ export const generateMasterSchedule = (
         } else if (instruction.schedule_frequency === 'one_time') {
           // One-time events: show reminder if tomorrow is the event date
           if (instruction.schedule_date) {
-            const eventDate = new Date(instruction.schedule_date);
+            const eventDate = new Date(instruction.schedule_date + 'T00:00:00-08:00'); // PST offset
             const tomorrowDate = new Date(todayDate);
             tomorrowDate.setDate(tomorrowDate.getDate() + 1);
             const tomorrowStr = tomorrowDate.toISOString().split('T')[0];
@@ -1038,7 +1040,7 @@ export const generateMasterSchedule = (
             shouldShowReminder = tomorrowStr === eventDateStr;
           } else if (instruction.schedule_day) {
             // Fallback for legacy one-time events
-            const eventDate = new Date(instruction.schedule_day);
+            const eventDate = new Date(instruction.schedule_day + 'T00:00:00-08:00'); // PST offset
             const tomorrowDate = new Date(todayDate);
             tomorrowDate.setDate(tomorrowDate.getDate() + 1);
             const tomorrowStr = tomorrowDate.toISOString().split('T')[0];
