@@ -807,39 +807,48 @@ export const generateMasterSchedule = (
       return true; // Show all items in admin view
     }
     
-    // If no start/end times are set on the stay, show all items
-    if (!activeStay.start_time && !activeStay.end_time) {
+    // Get the current date being viewed
+    const currentDate = today;
+    const stayStartDate = activeStay.start_date.split('T')[0];
+    const stayEndDate = activeStay.end_date.split('T')[0];
+    
+    // Only apply time filtering on the first and last days of the stay
+    const isFirstDay = currentDate === stayStartDate;
+    const isLastDay = currentDate === stayEndDate;
+    
+    // If it's not the first or last day, show all items
+    if (!isFirstDay && !isLastDay) {
       return true;
     }
     
-    // Handle items without specific times (like "TBD")
-    if (!itemTime || itemTime === 'TBD' || itemTime === '') {
-      return true; // Show items without specific times
+    // Handle items without specific times (like "TBD") - always show these
+    if (!itemTime || itemTime === 'TBD' || itemTime === '' || itemTime === 'No time specified') {
+      return true;
     }
     
     // Parse the item time
     const itemTimeMinutes = parseTime(itemTime);
     if (itemTimeMinutes === null) {
-      return true; // Show items that can't be parsed (fallback)
+      return true; // Show items that can't be parsed
     }
     
-    // Check start time constraint (only if start time is set)
-    if (activeStay.start_time) {
+    // On the first day, only show items after the stay start time
+    if (isFirstDay && activeStay.start_time) {
       const startTimeMinutes = parseTime(activeStay.start_time);
       if (startTimeMinutes !== null && itemTimeMinutes < startTimeMinutes) {
-        return false; // Item is before stay start time
+        return false; // Item is before stay start time on first day
       }
     }
     
-    // Check end time constraint (only if end time is set)
-    if (activeStay.end_time) {
+    // On the last day, only show items before the stay end time
+    if (isLastDay && activeStay.end_time) {
       const endTimeMinutes = parseTime(activeStay.end_time);
       if (endTimeMinutes !== null && itemTimeMinutes > endTimeMinutes) {
-        return false; // Item is after stay end time
+        return false; // Item is after stay end time on last day
       }
     }
     
-    return true; // Item falls within stay time constraints
+    return true; // Item is within stay time constraints
   };
   
   // Add feeding schedules from dogs
