@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
     let qrCodeDataUrl = '';
     try {
       qrCodeDataUrl = await QRCode.toDataURL(qrCodeUrl, {
-        width: 200,
-        margin: 2,
+        width: 150,
+        margin: 1,
         color: {
           dark: '#000000',
           light: '#FFFFFF'
@@ -48,84 +48,128 @@ export async function POST(request: NextRequest) {
               font-family: Arial, sans-serif;
               max-width: 800px;
               margin: 0 auto;
-              padding: 20px;
-              line-height: 1.6;
+              padding: 15px;
+              line-height: 1.4;
+              font-size: 14px;
             }
             .header {
               text-align: center;
               border-bottom: 2px solid #3b82f6;
-              padding-bottom: 20px;
-              margin-bottom: 30px;
+              padding-bottom: 15px;
+              margin-bottom: 20px;
             }
             .logo {
-              font-size: 24px;
+              font-size: 20px;
               font-weight: bold;
               color: #3b82f6;
-              margin-bottom: 10px;
+              margin-bottom: 8px;
             }
             .welcome {
-              font-size: 20px;
+              font-size: 18px;
               color: #1f2937;
             }
             .stay-info {
               background-color: #f8fafc;
-              padding: 20px;
-              border-radius: 8px;
-              margin: 20px 0;
+              padding: 15px;
+              border-radius: 6px;
+              margin: 15px 0;
             }
             .info-row {
               display: flex;
               justify-content: space-between;
-              margin: 10px 0;
-              padding: 8px 0;
+              margin: 6px 0;
+              padding: 4px 0;
               border-bottom: 1px solid #e5e7eb;
             }
             .info-label {
               font-weight: bold;
               color: #374151;
+              font-size: 13px;
             }
             .info-value {
               color: #6b7280;
+              font-size: 13px;
             }
             .qr-section {
               text-align: center;
-              margin: 30px 0;
-              padding: 20px;
+              margin: 15px 0;
+              padding: 15px;
               background-color: #fef3c7;
-              border-radius: 8px;
+              border-radius: 6px;
             }
             .qr-title {
-              font-size: 18px;
+              font-size: 16px;
               font-weight: bold;
               color: #92400e;
-              margin-bottom: 15px;
+              margin-bottom: 10px;
             }
             .qr-instructions {
               color: #78350f;
-              margin-bottom: 20px;
+              margin-bottom: 15px;
+              font-size: 13px;
             }
             .qr-code {
-              margin: 20px 0;
+              margin: 15px 0;
+            }
+            .wifi-section {
+              text-align: center;
+              margin: 15px 0;
+              padding: 15px;
+              background-color: #f0f9ff;
+              border: 1px solid #0ea5e9;
+              border-radius: 6px;
+            }
+            .wifi-title {
+              font-size: 16px;
+              font-weight: bold;
+              color: #0c4a6e;
+              margin-bottom: 10px;
+            }
+            .wifi-instructions {
+              color: #075985;
+              margin-bottom: 15px;
+              font-size: 13px;
+            }
+            .wifi-codes {
+              display: flex;
+              justify-content: space-around;
+              margin: 15px 0;
+              flex-wrap: wrap;
+            }
+            .wifi-code {
+              text-align: center;
+              margin: 8px;
+            }
+            .wifi-label {
+              font-weight: bold;
+              margin-bottom: 8px;
+              color: #0c4a6e;
+              font-size: 13px;
             }
             .footer {
-              margin-top: 40px;
-              padding-top: 20px;
+              margin-top: 20px;
+              padding-top: 15px;
               border-top: 1px solid #e5e7eb;
               text-align: center;
               color: #6b7280;
-              font-size: 14px;
+              font-size: 12px;
             }
             .emergency {
               background-color: #fef2f2;
               border: 1px solid #fecaca;
-              padding: 15px;
-              border-radius: 8px;
-              margin: 20px 0;
+              padding: 12px;
+              border-radius: 6px;
+              margin: 15px 0;
             }
             .emergency-title {
               color: #dc2626;
               font-weight: bold;
-              margin-bottom: 10px;
+              margin-bottom: 8px;
+              font-size: 14px;
+            }
+            .emergency p {
+              font-size: 13px;
+              margin: 0;
             }
           </style>
         </head>
@@ -160,37 +204,34 @@ export async function POST(request: NextRequest) {
           <div class="qr-section">
             <div class="qr-title">📱 Quick Access</div>
             <div class="qr-instructions">
-              Scan this QR code with your phone to instantly access the house sitting portal with all the information you need!
+              Scan this QR code with your phone to instantly access the house sitting portal!
             </div>
             <div class="qr-code">
               ${qrCodeDataUrl ? 
-                `<img src="${qrCodeDataUrl}" alt="QR Code for ${qrCodeUrl}" style="width: 200px; height: 200px; margin: 0 auto; display: block;" />` :
-                `<div style="width: 200px; height: 200px; margin: 0 auto; background-color: #f3f4f6; border: 2px dashed #9ca3af; display: flex; align-items: center; justify-content: center; color: #6b7280;">
-                  QR Code<br/>${qrCodeUrl}
+                `<img src="${qrCodeDataUrl}" alt="QR Code for ${qrCodeUrl}" style="width: 150px; height: 150px; margin: 0 auto; display: block;" />` :
+                `<div style="width: 150px; height: 150px; margin: 0 auto; background-color: #f3f4f6; border: 2px dashed #9ca3af; display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 12px;">
+                  QR Code
                 </div>`
               }
             </div>
-            <div style="margin-top: 15px; font-size: 12px; color: #6b7280;">
-              Or visit: ${qrCodeUrl}
-            </div>
           </div>
 
-          <div class="qr-section" style="background-color: #f0f9ff; border: 1px solid #0ea5e9;">
-            <div class="qr-title" style="color: #0c4a6e;">📶 WiFi Access</div>
-            <div class="qr-instructions" style="color: #075985;">
+          <div class="wifi-section">
+            <div class="wifi-title">📶 WiFi Access</div>
+            <div class="wifi-instructions">
               Scan these QR codes to connect to the WiFi networks:
             </div>
-            <div style="display: flex; justify-content: space-around; margin: 20px 0; flex-wrap: wrap;">
-              <div style="text-align: center; margin: 10px;">
-                <div style="font-weight: bold; margin-bottom: 10px; color: #0c4a6e;">Frenchie Den</div>
-                <img src="https://housesit.9441altodrive.com/wifi_qr_frenchie_den.png" alt="Frenchie Den WiFi QR Code" style="width: 150px; height: 150px; border: 1px solid #e5e7eb;" />
+            <div class="wifi-codes">
+              <div class="wifi-code">
+                <div class="wifi-label">Frenchie Den</div>
+                <img src="https://housesit.9441altodrive.com/wifi_qr_frenchie_den.png" alt="Frenchie Den WiFi QR Code" style="width: 120px; height: 120px; border: 1px solid #e5e7eb;" />
               </div>
-              <div style="text-align: center; margin: 10px;">
-                <div style="font-weight: bold; margin-bottom: 10px; color: #0c4a6e;">Frenchie Den2</div>
-                <img src="https://housesit.9441altodrive.com/wifi_qr_frenchie_den2.png" alt="Frenchie Den2 WiFi QR Code" style="width: 150px; height: 150px; border: 1px solid #e5e7eb;" />
+              <div class="wifi-code">
+                <div class="wifi-label">Frenchie Den2</div>
+                <img src="https://housesit.9441altodrive.com/wifi_qr_frenchie_den2.png" alt="Frenchie Den2 WiFi QR Code" style="width: 120px; height: 120px; border: 1px solid #e5e7eb;" />
               </div>
             </div>
-            <div style="margin-top: 15px; font-size: 12px; color: #075985;">
+            <div style="margin-top: 10px; font-size: 12px; color: #075985;">
               Simply scan with your phone's camera to connect automatically
             </div>
           </div>

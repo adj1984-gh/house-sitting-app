@@ -80,7 +80,7 @@ export interface HouseInstruction {
   schedule_date?: string // For one-time events
   schedule_time?: string
   schedule_time_type?: 'specific' | 'general'
-  schedule_duration?: number // Duration in minutes
+  schedule_duration?: number // Duration in hours
   remind_day_before?: boolean
   video_url?: string
   created_at: string

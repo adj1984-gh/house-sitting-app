@@ -174,17 +174,12 @@ export const calculateEndTime = (startTime: string, durationMinutes: number): st
 };
 
 // Helper function to format duration for display
-export const formatDuration = (durationMinutes: number): string => {
-  if (!durationMinutes) return '';
+export const formatDuration = (durationHours: number): string => {
+  if (!durationHours) return '';
   
-  const hours = Math.floor(durationMinutes / 60);
-  const minutes = durationMinutes % 60;
-  
-  if (hours === 0) {
-    return `${minutes} min`;
-  } else if (minutes === 0) {
-    return `${hours} hr${hours !== 1 ? 's' : ''}`;
+  if (durationHours === 1) {
+    return '1 hour';
   } else {
-    return `${hours} hr ${minutes} min`;
+    return `${durationHours} hours`;
   }
 };

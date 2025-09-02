@@ -1056,7 +1056,7 @@ export const generateMasterSchedule = (
         // Calculate time display with duration if available
         let timeDisplay = shouldShowReminder ? '' : (instruction.schedule_time || 'TBD');
         if (!shouldShowReminder && instruction.schedule_time && instruction.schedule_duration) {
-          const endTime = calculateEndTime(instruction.schedule_time, instruction.schedule_duration);
+          const endTime = calculateEndTime(instruction.schedule_time, instruction.schedule_duration * 60); // Convert hours to minutes
           if (endTime) {
             const startTimeFormatted = formatTimeForDisplay(instruction.schedule_time);
             const endTimeFormatted = formatTimeForDisplay(endTime);
@@ -1079,7 +1079,7 @@ export const generateMasterSchedule = (
         
         // For reminders, also add time range info if available
         if (shouldShowReminder && instruction.schedule_time && instruction.schedule_duration) {
-          const endTime = calculateEndTime(instruction.schedule_time, instruction.schedule_duration);
+          const endTime = calculateEndTime(instruction.schedule_time, instruction.schedule_duration * 60); // Convert hours to minutes
           if (endTime) {
             const startTimeFormatted = formatTimeForDisplay(instruction.schedule_time);
             const endTimeFormatted = formatTimeForDisplay(endTime);
