@@ -651,6 +651,132 @@ const DogEditForm = React.memo(({ formData, contacts }: { formData: any, contact
 
       </div>
 
+      {/* Vet Visits Section */}
+      <div className="border-t pt-4">
+        <h4 className="font-semibold text-gray-800 mb-3">Vet Visits</h4>
+        <p className="text-sm text-gray-600 mb-3">
+          Vet information will be auto-populated from your regular vet contact when adding a new visit.
+        </p>
+        <div className="space-y-4">
+          {vetVisits.map((visit, index) => (
+            <div key={`vet-visit-${index}`} className="border rounded-lg p-4 bg-gray-50">
+              <div className="flex justify-between items-center mb-3">
+                <h5 className="font-medium">Vet Visit {index + 1}</h5>
+                <button
+                  type="button"
+                  onClick={() => removeVetVisit(index)}
+                  className="text-red-600 hover:text-red-800"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Visit Type</label>
+                  <input
+                    type="text"
+                    value={visit.visit_type}
+                    onChange={(e) => updateVetVisit(index, 'visit_type', e.target.value)}
+                    placeholder="e.g., Annual checkup, Vaccination, Surgery"
+                    className="w-full px-3 py-2 border rounded-md text-sm"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={visit.date}
+                    onChange={(e) => updateVetVisit(index, 'date', e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md text-sm"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Time</label>
+                  <input
+                    type="time"
+                    value={visit.time}
+                    onChange={(e) => updateVetVisit(index, 'time', e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md text-sm"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Vet Name</label>
+                  <input
+                    type="text"
+                    value={visit.vet_name}
+                    onChange={(e) => updateVetVisit(index, 'vet_name', e.target.value)}
+                    placeholder="Veterinary clinic name"
+                    className="w-full px-3 py-2 border rounded-md text-sm"
+                  />
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium mb-1">Vet Address</label>
+                  <input
+                    type="text"
+                    value={visit.vet_address}
+                    onChange={(e) => updateVetVisit(index, 'vet_address', e.target.value)}
+                    placeholder="Veterinary clinic address"
+                    className="w-full px-3 py-2 border rounded-md text-sm"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Vet Phone</label>
+                  <input
+                    type="tel"
+                    value={visit.vet_phone}
+                    onChange={(e) => updateVetVisit(index, 'vet_phone', e.target.value)}
+                    placeholder="(555) 123-4567"
+                    className="w-full px-3 py-2 border rounded-md text-sm"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Reminder (days before)</label>
+                  <select
+                    value={visit.reminder_days_before}
+                    onChange={(e) => updateVetVisit(index, 'reminder_days_before', parseInt(e.target.value))}
+                    className="w-full px-3 py-2 border rounded-md text-sm"
+                  >
+                    <option value={0}>No reminder</option>
+                    <option value={1}>1 day before</option>
+                    <option value={2}>2 days before</option>
+                    <option value={3}>3 days before</option>
+                    <option value={7}>1 week before</option>
+                  </select>
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium mb-1">Notes</label>
+                  <textarea
+                    value={visit.notes}
+                    onChange={(e) => updateVetVisit(index, 'notes', e.target.value)}
+                    placeholder="Special instructions, preparation needed, etc."
+                    className="w-full px-3 py-2 border rounded-md text-sm"
+                    rows={2}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <button
+          type="button"
+          onClick={addVetVisit}
+          className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:text-blue-800 text-sm mt-3"
+        >
+          <Plus className="w-4 h-4" />
+          Add Vet Visit
+        </button>
+        <input type="hidden" name="vet_visits" value={JSON.stringify(vetVisits)} />
+      </div>
+
       {/* Sleeping Section */}
       <div className="border-t pt-4">
         <h4 className="font-semibold text-gray-800 mb-3">Sleeping Information</h4>
@@ -709,132 +835,6 @@ const DogEditForm = React.memo(({ formData, contacts }: { formData: any, contact
           </button>
         </div>
         <input type="hidden" name="special_instructions" value={JSON.stringify(Object.fromEntries(specialInstructions.map(si => [si.type, si.instruction])))} />
-        
-        {/* Vet Visits Section */}
-        <div className="mt-6">
-          <h3 className="text-lg font-semibold mb-3">Vet Visits</h3>
-          <p className="text-sm text-gray-600 mb-3">
-            Vet information will be auto-populated from your regular vet contact when adding a new visit.
-          </p>
-          <div className="space-y-4">
-            {vetVisits.map((visit, index) => (
-              <div key={`vet-visit-${index}`} className="border rounded-lg p-4 bg-gray-50">
-                <div className="flex justify-between items-center mb-3">
-                  <h4 className="font-medium">Vet Visit {index + 1}</h4>
-                  <button
-                    type="button"
-                    onClick={() => removeVetVisit(index)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Visit Type</label>
-                    <input
-                      type="text"
-                      value={visit.visit_type}
-                      onChange={(e) => updateVetVisit(index, 'visit_type', e.target.value)}
-                      placeholder="e.g., Annual checkup, Vaccination, Surgery"
-                      className="w-full px-3 py-2 border rounded-md text-sm"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Date</label>
-                    <input
-                      type="date"
-                      value={visit.date}
-                      onChange={(e) => updateVetVisit(index, 'date', e.target.value)}
-                      className="w-full px-3 py-2 border rounded-md text-sm"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Time</label>
-                    <input
-                      type="time"
-                      value={visit.time}
-                      onChange={(e) => updateVetVisit(index, 'time', e.target.value)}
-                      className="w-full px-3 py-2 border rounded-md text-sm"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Vet Name</label>
-                    <input
-                      type="text"
-                      value={visit.vet_name}
-                      onChange={(e) => updateVetVisit(index, 'vet_name', e.target.value)}
-                      placeholder="Veterinary clinic name"
-                      className="w-full px-3 py-2 border rounded-md text-sm"
-                    />
-                  </div>
-                  
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-1">Vet Address</label>
-                    <input
-                      type="text"
-                      value={visit.vet_address}
-                      onChange={(e) => updateVetVisit(index, 'vet_address', e.target.value)}
-                      placeholder="Veterinary clinic address"
-                      className="w-full px-3 py-2 border rounded-md text-sm"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Vet Phone</label>
-                    <input
-                      type="tel"
-                      value={visit.vet_phone}
-                      onChange={(e) => updateVetVisit(index, 'vet_phone', e.target.value)}
-                      placeholder="(555) 123-4567"
-                      className="w-full px-3 py-2 border rounded-md text-sm"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Reminder (days before)</label>
-                    <select
-                      value={visit.reminder_days_before}
-                      onChange={(e) => updateVetVisit(index, 'reminder_days_before', parseInt(e.target.value))}
-                      className="w-full px-3 py-2 border rounded-md text-sm"
-                    >
-                      <option value={0}>No reminder</option>
-                      <option value={1}>1 day before</option>
-                      <option value={2}>2 days before</option>
-                      <option value={3}>3 days before</option>
-                      <option value={7}>1 week before</option>
-                    </select>
-                  </div>
-                  
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-1">Notes</label>
-                    <textarea
-                      value={visit.notes}
-                      onChange={(e) => updateVetVisit(index, 'notes', e.target.value)}
-                      placeholder="Special instructions, preparation needed, etc."
-                      className="w-full px-3 py-2 border rounded-md text-sm"
-                      rows={2}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          <button
-            type="button"
-            onClick={addVetVisit}
-            className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:text-blue-800 text-sm mt-3"
-          >
-            <Plus className="w-4 h-4" />
-            Add Vet Visit
-          </button>
-        </div>
-        <input type="hidden" name="vet_visits" value={JSON.stringify(vetVisits)} />
       </div>
     </>
   );
@@ -2185,6 +2185,73 @@ export default function HouseSittingApp() {
                     <p key={type}>
                       <span className="font-medium capitalize">{type.replace(/([A-Z])/g, ' $1').trim()}:</span> {instruction as string}
                     </p>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Vet Visits */}
+            {dog.vet_visits && Array.isArray(dog.vet_visits) && dog.vet_visits.length > 0 && (
+              <div className="border rounded-lg p-4">
+                <h4 className="font-semibold flex items-center gap-2 mb-3">
+                  <Heart className="w-4 h-4 text-red-600" />
+                  Upcoming Vet Visits
+                </h4>
+                <div className="space-y-3">
+                  {dog.vet_visits
+                    .filter((visit: any) => {
+                      // Only show future visits
+                      const visitDate = new Date(visit.date);
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      return visitDate >= today;
+                    })
+                    .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                    .map((visit: any, index: number) => (
+                    <div key={`vet-visit-display-${index}`} className="bg-white rounded-lg border p-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-grow">
+                          <p className="font-medium text-gray-800">{visit.visit_type || 'Vet Visit'}</p>
+                          <p className="text-sm text-gray-600">
+                            {new Date(visit.date).toLocaleDateString('en-US', { 
+                              weekday: 'long', 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            })}
+                            {visit.time && ` at ${formatTimeForDisplay(visit.time)}`}
+                          </p>
+                          {visit.vet_name && (
+                            <p className="text-sm text-gray-600 mt-1">
+                              <span className="font-medium">Vet:</span> {visit.vet_name}
+                            </p>
+                          )}
+                          {visit.vet_address && (
+                            <p className="text-sm text-gray-600">
+                              <span className="font-medium">Address:</span> {visit.vet_address}
+                            </p>
+                          )}
+                          {visit.vet_phone && (
+                            <p className="text-sm text-gray-600">
+                              <span className="font-medium">Phone:</span> 
+                              <a href={`tel:${visit.vet_phone}`} className="text-blue-600 hover:text-blue-800 ml-1">
+                                {visit.vet_phone}
+                              </a>
+                            </p>
+                          )}
+                          {visit.notes && (
+                            <p className="text-sm text-gray-600 italic mt-2">{visit.notes}</p>
+                          )}
+                        </div>
+                        {visit.reminder_days_before && visit.reminder_days_before > 0 && (
+                          <div className="flex-shrink-0 ml-2">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                              🔔 {visit.reminder_days_before} day{visit.reminder_days_before > 1 ? 's' : ''} reminder
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>

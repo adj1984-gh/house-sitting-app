@@ -1438,6 +1438,8 @@ The application now has full database connectivity, data persistence, and a full
   - **Clear Organization**: Each vet visit has its own card with all relevant details
   - **Intuitive Interface**: Date picker, time picker, and reminder dropdown for easy scheduling
   - **Helpful Guidance**: Clear instructions that vet info comes from regular vet contact
+  - **Summary Display**: Upcoming vet visits shown in dog summary page with full details
+  - **Form Organization**: Vet visits section positioned above sleeping information for better workflow
 - **Schedule Integration**:
   - **Master Schedule**: Vet visits appear in daily schedule alongside other appointments
   - **Reminder Notifications**: Day-before reminders show in schedule with 🔔 icon
