@@ -2427,36 +2427,42 @@ export default function HouseSittingApp() {
                       </div>
                       <div className="flex-grow">
                         {timeGroups[time].map((med, medIdx) => (
-                          <div key={`med-${medIdx}`} className="flex items-start gap-2 mb-1 last:mb-0">
-                            <span className="font-medium text-gray-800">{med.medication}</span>
+                          <div key={`med-${medIdx}`} className="mb-3 last:mb-0">
+                            {/* Medication Name */}
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-gray-900">{med.medication}</span>
+                              {med.video_url && (
+                                <button
+                                  onClick={() => window.open(med.video_url, '_blank')}
+                                  className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-xs font-medium"
+                                  title="Watch video instructions"
+                                >
+                                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"/>
+                                  </svg>
+                                  Video
+                                </button>
+                              )}
+                              {med.image_url && (
+                                <button
+                                  onClick={() => setImageModal({
+                                    isOpen: true,
+                                    imageUrl: med.image_url!,
+                                    title: `${med.medication} - Medicine Instructions`
+                                  })}
+                                  className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-xs font-medium"
+                                  title="View medicine image"
+                                >
+                                  <Image className="w-3 h-3" />
+                                  Image
+                                </button>
+                              )}
+                            </div>
+                            {/* Notes */}
                             {med.notes && (
-                              <span className="text-gray-600">- {med.notes}</span>
-                            )}
-                            {med.video_url && (
-                              <button
-                                onClick={() => window.open(med.video_url, '_blank')}
-                                className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-xs font-medium ml-2"
-                                title="Watch video instructions"
-                              >
-                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                                  <path d="M8 5v14l11-7z"/>
-                                </svg>
-                                Video
-                              </button>
-                            )}
-                            {med.image_url && (
-                              <button
-                                onClick={() => setImageModal({
-                                  isOpen: true,
-                                  imageUrl: med.image_url!,
-                                  title: `${med.medication} - Medicine Instructions`
-                                })}
-                                className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-xs font-medium ml-2"
-                                title="View medicine image"
-                              >
-                                <Image className="w-3 h-3" />
-                                Image
-                              </button>
+                              <div className="ml-0 text-sm text-gray-600 leading-relaxed">
+                                {med.notes}
+                              </div>
                             )}
                           </div>
                         ))}
@@ -2842,10 +2848,38 @@ export default function HouseSittingApp() {
                                 <>Daily{instruction.schedule_time && `, at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
                               )}
                               {instruction.schedule_frequency === 'weekly' && (
-                                <>Weekly{instruction.schedule_day && `, on ${instruction.schedule_day.charAt(0).toUpperCase() + instruction.schedule_day.slice(1)}`}{instruction.schedule_time && `, at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
+                                <>Weekly{instruction.schedule_day && `, on ${instruction.schedule_day.charAt(0).toUpperCase() + instruction.schedule_day.slice(1)}`}{instruction.schedule_time && ` at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
                               )}
                               {instruction.schedule_frequency === 'one_time' && (
-                                <>One-time event{instruction.schedule_date && ` on ${new Date(instruction.schedule_date).toLocaleDateString()}`}{instruction.schedule_time && ` at ${formatTimeForDisplay(instruction.schedule_time)}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
+                                <>One-time event{(() => {
+                                  // Try to get the date from schedule_date first, then fall back to schedule_day
+                                  const eventDate = instruction.schedule_date || instruction.schedule_day;
+                                  if (eventDate) {
+                                    try {
+                                      const date = new Date(eventDate);
+                                      // Ensure the date is valid
+                                      if (!isNaN(date.getTime())) {
+                                        // Format date in a more natural way: "Tuesday, September 9th"
+                                        const weekday = date.toLocaleDateString('en-US', { weekday: 'long' });
+                                        const month = date.toLocaleDateString('en-US', { month: 'long' });
+                                        const day = date.getDate();
+                                        const dayWithSuffix = day + (day === 1 || day === 21 || day === 31 ? 'st' : 
+                                                                     day === 2 || day === 22 ? 'nd' : 
+                                                                     day === 3 || day === 23 ? 'rd' : 'th');
+                                        
+                                        return ` on ${weekday}, ${month} ${dayWithSuffix}`;
+                                      } else {
+                                        // If date parsing failed, show the raw value
+                                        return ` on ${eventDate}`;
+                                      }
+                                    } catch (e) {
+                                      // If there's an error, show the raw value
+                                      return ` on ${eventDate}`;
+                                    }
+                                  }
+                                  // If no date is found, show a warning
+                                  return ' (⚠️ No date specified)';
+                                })()}{instruction.schedule_time && ` at ${formatTimeForDisplay(instruction.schedule_time).toLowerCase()}`}{instruction.schedule_duration && ` for ${instruction.schedule_duration} hours`}</>
                               )}
                             </p>
                             
