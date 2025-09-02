@@ -2351,6 +2351,12 @@ export default function HouseSittingApp() {
                       const endDate = new Date(item.calculated_end_date);
                       const today = new Date();
                       today.setHours(0, 0, 0, 0);
+                      
+                      // Check if the date is valid
+                      if (isNaN(endDate.getTime())) {
+                        return true; // Show medicines with invalid dates
+                      }
+                      
                       return today <= endDate;
                     } else if (item.end_date) {
                       // Old format

@@ -801,22 +801,60 @@ export const generateMasterSchedule = (
     }
   }
   
+  // Helper function to check if a schedule item should be shown in sitter view
+  const shouldShowInSitterView = (itemTime: string): boolean => {
+    if (!isSitterView || !activeStay) {
+      return true; // Show all items in admin view
+    }
+    
+    // If no start/end times are set, show all items
+    if (!activeStay.start_time && !activeStay.end_time) {
+      return true;
+    }
+    
+    // Parse the item time
+    const itemTimeMinutes = parseTime(itemTime);
+    if (itemTimeMinutes === null) {
+      return true; // Show items without valid times
+    }
+    
+    // Check start time constraint
+    if (activeStay.start_time) {
+      const startTimeMinutes = parseTime(activeStay.start_time);
+      if (startTimeMinutes !== null && itemTimeMinutes < startTimeMinutes) {
+        return false;
+      }
+    }
+    
+    // Check end time constraint
+    if (activeStay.end_time) {
+      const endTimeMinutes = parseTime(activeStay.end_time);
+      if (endTimeMinutes !== null && itemTimeMinutes > endTimeMinutes) {
+        return false;
+      }
+    }
+    
+    return true;
+  };
+  
   // Add feeding schedules from dogs
   dogs.forEach(dog => {
     if (dog.feeding_schedule && Array.isArray(dog.feeding_schedule)) {
       dog.feeding_schedule.forEach((feeding: any, index: number) => {
-        scheduleItems.push({
-          id: `feeding-${dog.id}-${index}`,
-          type: 'feeding',
-          title: `Feed ${dog.name}`,
-          time: feeding.time,
-          date: today,
-          dog_id: dog.id,
-          dog_name: dog.name,
-          notes: feeding.amount,
-          recurring: true,
-          source: 'dog'
-        })
+        if (shouldShowInSitterView(feeding.time)) {
+          scheduleItems.push({
+            id: `feeding-${dog.id}-${index}`,
+            type: 'feeding',
+            title: `Feed ${dog.name}`,
+            time: feeding.time,
+            date: today,
+            dog_id: dog.id,
+            dog_name: dog.name,
+            notes: feeding.amount,
+            recurring: true,
+            source: 'dog'
+          })
+        }
       })
     }
   })
@@ -853,11 +891,11 @@ export const generateMasterSchedule = (
           if (medicine.dose_times && Array.isArray(medicine.dose_times)) {
             // New smart format - add each dose time as separate schedule item
             medicine.dose_times.forEach((dose: any, doseIndex: number) => {
-              if (dose.time) {
+              if (dose.time && shouldShowInSitterView(dose.time)) {
                 scheduleItems.push({
                   id: `medicine-${dog.id}-${index}-${doseIndex}`,
                   type: 'medicine',
-                  title: medicine.medication,
+                  title: `${medicine.medication} (${dog.name})`,
                   time: dose.time,
                   date: today,
                   dog_id: dog.id,
@@ -871,19 +909,21 @@ export const generateMasterSchedule = (
             })
           } else {
             // Old format
-            scheduleItems.push({
-              id: `medicine-${dog.id}-${index}`,
-              type: 'medicine',
-              title: medicine.medication,
-              time: medicine.time,
-              date: today,
-              dog_id: dog.id,
-              dog_name: dog.name,
-              notes: medicine.notes,
-              video_url: medicine.video_url,
-              recurring: true,
-              source: 'dog'
-            })
+            if (shouldShowInSitterView(medicine.time)) {
+              scheduleItems.push({
+                id: `medicine-${dog.id}-${index}`,
+                type: 'medicine',
+                title: `${medicine.medication} (${dog.name})`,
+                time: medicine.time,
+                date: today,
+                dog_id: dog.id,
+                dog_name: dog.name,
+                notes: medicine.notes,
+                video_url: medicine.video_url,
+                recurring: true,
+                source: 'dog'
+              })
+            }
           }
         }
       })
@@ -894,7 +934,7 @@ export const generateMasterSchedule = (
   dogs.forEach(dog => {
     if (dog.walk_schedule && Array.isArray(dog.walk_schedule)) {
       dog.walk_schedule.forEach((walk: any, index: number) => {
-        if (walk.time) {
+        if (walk.time && shouldShowInSitterView(walk.time)) {
           scheduleItems.push({
             id: `walk-${dog.id}-${index}`,
             type: 'walk',
@@ -917,7 +957,7 @@ export const generateMasterSchedule = (
     if (dog.vet_visits && Array.isArray(dog.vet_visits)) {
       dog.vet_visits.forEach((visit: any, index: number) => {
         const visitDate = visit.date
-        if (visitDate === today) {
+        if (visitDate === today && shouldShowInSitterView(visit.time || 'TBD')) {
           // Add the actual vet visit
           scheduleItems.push({
             id: `vet-visit-${dog.id}-${index}`,
@@ -963,7 +1003,7 @@ export const generateMasterSchedule = (
   // Add appointments
   appointments.forEach(appointment => {
     const appointmentDate = appointment.date.split('T')[0]
-    if (appointmentDate === today) {
+    if (appointmentDate === today && shouldShowInSitterView(appointment.time || 'TBD')) {
       const dog = dogs.find(d => d.id === appointment.for_dog_id)
       scheduleItems.push({
         id: `appointment-${appointment.id}`,
@@ -1015,7 +1055,7 @@ export const generateMasterSchedule = (
         serviceTime = service.service_time || 'TBD';
       }
       
-      if (shouldInclude) {
+      if (shouldInclude && shouldShowInSitterView(serviceTime)) {
         scheduleItems.push({
           id: `service-${service.id}`,
           type: 'service',
@@ -1033,7 +1073,7 @@ export const generateMasterSchedule = (
   
   // Add timed daily tasks from database (untimed tasks will be handled separately)
   dailyTasks.forEach(task => {
-    if (task.time) {
+    if (task.time && shouldShowInSitterView(task.time)) {
       scheduleItems.push({
         id: `task-${task.id}`,
         type: 'task',
@@ -1116,11 +1156,25 @@ export const generateMasterSchedule = (
       
       // Add to schedule if it should show today or as a reminder
       if (shouldShowToday || shouldShowReminder) {
-        const subcategoryLabel = instruction.subcategory ? 
+        // Generate title for house instruction services
+        let subcategoryLabel = instruction.subcategory ? 
           instruction.subcategory.split(/(?=[A-Z])/).map(word => 
             word.charAt(0).toUpperCase() + word.slice(1)
           ).join(' ') : 
           'Service';
+        
+        // For amenities with services, extract only the part after "Notes:" if it exists
+        if (instruction.category === 'amenities' && instruction.instructions?.text) {
+          const notesMatch = instruction.instructions.text.match(/Notes:\s*(.+)/i);
+          if (notesMatch) {
+            subcategoryLabel = notesMatch[1].trim();
+          }
+        }
+        
+        // Add "Service" to the end if not already present
+        if (!subcategoryLabel.toLowerCase().includes('service')) {
+          subcategoryLabel += ' Service';
+        }
         
         // Calculate time display with duration if available
         let timeDisplay = shouldShowReminder ? '' : (instruction.schedule_time || 'TBD');
@@ -1177,16 +1231,18 @@ export const generateMasterSchedule = (
           enhancedNotes = enhancedNotes ? `${enhancedNotes}\n${additionalInfo.join(', ')}` : additionalInfo.join(', ');
         }
 
-        scheduleItems.push({
-          id: `house-${instruction.id}${shouldShowReminder ? '-reminder' : ''}`,
-          type: 'house',
-          title: shouldShowReminder ? `🔔 Reminder: ${subcategoryLabel}` : subcategoryLabel,
-          time: timeDisplay,
-          date: today,
-          notes: enhancedNotes,
-          recurring: true,
-          source: 'house'
-        })
+        if (shouldShowInSitterView(timeDisplay)) {
+          scheduleItems.push({
+            id: `house-${instruction.id}${shouldShowReminder ? '-reminder' : ''}`,
+            type: 'house',
+            title: shouldShowReminder ? `🔔 Reminder: ${subcategoryLabel}` : subcategoryLabel,
+            time: timeDisplay,
+            date: today,
+            notes: enhancedNotes,
+            recurring: true,
+            source: 'house'
+          })
+        }
       }
     }
   })
