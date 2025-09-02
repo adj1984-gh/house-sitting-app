@@ -2752,18 +2752,8 @@ export default function HouseSittingApp() {
                   
                   {/* Scheduling Section */}
                   <div className="border-t pt-4">
-                    <h4 className="font-semibold text-gray-800 mb-3">Scheduling (Optional)</h4>
+                    <h4 className="font-semibold text-gray-800 mb-3">Scheduling</h4>
                     <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <input 
-                          type="checkbox" 
-                          name="needs_scheduling" 
-                          defaultChecked={formData.needs_scheduling || false}
-                          className="rounded"
-                        />
-                        <label className="text-sm font-medium">This service needs regular scheduling</label>
-                      </div>
-                      
                       <div className="flex items-center gap-2">
                         <input 
                           type="checkbox" 
